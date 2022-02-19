@@ -1,3 +1,9 @@
+(defvar print-log t
+  "Wether to print the log messages for the contractions and so on")
+(defmacro logger (fmt &rest args)
+  `(when print-log
+    (eval (format t ,fmt ,@args))))
+
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
                         collect (gensym (format nil "~a-i-" i))))
@@ -204,7 +210,7 @@ This is done by =contraction-to-temp-tensor=.
                                              (lambda (x)
                                                (intersection x contraction))
                                              all-indices))))
-                    (format t "~&current: ~s matching: ~s through: ~s"
+                    (logger "~&current: ~s matching: ~s through: ~s"
                             index matching-indices contraction)
                     (case (length matching-indices)
                       (0 (error "Unbound contractiong ~a with ~a"
@@ -396,7 +402,7 @@ subsets of length up to N_c
                      (let ((positions (list (position a node-a)
                                             (position b node-b))))
                        (when (equal positions (cdr rule))
-                         (format t "~&~8tcontraction ~a <> ~a through ~a"
+                         (logger "~&~8tcontraction ~a <> ~a through ~a"
                                  a b rule)
                          (list a b))))))))
 ;; test
@@ -455,11 +461,11 @@ subsets of length up to N_c
          (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
                                                               ,(length leg-pairs))))
          results)
-    (format t "~&============")
-    (format t "~&N-contractions: ~s" N-c)
-    (format t "~&all indices: ~s" all-indices)
-    (format t "~&all leg-pairs: ~s" leg-pairs)
-    (format t "~&all combinations (of pairs) : ~s" which-pairs)
+    (logger "~&============")
+    (logger "~&N-contractions: ~s" N-c)
+    (logger "~&all indices: ~s" all-indices)
+    (logger "~&all leg-pairs: ~s" leg-pairs)
+    (logger "~&all combinations (of pairs) : ~s" which-pairs)
     (setq results
           (labels
               ((indexing (indices lst) (mapcar (lambda (i) (nth i lst)) indices)))
@@ -470,7 +476,7 @@ subsets of length up to N_c
                 (tagbody
                    (let ((pairs (indexing pair-indices leg-pairs))
                          top-contractions)
-                     (format t "~&combination: ~s pairs: ~s [~s]"
+                     (logger "~&combination: ~s pairs: ~s [~s]"
                              pair-indices
                              pairs (mapcar (lambda (x) (indexing x all-indices)) pairs))
                      (loop for pair in pairs
@@ -486,12 +492,12 @@ subsets of length up to N_c
                                ((equal conts
                                        (intersection top-contractions conts
                                                      :test #'equal))
-                                (format t "~&~30t⇐Exiting since ~a fully in ~a"
+                                (logger "~&~30t⇐Exiting since ~a fully in ~a"
                                         conts top-contractions)
                                 (return-from :pairs-discovery))
                                (t
-                                (format t "~&~8tvertices: ~s" vertices)
-                                (format t "~&~24t appending contractions ~s" conts)
+                                (logger "~&~8tvertices: ~s" vertices)
+                                (logger "~&~24t appending contractions ~s" conts)
                                 (push conts top-contractions)))))
 
                      ;; START FILTERING
@@ -519,7 +525,7 @@ subsets of length up to N_c
                  target tensor-list :orbital-spaces orbital-spaces
                                     :contraction-rules contraction-rules))
         (all-indices (loop for i in (mapcar #'cdr tensor-list) appending i)))
-    (format t "~&CONTRACTIONS TO CHECK: ~a" result)
+    (logger "~&CONTRACTIONS TO CHECK: ~a" result)
     (remove-if #'null
      (loop for contraction in result
           collect
@@ -528,7 +534,7 @@ subsets of length up to N_c
                  (contracted-tensor (get-contracted-temp-tensor
                                      contraction-tensor)))
 
-            (format t "~&getting-temp-tensor... ~a ~a" contraction tensor-list)
+            (logger "~&getting-temp-tensor... ~a ~a" contraction tensor-list)
 
             (if (match-target-with-tensor target
                                           contracted-tensor
@@ -566,6 +572,21 @@ subsets of length up to N_c
        ((B C) (J K))
        ((B A) (J L))
        ((B C) (J L))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (P H))
+                                             '((f (a b)) (t (c i))))
+     '(((B A)) ((B C))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (G H))
+                                             '((f (a b)) (t (c i))))
+     '())
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (H P))
+                                             '((f (a b)) (t (c i))))
+     '())
 
     )
 
