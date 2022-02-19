@@ -1,3 +1,920 @@
 * Todo [0%]
 
 - [ ] create the unit tensor operator and check that it plays well
+
+* Types
+
+- A tensor
+  #+begin_src lisp
+  (tensor-name [points])
+  #+end_src
+- A contracted expression
+  #+begin_src lisp
+  ((contraction (point-1 point-2)) (tensor-product))
+  #+end_src
+
+* Implementation
+** Prolog
+
+#+begin_src lisp :tangle t.lisp
+;; todo define packages and all that
+(load "gunu.lisp")
+
+(defmacro assert-equal (left right)
+  `(assert (equal ,left ,right)))
+#+end_src
+
+** Main variables
+
+
+#+begin_src lisp  :tangle gunu.lisp
+(defvar print-log t
+  "Wether to print the log messages for the contractions and so on")
+(defmacro logger (fmt &rest args)
+  `(when print-log
+    (eval (format t ,fmt ,@args))))
+#+end_src
+
+** Combinatorics
+
+This code relies a lot on combinatorics and set-theoretic functions,
+this section describes their implementation in order to maintain
+the package self-contained.
+
+*** Cartesian product
+#+begin_src lisp :tangle gunu.lisp
+(defmacro cartesian-product (&rest lists)
+  (let* ((indices (loop for i from 1 to (length lists)
+                        collect (gensym (format nil "~a-i-" i))))
+         (initial-value `(loop for ,(car (last indices)) in ',(car (last lists))
+                               collect `(,,@indices))))
+    (reduce
+     (lambda (x y)
+       `(loop for ,(car x) in ',(cadr x)
+              nconc ,y))
+     (mapcar #'list (butlast indices) (butlast lists))
+     :from-end t
+     :initial-value initial-value)))
+#+end_src
+
+With tests:
+#+begin_src lisp :tangle t.lisp
+(assert-equal (cartesian-product (H P) (a b c) (1 2 3 5))
+              '((H A 1) (H A 2) (H A 3) (H A 5)
+                (H B 1) (H B 2) (H B 3) (H B 5)
+                (H C 1) (H C 2) (H C 3) (H C 5)
+                (P A 1) (P A 2) (P A 3) (P A 5)
+                (P B 1) (P B 2) (P B 3) (P B 5)
+                (P C 1) (P C 2) (P C 3) (P C 5)))
+
+(assert-equal (cartesian-product (H (P)) ((a)))
+              '((H (A)) ((P) (A))))
+#+end_src
+
+** Arithmetic expressions
+#+begin_src lisp :tangle gunu.lisp
+(defun expression-to-lists (exp)
+  (ecase (car exp)
+    ('* (let ((operands
+                (mapcar (lambda (e) (case (car e)
+                                      ('+ (cdr e))
+                                      (t (list e))))
+                        (cdr exp))))
+          operands))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal
+ (expression-to-lists '(* (v (a i))
+                        (+ 1 (t (a i)) (t (a i) (b j)))
+                        (+ (r (g i)) (r (g i) (a j)))))
+ '(((V (A I)))
+   (1 (T (A I)) (T (A I) (B J)))
+   ((R (G I)) (R (G I) (A J)))))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+(defun expand-expression (expr)
+  (eval `(cartesian-product ,@(expression-to-lists expr))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal
+ (expand-expression '(* (v (a i))
+                      (+ 1 (t (a i)) (t (a i) (b j)))
+                      (+ (r (g i)) (r (g i) (a j)))))
+ '(((V (A I)) 1 (R (G I)))
+   ((V (A I)) 1 (R (G I) (A J)))
+   ((V (A I)) (T (A I)) (R (G I)))
+   ((V (A I)) (T (A I)) (R (G I) (A J)))
+   ((V (A I)) (T (A I) (B J)) (R (G I)))
+   ((V (A I)) (T (A I) (B J)) (R (G I) (A J)))))
+#+end_src
+
+** Index spaces
+#+begin_src lisp :tangle gunu.lisp
+(defun match-index-to-space (index orbital-space)
+  (find index (cdr orbital-space)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(progn (assert (match-index-to-space 'k '(H i j k l)))
+       (assert (not (match-index-to-space 'H '(H i j k l)))))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+(defun find-space-by-leg (index orbital-spaces)
+  (find index orbital-spaces :test #'match-index-to-space))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(progn (assert (equal (find-space-by-leg 'k '((P a b c) (H i j k l)))
+                      '(H I J K L)))
+       (assert (not (find-space-by-leg 'a '((H i j k l))))))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+(defun find-space-by-name (name orbital-spaces)
+  (find name orbital-spaces :key #'car))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal
+ (find-space-by-name 'p '((PQ p q r s) (p a b c)))
+ '(p a b c))
+#+end_src
+
+** Tensor matching
+#+begin_src lisp :tangle gunu.lisp
+(defun all-permutations (lst &optional (remain lst))
+  (cond ((null remain) nil)
+        ((null (rest lst)) (list lst))
+        (t (append
+            (mapcar (lambda (l) (cons (first lst) l))
+                    (all-permutations (rest lst)))
+            (all-permutations (append (rest lst) (list (first lst)))
+                              (rest remain))))))
+
+(defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
+  (assert (eq (length target) (length tensor)))
+  (notany #'null
+          (loop for target-tensor in (mapcar #'list (cdr target) (cdr tensor))
+                collect
+                (let ((spaces (mapcar (lambda (i) (find i orbital-spaces :key #'car))
+                                      (car target-tensor))))
+                  (assert (eq (length (car target-tensor)) (length (cadr target-tensor))))
+                  (notany #'null (mapcar #'match-index-to-space
+                                         (cadr target-tensor)
+                                         spaces))))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(progn
+  (assert (match-target-with-tensor-1 '(V (H P) (P))
+                                      '(t (i b) (a))
+                                      :orbital-spaces
+                                      '((H i)
+                                        (P b a))))
+  (assert (not (match-target-with-tensor-1 '(V (H P) (P))
+                                           '(t (i b) (c)) ;; here
+                                           :orbital-spaces
+                                           '((H i)
+                                             (P b a))))))
+#+end_src
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun match-target-with-tensor (target tensor &key orbital-spaces)
+  "Here we check that Vaibj is equivalent to Viajb and so on always.
+  This is general to all tensors.
+  It works for any dimension thanks to permuting all the legs of
+  the tensor."
+  (let ((all-targets (mapcar (lambda (x) `(,(car target) ;; name
+                                                   ,@x)) ;; feet
+                             (all-permutations (cdr target)))))
+    (loop for tt in all-targets
+          thereis (match-target-with-tensor-1
+                  tt tensor
+                  :orbital-spaces orbital-spaces))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(progn
+  (assert (match-target-with-tensor '(V (H P) (P H))
+                                    '(t (a i) (j b))
+                                    :orbital-spaces
+                                    '((H i j)
+                                      (P b a))))
+  (assert (not (match-target-with-tensor '(V (H P) (P H))
+                                         '(t (i a) (j b))
+                                         :orbital-spaces
+                                         '((H i j)
+                                           (P b a))))))
+#+end_src
+
+** Contractions
+
+Contraction rules should be something that tells us
+which contractions are not zero.
+For instance having
+
+#+begin_src lisp :eval no
+  (v (j b)) (t (a i))
+#+end_src
+
+here we can see that
+
+- =a b= can contract: =(P 1 0)= (i.e. first position and zeroth position)
+- =i j= can contract: =(H 0 1)= (i.e. zeroth position and first position)
+
+A contraction is given by the format
+
+#+begin_src lisp :eval no
+  ((contraction ((a b)))
+   (v (j b)
+   (t (a i))))
+#+end_src
+
+and we can stich this contraction together to create a tensor
+This is done by =contraction-to-temp-tensor=.
+
+#+begin_src lisp :eval no
+  ((contraction ((a b)))
+   (v (j b)
+   (t (a i)))) =>> (tv (j i)) which would match (_ (H H))
+#+end_src
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun flatten-list (ls)
+  (cond
+    ((and (consp ls)
+          (atom (car ls)))
+     `(,(car ls) ,@(flatten-list (cdr ls))))
+    ((and (consp ls)
+          (consp (car ls)))
+     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
+    (t ls)))
+
+(defun stich-together (contraction index-a index-b)
+  (labels ((kill-matching (i)
+                         ;; it will set x wherever the index belongs
+                         ;; to the contraction
+                         (subst 'x nil i
+                           :test (lambda (new old)
+                                   (declare (ignorable new))
+                                   (intersection (list old) contraction)))))
+    (let* ((pos-a (position 'x (kill-matching index-a)))
+           (killed-b (kill-matching index-b))
+           (pos-b (position 'x killed-b)))
+      (if (eq pos-a pos-b)
+          (error "You are trying to contract ~a and ~a at the same position ~a"
+                 index-a index-b pos-a)
+          (progn
+            (setf (nth pos-a index-a) (car (delete 'x killed-b)))
+            index-a)))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (stich-together '(a d)
+                              '(a b) '(c d))
+              '(c b))
+(assert-equal (stich-together '(b c)
+                              '(a b) '(c d))
+              '(a d))
+#+end_src
+
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun find-and-replace-matching-indices
+    (contraction tensor-indices &key killed-pair)
+  (let* ((result (copy-tree tensor-indices))
+         (all-indices (reduce (lambda (x y)
+                                (concatenate 'list x y))
+                              result)))
+    (loop for index in all-indices
+          do
+             (case (length (intersection index contraction))
+               (0 (continue))
+               ;; self contraction
+               (2 (return (subst killed-pair
+                                 index
+                                 result
+                                 :test #'equal)))
+               ;; usual contraction
+               ;; x--<>---
+               ;; we should find exactly ONE OTHER PLACE where this
+               ;; contraction is linked by the contraction
+               ;; otherwise it is an error
+               (1 (let* ((matching-indices (remove-if
+                                            (lambda (x) (equal x index))
+                                            (remove-if-not
+                                             (lambda (x)
+                                               (intersection x contraction))
+                                             all-indices))))
+                    (logger "~&current: ~s matching: ~s through: ~s"
+                            index matching-indices contraction)
+                    (case (length matching-indices)
+                      (0 (error "Unbound contractiong ~a with ~a"
+                                index contraction))
+                      (1 (let ((stiched (stich-together contraction
+                                                        index
+                                                        (car matching-indices))))
+                           (return (subst
+                                    killed-pair
+                                    (car matching-indices)
+                                    (subst stiched index result)))))
+                      (t (error "Contraction arity(~a) error ~a contracts with ~a"
+                                (length matching-indices) index matching-indices)))
+                    ))))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(macrolet ((assert-eq (index result)
+             `(assert (equal (find-and-replace-matching-indices ,index
+                                                                original
+                                                                :killed-pair
+                                                                '(x x))
+                             ,result))))
+  (let ((original '(((a b) (c d))
+                    ((e f) (g h))
+                    ((i j) (k l)))))
+
+    (assert-eq '(e h) '(((a b) (c d))
+                        ((g f) (x x))
+                        ((i j) (k l))))
+
+    (assert-eq '(k l) '(((a b) (c d))
+                        ((e f) (g h))
+                        ((i j) (x x))))
+
+    (assert-eq '(e h) '(((a b) (c d))
+                        ((g f) (x x))
+                        ((i j) (k l))))))
+#+end_src
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun get-contracted-indices (contraction-tensor &key killed-pair)
+  (assert (eq (caar contraction-tensor) 'contraction))
+  (let ((contracted-indices (copy-list (mapcar #'cdr (cdr contraction-tensor))))
+        (contractions (cadar contraction-tensor)))
+    (loop for contraction in contractions
+          do
+             (setq contracted-indices
+                   (find-and-replace-matching-indices
+                    contraction
+                    contracted-indices
+                    :killed-pair killed-pair)))
+    contracted-indices))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (get-contracted-indices
+               '((contraction ((e d) (k j)))
+                 (v (a b) (c d))
+                 (h (e f) (g h))
+                 (l (i j) (k l))) :killed-pair '(x x))
+              '(((A B) (C F))
+                ((X X) (G H))
+                ((I L) (X X))))
+#+end_src
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun get-contracted-temp-tensor (contraction-tensor)
+  (let* ((killed-pair '(x x))
+         (x-indices (get-contracted-indices contraction-tensor
+                                           :killed-pair killed-pair))
+         (flat-indices (reduce (lambda (x y) (concatenate 'list x y))
+                               x-indices))
+         (cleaned-indices (remove-if (lambda (x) (equal x killed-pair))
+                                     flat-indices)))
+    `(contracted ,@cleaned-indices)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (get-contracted-temp-tensor
+               '((contraction ((e d) (k j)))
+                 (v (a b) (c d))
+                 (h (e f) (g h))
+                 (l (i j) (k l))))
+              '(contracted (A B) (C F) (G H) (I L)))
+
+(assert-equal (get-contracted-temp-tensor
+               '((contraction ((b a) (j k)))
+                 (V (J I) (A B))
+                 (T (C K))
+                 (R (G L))))
+              '(contracted (C I) (G L)))
+#+end_src
+
+
+In this routine magic happens.
+So we have a target tensor with
+  N_t operators
+and some product of tensors with N_i operators each.
+The number of contractions should be N_c,
+so filters for the number of contractions are
+
+  N_c = (Σ_i N_i) - N_t
+
+If we need N_c contractions, we can get up to
+N_c pairs of indices, where every index has a single
+contraction. Therefore we need all ORDERED
+subsets of length up to N_c
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(declaim (ftype (function (integer)) get-pairs))
+(defun get-pairs (n)
+  (loop for i from 0 below n
+        nconcing (loop for j from i below n
+                       collect `(,i ,j))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (get-pairs 1) '((0 0)))
+(assert-equal (get-pairs 2) '((0 0) (0 1) (1 1)))
+(assert-equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmacro ordered-subsets-with-repetition (n space-size)
+  (let* ((vars (loop for i below n collect (gensym)))
+         (deepest-level `(loop for ,(car (last vars))
+                               from ,(car (last (butlast vars)))
+                                 below ,space-size
+                               collect `(,,@vars)))
+         (init-var (gensym))
+         (body (reduce (lambda (x y)
+                         `(loop for ,(cadr x) from ,(car x) below ,space-size
+                                nconcing ,y))
+                       (butlast (mapcar #'list (append (list init-var)
+                                                       (butlast vars))
+                                        vars))
+                       :initial-value deepest-level
+                       :from-end t)))
+    `(let ((,init-var 0))
+       ,body)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (ordered-subsets-with-repetition 2 2)
+              '((0 0) (0 1) (1 1)))
+(assert-equal (ordered-subsets-with-repetition 2 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
+                (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4)))
+(assert-equal (ordered-subsets-with-repetition 3 3)
+              '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
+                (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2)))
+(assert-equal (ordered-subsets-with-repetition 4 4)
+              '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
+                (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
+                (0 1 1 3) (0 1 2 2) (0 1 2 3) (0 1 3 3) (0 2 2 2) (0 2 2 3)
+                (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
+                (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
+                (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
+#+end_src
+
+TODO : this function is duplicated
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun orbital-space-name (index-name orbital-spaces)
+  (car (find index-name orbital-spaces
+             ;; this is important in order to have the same name
+             ;; for spaces as for indices but not checking the space
+             :test (lambda (el space) (member el (cdr space))))))
+(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
+      (vals '((i . h)
+              (p . pq)
+              (q . pq)
+              (b . p))))
+  (loop for (v . result) in vals
+        do (assert (eq (orbital-space-name v spaces) result))))
+#+end_src
+
+*** Finding contractions
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun compatible-contractions (node-a node-b &key
+                                                orbital-spaces
+                                                contraction-rules)
+  (assert (eq (length node-a) 2))
+  (assert (eq (length node-a) (length node-b)))
+  (remove-if
+   #'null
+   (loop for (a b) in (eval `(cartesian-product ,node-a ,node-b))
+         collect (let* ((name-pair (mapcar (lambda (x)
+                                             (orbital-space-name
+                                              x
+                                              orbital-spaces))
+                                           (list a b)))
+                        (rule (find name-pair contraction-rules
+                                    :test #'equal
+                                    :key #'car)))
+                   (when rule
+                     (let ((positions (list (position a node-a)
+                                            (position b node-b))))
+                       (when (equal positions (cdr rule))
+                         (logger "~&~8tcontraction ~a <> ~a through ~a"
+                                 a b rule)
+                         (list a b))))))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+;; test
+(let ((spaces '((H I J K L)
+                (P A B C D)
+                (G G)))
+      (rules '(((H H) 0 1)
+               ((P P) 1 0)))
+      (values '(((j i) (i a) . nil)
+                ((j i) (i k) . ((j k)))
+                ((a b) (c k) . ((b c)))
+                ((i a) (g l) . ((i l)))
+                ((i j) (k l) . ((i l)))
+                ((i a) (b j) . ((i j) (a b))))))
+  (loop for (a b . result) in values
+        do
+           (assert (equal (compatible-contractions a b
+                           :orbital-spaces spaces
+                           :contraction-rules rules)
+                          result))))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun symbols-repeated-p (lst)
+  (let ((symbols (flatten-list lst))
+        s)
+    (loop while (setq s (pop symbols))
+          if (> (count s symbols) 0)
+            do (return t))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let ((vals '(((a b c) . nil)
+              ((a (a) b c) . t)
+              ((((a)) ((b e f g)) ((((b))))) . t))))
+  (loop for (lst . val) in vals
+        do (assert (eq (symbols-repeated-p lst) val))))
+#+end_src
+
+Here we apply the norm simply
+Find contractions in a product.
+Some filters used are the number of contractions
+
+#+begin_example
+     N-c = Sum (i) legs(product) - legs(target)
+#+end_example
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun find-contractions-in-product-by-number-of-legs
+    (target tensor-list &key
+                          orbital-spaces
+                          contraction-rules)
+  (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
+                    (length (flatten-list (cdr target))))
+                 2))
+         (all-indices (loop for ts in (mapcar #'cdr tensor-list)
+                            with ls = nil
+                            do (setq ls (append ls ts))
+                            finally (return ls)))
+         (space-size (length all-indices))
+         ;; '((1 1) (1 2) (2 2)) if length all-indices = 2
+         (leg-pairs (get-pairs space-size))
+         (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
+                                                              ,(length leg-pairs))))
+         results)
+    (logger "~&============")
+    (logger "~&N-contractions: ~s" N-c)
+    (logger "~&all indices: ~s" all-indices)
+    (logger "~&all leg-pairs: ~s" leg-pairs)
+    (logger "~&all combinations (of pairs) : ~s" which-pairs)
+    (setq results
+          (labels
+              ((indexing (indices lst) (mapcar (lambda (i) (nth i lst)) indices)))
+            (loop
+              for pair-indices in which-pairs
+              nconcing
+              (block :pairs-discovery
+                (tagbody
+                   (let ((pairs (indexing pair-indices leg-pairs))
+                         top-contractions)
+                     (logger "~&combination: ~s pairs: ~s [~s]"
+                             pair-indices
+                             pairs (mapcar (lambda (x) (indexing x all-indices)) pairs))
+                     (loop for pair in pairs
+                           collect
+                           (let* ((vertices (indexing pair all-indices))
+                                  (conts (compatible-contractions
+                                          (car vertices)
+                                          (cadr vertices)
+                                          :orbital-spaces orbital-spaces
+                                          :contraction-rules contraction-rules)))
+                             (cond
+                               ((null conts) (return-from :pairs-discovery))
+                               ((equal conts
+                                       (intersection top-contractions conts
+                                                     :test #'equal))
+                                (logger "~&~30t⇐Exiting since ~a fully in ~a"
+                                        conts top-contractions)
+                                (return-from :pairs-discovery))
+                               (t
+                                (logger "~&~8tvertices: ~s" vertices)
+                                (logger "~&~24t appending contractions ~s" conts)
+                                (push conts top-contractions)))))
+
+                     ;; START FILTERING
+                     (return-from :pairs-discovery
+                       (loop
+                         for real-contraction in (eval `(cartesian-product
+                                                         ,@top-contractions))
+                         collect
+                         (block :filter-real-contractions
+                           (progn
+                             ;; photons say: repeated letters must go!
+                             (let ((letters (flatten-list real-contraction)))
+                               (when (symbols-repeated-p letters)
+                                 (return-from :filter-real-contractions)))
+                             real-contraction))))
+                     ))))))
+    (remove-if #'null results)
+    ))
+#+end_src
+
+;; TODO: tests
+
+#+begin_src lisp :tangle gunu.lisp
+(defun find-contractions-in-product-by-target
+    (target tensor-list &key
+                          orbital-spaces
+                          contraction-rules)
+  (let ((result (find-contractions-in-product-by-number-of-legs
+                 target tensor-list :orbital-spaces orbital-spaces
+                                    :contraction-rules contraction-rules))
+        (all-indices (loop for i in (mapcar #'cdr tensor-list) appending i)))
+    (logger "~&CONTRACTIONS TO CHECK: ~a" result)
+    (remove-if #'null
+     (loop for contraction in result
+          collect
+          (let* ((contraction-tensor `((contraction ,contraction)
+                                       ,@(copy-list tensor-list)))
+                 (contracted-tensor (get-contracted-temp-tensor
+                                     contraction-tensor)))
+
+            (logger "~&getting-temp-tensor... ~a ~a" contraction tensor-list)
+
+            (if (match-target-with-tensor target
+                                          contracted-tensor
+                                          :orbital-spaces orbital-spaces)
+                contraction
+                nil))))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let ((orbital-spaces '((H I J K L h1 h2 h3)
+                        (P A B C D p1 p2 p3)
+                        (G g)))
+      (contraction-rules '(((H H) 0 1)
+                           ((P P) 1 0)))
+      (|_ H P H| '(_ (G H) (P H)))
+      (|P H P H| '(_ (P H) (P H)))
+      (|Vhhpp * Tpphh * Tpphh| '((V (i a) (j b))
+                                 (T (c k) (d l))
+                                 (T (p1 h1) (p2 h2))))
+      (|Vhphp * Thp * Rh| '((V (J I) (A B))
+                            (T (C K))
+                            (R (G L)))))
+  (macrolet ((assert-with-env (fun-applied value)
+               `(assert
+                 (equal
+                  ,(concatenate 'list fun-applied '(:orbital-spaces
+                                                    orbital-spaces
+                                                    :contraction-rules
+                                                    contraction-rules))
+                        ,value))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
+     '(((B A) (J I))
+       ((B C) (J I))
+       ((B A) (J K))
+       ((B C) (J K))
+       ((B A) (J L))
+       ((B C) (J L))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (P H))
+                                             '((f (a b)) (t (c i))))
+     '(((B A)) ((B C))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (G H))
+                                             '((f (a b)) (t (c i))))
+     '())
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (H P))
+                                             '((f (a b)) (t (c i))))
+     '())))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+(defun contract-expressions-by-target
+    (target expression &key orbital-spaces contraction-rules)
+  (let ((products (expand-expression expression))
+        sums)
+    (setq sums
+          (loop
+            for product in products
+            appending
+            (progn (print product)
+                   (let ((contractions
+                           (find-contractions-in-product-by-target target product
+                                                                   :orbital-spaces
+                                                                   orbital-spaces
+                                                                   :contraction-rules
+                                                                   contraction-rules)))
+                     (mapcar (lambda (x) `((contraction ,x) ,@product))
+                             contractions)))))
+    `(+ ,@sums)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+
+(assert-equal
+ (contract-expressions-by-target '(_ (P H))
+                                 '(* (+ (f (a b)) (f (i j)))
+                                   (t (c k)))
+                                 :orbital-spaces
+                                 '((H i j k)
+                                   (P a b c))
+                                 :contraction-rules
+                                 '(((H H) 0 1)
+                                   ((P P) 1 0)))
+ '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
+     ((CONTRACTION ((B C))) (F (A B)) (T (C K)))
+     ((CONTRACTION ((I J))) (F (I J)) (T (C K)))
+     ((CONTRACTION ((I K))) (F (I J)) (T (C K)))))
+#+end_src
+
+
+TOOD: Explain that all indices must be different and so on
+
+#+begin_src lisp :tangle gunu.lisp
+(defun space-subseq (&key orbital-spaces from-index)
+  (mapcar (lambda (space)
+            (handler-case `(,(car space)
+                            ,@(subseq (cdr space) from-index))
+              (condition ()
+                (error (concatenate
+                        'string
+                        "Dear user: "
+                        "When partitioning tensors, all spaces "
+                        "should have a long enough length to cut "
+                        "through the leg names using from-index. "
+                        "~&In this case "
+                        "the space ~s needs at least more "
+                        "than ~s elements "
+                        "BUT it currently has ~s ")
+                       space from-index (length (cdr space))))))
+          orbital-spaces))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
+                            :from-index 2)
+              '((H 3 4) (P c) (G)))
+#+end_src
+
+TODO:: Explain how one to do the naming of tensors so that everything works well
+#+begin_src lisp :tangle gunu.lisp
+(defun name-legs-by-space-name (tensor-description &key orbital-spaces (from-index 0))
+  (let ((orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index))))
+
+    `(,(car tensor-description)
+      ,@(loop for index-description in (cdr tensor-description)
+              collect
+              (loop for space-name in index-description
+                    collect
+                    (let ((space (find-space-by-name space-name orbital-spaces-copy)))
+                      (if (cdr space)
+                          (pop (cdr space))
+                          (error "Not enough leg names given for space ~a~%"
+                                 space))))))
+    ))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let ((vals '((0 . (t (h1 p1) (p2 h2)))
+              (1 . (t (h2 p2) (p3 h3)))
+              (2 . (t (h3 p3) (p4 h4))))))
+  (loop for (from-index . result) in vals
+        do (assert (equal
+                    (name-legs-by-space-name
+                     '(t (H P) (P H))
+                     :orbital-spaces '((H h1 h2 h3 h4) (P p1 p2 p3 p4))
+                     :from-index from-index)
+                    result))))
+#+end_src
+
+
+TODO: Explain the concept of partitioning and the format
+
+#+begin_src lisp :tangle gunu.lisp
+(defun partition-tensor (tensor &key orbital-spaces partition (from-index 0))
+  (let ((name (car tensor))
+        (indices (cdr tensor))
+        (orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index)))
+        new-indices-unexpanded)
+    (setq
+     new-indices-unexpanded
+     (mapcar
+      (lambda (index)
+        (mapcar
+         (lambda (leg)
+           (let* ((space (find-space-by-leg leg orbital-spaces))
+                  (space-name (car space))
+                  (partition (find space-name partition :key #'car)))
+             (if partition
+                 ;; we found a partition
+                 (mapcar (lambda (-space-name)
+                           (let* ((space (find-space-by-name
+                                          -space-name
+                                          orbital-spaces-copy)))
+                             (if (cdr space) ;; available leg names
+                                 (pop (cdr space))
+                                 (error "Not enough leg names given for space ~a~%"
+                                        space))))
+                         ;; elements of the partition (e.g H P)
+                         (cdr partition))
+                 (list leg))))
+         index))
+      indices))
+    (let ((new-indices (eval `(cartesian-product
+                               ,@(mapcar (lambda (index-set)
+                                           (eval `(cartesian-product ,@index-set)))
+                                         new-indices-unexpanded)))))
+      `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
+                   new-indices)))))
+#+end_src
+
+
+#+begin_src lisp :tangle t.lisp
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+
+  (partition-tensor '(f (p q))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)
+  (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition))
+
+#+end_src
+
+* Output formats
+** TeX
+
+#+begin_src lisp :tangle gunu.lisp
+(defun latex-tensor (tensor)
+  (format nil "~a^{~a}_{~a}"
+          (car tensor)
+          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
+          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
+
+(defun latex (tensor-expression &optional (stream t))
+  (case (car tensor-expression)
+    ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+                                                     (cdr tensor-expression))))
+    ('* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (t (latex-tensor tensor-expression))))
+
+#+end_src
+
+TODO actually to the tests
+#+begin_src lisp :tangle t.lisp
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+  (latex (partition-tensor '(f (p q))
+                           :orbital-spaces orbital-spaces
+                           :partition partition))
+  (latex (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)))
+#+end_src
+

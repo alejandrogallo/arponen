@@ -17,12 +17,6 @@
      :from-end t
      :initial-value initial-value)))
 
-(assert (equal (cartesian-product (H P) (a b c) (1 2 3 5))
-               '((H A 1) (H A 2) (H A 3) (H A 5) (H B 1) (H B 2) (H B 3) (H B 5)
-                 (H C 1) (H C 2) (H C 3) (H C 5)
-                 (P A 1) (P A 2) (P A 3) (P A 5) (P B 1) (P B 2) (P B 3) (P B 5)
-                 (P C 1) (P C 2) (P C 3) (P C 5))))
-
 (defun expression-to-lists (exp)
   (ecase (car exp)
     ('* (let ((operands
@@ -32,45 +26,17 @@
                         (cdr exp))))
           operands))))
 
-(assert (equal
-         (expression-to-lists '(* (v (a i))
-                                (+ 1 (t (a i)) (t (a i) (b j)))
-                                (+ (r (g i)) (r (g i) (a j)))))
-         '(((V (A I)))
-           (1 (T (A I)) (T (A I) (B J)))
-           ((R (G I)) (R (G I) (A J))))))
-
 (defun expand-expression (expr)
   (eval `(cartesian-product ,@(expression-to-lists expr))))
 
-(assert (equal
-         (expand-expression '(* (v (a i))
-                                (+ 1 (t (a i)) (t (a i) (b j)))
-                                (+ (r (g i)) (r (g i) (a j)))))
-         '(((V (A I)) 1 (R (G I)))
-           ((V (A I)) 1 (R (G I) (A J)))
-           ((V (A I)) (T (A I)) (R (G I)))
-           ((V (A I)) (T (A I)) (R (G I) (A J)))
-           ((V (A I)) (T (A I) (B J)) (R (G I)))
-           ((V (A I)) (T (A I) (B J)) (R (G I) (A J))))))
-
 (defun match-index-to-space (index orbital-space)
   (find index (cdr orbital-space)))
-(progn (assert (match-index-to-space 'k '(H i j k l)))
-       (assert (not (match-index-to-space 'H '(H i j k l)))))
 
 (defun find-space-by-leg (index orbital-spaces)
   (find index orbital-spaces :test #'match-index-to-space))
-(progn (assert (equal (find-space-by-leg 'k '((P a b c) (H i j k l)))
-                      '(H I J K L)))
-       (assert (not (find-space-by-leg 'a '((H i j k l))))))
 
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
-(progn
-  (assert
-   (equal (find-space-by-name 'p '((PQ p q r s) (p a b c)))
-          '(p a b c))))
 
 (defun all-permutations (lst &optional (remain lst))
   (cond ((null remain) nil)
@@ -93,19 +59,6 @@
                                          (cadr target-tensor)
                                          spaces))))))
 
-(progn
-  (assert (match-target-with-tensor-1 '(V (H P) (P))
-                                      '(t (i b) (a))
-                                      :orbital-spaces
-                                      '((H i)
-                                        (P b a))))
-  (assert (not (match-target-with-tensor-1 '(V (H P) (P))
-                                           '(t (i b) (c)) ;; here
-                                           :orbital-spaces
-                                           '((H i)
-                                             (P b a))))))
-
-
 (defun match-target-with-tensor (target tensor &key orbital-spaces)
   "Here we check that Vaibj is equivalent to Viajb and so on always.
   This is general to all tensors.
@@ -118,45 +71,6 @@
           thereis (match-target-with-tensor-1
                   tt tensor
                   :orbital-spaces orbital-spaces))))
-
-(progn
-  (assert (match-target-with-tensor '(V (H P) (P H))
-                                    '(t (a i) (j b))
-                                    :orbital-spaces
-                                    '((H i j)
-                                      (P b a))))
-  (assert (not (match-target-with-tensor '(V (H P) (P H))
-                                         '(t (i a) (j b))
-                                         :orbital-spaces
-                                         '((H i j)
-                                           (P b a))))))
-
-#|
-Constraction rules should be something that tells us
-which contractions are not zero.
-For instance having
-
-  (v (j b)) (t (a i))
-
-here we can see that
-
-  a b can contract: (P 1 0) (i.e. first position and zeroth position)
-  i j can contract: (H 0 1) (i.e. zeroth position and first position)
-
-A contraction is given by the format
-
-  ((contraction ((a b)))
-   (v (j b)
-   (t (a i))))
-
-and we can stich this contraction together to create a tensor
-This is done by =contraction-to-temp-tensor=.
-
-  ((contraction ((a b)))
-   (v (j b)
-   (t (a i)))) =>> (tv (j i)) which would match (_ (H H))
-
-|#
 
 (defun flatten-list (ls)
   (cond
@@ -186,17 +100,6 @@ This is done by =contraction-to-temp-tensor=.
             (setf (nth pos-a index-a) (car (delete 'x killed-b)))
             index-a)))))
 
-(progn
-  #+nil(stich-together '(a c)
-                       '(a b) '(c d))
-  (assert (equal (stich-together '(a d)
-                                 '(a b) '(c d))
-                 '(c b)))
-  (assert (equal (stich-together '(b c)
-                                 '(a b) '(c d))
-                 '(a d))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun find-and-replace-matching-indices
     (contraction tensor-indices &key killed-pair)
   (let* ((result (copy-tree tensor-indices))
@@ -239,30 +142,6 @@ This is done by =contraction-to-temp-tensor=.
                                 (length matching-indices) index matching-indices)))
                     ))))))
 
-(macrolet ((assert-eq (index result)
-             `(assert (equal (find-and-replace-matching-indices ,index
-                                                                original
-                                                                :killed-pair
-                                                                '(x x))
-                             ,result))))
-  (let ((original '(((a b) (c d))
-                    ((e f) (g h))
-                    ((i j) (k l)))))
-
-    (assert-eq '(e h) '(((a b) (c d))
-                        ((g f) (x x))
-                        ((i j) (k l))))
-
-    (assert-eq '(k l) '(((a b) (c d))
-                        ((e f) (g h))
-                        ((i j) (x x))))
-
-    (assert-eq '(e h) '(((a b) (c d))
-                        ((g f) (x x))
-                        ((i j) (k l))))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun get-contracted-indices (contraction-tensor &key killed-pair)
   (assert (eq (caar contraction-tensor) 'contraction))
   (let ((contracted-indices (copy-list (mapcar #'cdr (cdr contraction-tensor))))
@@ -276,17 +155,6 @@ This is done by =contraction-to-temp-tensor=.
                     :killed-pair killed-pair)))
     contracted-indices))
 
-(assert (equal (get-contracted-indices
-                '((contraction ((e d) (k j)))
-                  (v (a b) (c d))
-                  (h (e f) (g h))
-                  (l (i j) (k l))) :killed-pair '(x x))
-               '(((A B) (C F))
-                 ((X X) (G H))
-                 ((I L) (X X)))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun get-contracted-temp-tensor (contraction-tensor)
   (let* ((killed-pair '(x x))
          (x-indices (get-contracted-indices contraction-tensor
@@ -297,48 +165,12 @@ This is done by =contraction-to-temp-tensor=.
                                      flat-indices)))
     `(contracted ,@cleaned-indices)))
 
-(assert (equal (get-contracted-temp-tensor
-                '((contraction ((e d) (k j)))
-                  (v (a b) (c d))
-                  (h (e f) (g h))
-                  (l (i j) (k l))))
-               '(contracted (A B) (C F) (G H) (I L))))
-
-(assert (equal (get-contracted-temp-tensor
-                '((contraction ((b a) (j k)))
-                  (V (J I) (A B))
-                  (T (C K))
-                  (R (G L))))
-               '(contracted (C I) (G L))))
-
-#|
-In this routine magic happens.
-So we have a target tensor with
-  N_t operators
-and some product of tensors with N_i operators each.
-The number of contractions should be N_c,
-so filters for the number of contractions are
-
-  N_c = (Σ_i N_i) - N_t
-
-If we need N_c contractions, we can get up to
-N_c pairs of indices, where every index has a single
-contraction. Therefore we need all ORDERED
-subsets of length up to N_c
-
-|#
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (declaim (ftype (function (integer)) get-pairs))
 (defun get-pairs (n)
   (loop for i from 0 below n
         nconcing (loop for j from i below n
                        collect `(,i ,j))))
-(progn
-  (assert (equal (get-pairs 1) '((0 0))))
-  (assert (equal (get-pairs 2) '((0 0) (0 1) (1 1))))
-  (assert (equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmacro ordered-subsets-with-repetition (n space-size)
@@ -358,27 +190,6 @@ subsets of length up to N_c
                        :from-end t)))
     `(let ((,init-var 0))
        ,body)))
-
-(progn
-  (assert (equal (ordered-subsets-with-repetition 2 2)
-                 '((0 0) (0 1) (1 1))))
-  (assert (equal (ordered-subsets-with-repetition 2 5)
-                 '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
-                   (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4))))
-  (assert (equal (ordered-subsets-with-repetition 3 3)
-                 '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
-                   (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2))))
-  (assert (equal (ordered-subsets-with-repetition 4 4)
-                 '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
-                   (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
-                   (0 1 1 3) (0 1 2 2) (0 1 2 3) (0 1 3 3) (0 2 2 2) (0 2 2 3)
-                   (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
-                   (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
-                   (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))))
-
-
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun orbital-space-name (index-name orbital-spaces)
@@ -418,24 +229,6 @@ subsets of length up to N_c
                          (logger "~&~8tcontraction ~a <> ~a through ~a"
                                  a b rule)
                          (list a b))))))))
-;; test
-(let ((spaces '((H I J K L)
-                (P A B C D)
-                (G G)))
-      (rules '(((H H) 0 1)
-               ((P P) 1 0)))
-      (values '(((j i) (i a) . nil)
-                ((j i) (i k) . ((j k)))
-                ((a b) (c k) . ((b c)))
-                ((i a) (g l) . ((i l)))
-                ((i j) (k l) . ((i l)))
-                ((i a) (b j) . ((i j) (a b))))))
-  (loop for (a b . result) in values
-        do
-           (assert (equal (compatible-contractions a b
-                           :orbital-spaces spaces
-                           :contraction-rules rules)
-                          result))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun symbols-repeated-p (lst)
@@ -445,22 +238,11 @@ subsets of length up to N_c
           if (> (count s symbols) 0)
             do (return t))))
 
-(let ((vals '(((a b c) . nil)
-              ((a (a) b c) . t)
-              ((((a)) ((b e f g)) ((((b))))) . t))))
-  (loop for (lst . val) in vals
-        do (assert (eq (symbols-repeated-p lst) val))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
                           contraction-rules)
-  "Find contractions in a product.
-   Some filters used are the number of contractions
-     N-c = Sum (i) legs(product) - legs(target)
-  "
   (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
                     (length (flatten-list (cdr target))))
                  2))
@@ -555,52 +337,6 @@ subsets of length up to N_c
                 contraction
                 nil))))))
 
-(let ((orbital-spaces '((H I J K L h1 h2 h3)
-                        (P A B C D p1 p2 p3)
-                        (G g)))
-      (contraction-rules '(((H H) 0 1)
-                           ((P P) 1 0)))
-      (|_ H P H| '(_ (G H) (P H)))
-      (|P H P H| '(_ (P H) (P H)))
-      (|Vhhpp * Tpphh * Tpphh| '((V (i a) (j b))
-                                 (T (c k) (d l))
-                                 (T (p1 h1) (p2 h2))))
-      (|Vhphp * Thp * Rh| '((V (J I) (A B))
-                            (T (C K))
-                            (R (G L)))))
-  (macrolet ((assert-with-env (fun-applied value)
-               `(assert
-                 (equal
-                  ,(concatenate 'list fun-applied '(:orbital-spaces
-                                                    orbital-spaces
-                                                    :contraction-rules
-                                                    contraction-rules))
-                        ,value))))
-
-    (assert-with-env
-     (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
-     '(((B A) (J I))
-       ((B C) (J I))
-       ((B A) (J K))
-       ((B C) (J K))
-       ((B A) (J L))
-       ((B C) (J L))))
-
-    (assert-with-env
-     (find-contractions-in-product-by-target '(_ (P H))
-                                             '((f (a b)) (t (c i))))
-     '(((B A)) ((B C))))
-
-    (assert-with-env
-     (find-contractions-in-product-by-target '(_ (G H))
-                                             '((f (a b)) (t (c i))))
-     '())
-
-    (assert-with-env
-     (find-contractions-in-product-by-target '(_ (H P))
-                                             '((f (a b)) (t (c i))))
-     '())))
-
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
   (let ((products (expand-expression expression))
@@ -620,20 +356,6 @@ subsets of length up to N_c
                              contractions)))))
     `(+ ,@sums)))
 
-
-(contract-expressions-by-target '(_ (P H))
-                                '(* (+ (f (a b)) (f (i j)))
-                                  (t (c k)))
-                                :orbital-spaces
-                                '((H i j k)
-                                  (P a b c))
-                                :contraction-rules
-                                '(((H H) 0 1)
-                                  ((P P) 1 0)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defun space-subseq (&key orbital-spaces from-index)
   (mapcar (lambda (space)
             (handler-case `(,(car space)
@@ -652,10 +374,6 @@ subsets of length up to N_c
                        space from-index (length (cdr space))))))
           orbital-spaces))
 
-(assert (equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
-                             :from-index 2)
-               '((H 3 4) (P c) (G))))
-
 (defun name-legs-by-space-name (tensor-description &key orbital-spaces (from-index 0))
   (let ((orbital-spaces-copy (copy-tree
                               (space-subseq :orbital-spaces orbital-spaces
@@ -672,17 +390,6 @@ subsets of length up to N_c
                           (error "Not enough leg names given for space ~a~%"
                                  space))))))
     ))
-
-(let ((vals '((0 . (t (h1 p1) (p2 h2)))
-              (1 . (t (h2 p2) (p3 h3)))
-              (2 . (t (h3 p3) (p4 h4))))))
-  (loop for (from-index . result) in vals
-        do (assert (equal
-                    (name-legs-by-space-name
-                     '(t (H P) (P H))
-                     :orbital-spaces '((H h1 h2 h3 h4) (P p1 p2 p3 p4))
-                     :from-index from-index)
-                    result))))
 
 (defun partition-tensor (tensor &key orbital-spaces partition (from-index 0))
   (let ((name (car tensor))
@@ -722,23 +429,6 @@ subsets of length up to N_c
       `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
                    new-indices)))))
 
-
-(let ((orbital-spaces '((PQ p q r s)
-                        (H i j k l)
-                        (P a b c d)))
-      (partition '((PQ H P))))
-
-  (partition-tensor '(f (p q))
-                    :orbital-spaces orbital-spaces
-                    :partition partition)
-  (partition-tensor '(V (p q) (r s))
-                    :orbital-spaces orbital-spaces
-                    :partition partition))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LATEX
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun latex-tensor (tensor)
   (format nil "~a^{~a}_{~a}"
           (car tensor)
@@ -751,15 +441,3 @@ subsets of length up to N_c
                                                      (cdr tensor-expression))))
     ('* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))
-
-
-(let ((orbital-spaces '((PQ p q r s)
-                        (H i j k l)
-                        (P a b c d)))
-      (partition '((PQ H P))))
-  (latex (partition-tensor '(f (p q))
-                           :orbital-spaces orbital-spaces
-                           :partition partition))
-  (latex (partition-tensor '(V (p q) (r s))
-                    :orbital-spaces orbital-spaces
-                    :partition partition)))
