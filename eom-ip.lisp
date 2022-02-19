@@ -5,12 +5,36 @@
                       (intern (format nil "~a~a" prefix i)))
                     (loop for i from 1 to n collect i))))
 
+(defun contract-expression (target expr &key orbital-spaces contraction-rules)
+  (remove-if
+   #'null
+   (mapcar
+    (lambda (tensor-product)
+
+      (let ((contractions
+              (find-contractions-in-product-by-target target
+                                                      tensor-product
+                                                      :orbital-spaces
+                                                      orbital-spaces
+                                                      :contraction-rules
+                                                      contraction-rules)))
+        (when contractions
+          (list `(contractions ,contractions) tensor-product))))
+    (expand-expression expr))))
+
+(defun tensor-sum (&rest args)
+  `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)
+                                     ('+ (append (cdr tsr) rest))
+                                     (t (cons tsr rest))))
+                args
+                :from-end t
+                :initial-value nil)))
+
 (let* ((orbital-spaces
          (list (append (make-space 'H 'h 20) '(i j k l m n))
                (append (make-space 'P 'p 20) '(a b c d e f))
                (make-space 'G 'g 20)
-               (append (make-space 'pq 'pq- 20) '(p q r s))
-               ))
+               (append (make-space 'pq 'pq- 20) '(p q r s))))
 
        (partition '((PQ H P)))
 
@@ -19,7 +43,10 @@
            ((P P) 1 0)))
 
        ;; tensors
-       vpqrs f t1 t2 r1 r2)
+       vpqrs f t1 t2 r1 r2
+
+       (r1-like '(_ (G H)))
+       (r2-like '(_ (G H) (P H))))
 
   (setq vpqrs (partition-tensor '(V (p q) (r s))
                                 :orbital-spaces orbital-spaces
@@ -48,8 +75,15 @@
 
   (format t "~&======~{~&=> ~a~}" (list vpqrs f t1 t2 r1 r2))
 
+  #+nil
+  (contract-expression r1-like
+                       (list '* f (list '+ t1 t2) (list '+ r1))
+                       :orbital-spaces orbital-spaces
+                       :contraction-rules contraction-rules)
 
-
+  (contract-expression r1-like
+                       (list '* (tensor-sum f vpqrs)
+                             (list '+ t1 t2) (list '+ r1))
+                       :orbital-spaces orbital-spaces
+                       :contraction-rules contraction-rules)
   )
-
-
