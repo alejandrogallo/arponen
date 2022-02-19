@@ -59,6 +59,12 @@
 (progn (assert (match-index-to-space 'k '(H i j k l)))
        (assert (not (match-index-to-space 'H '(H i j k l)))))
 
+(defun find-space-by-leg (index orbital-spaces)
+  (find index orbital-spaces :test #'match-index-to-space))
+(progn (assert (equal (find-space-by-leg 'k '((P a b c) (H i j k l)))
+                      '(H I J K L)))
+       (assert (not (find-space-by-leg 'a '((H i j k l))))))
+
 (defun all-permutations (lst &optional (remain lst))
   (cond ((null remain) nil)
         ((null (rest lst)) (list lst))
@@ -617,3 +623,83 @@ subsets of length up to N_c
                                 :contraction-rules
                                 '(((H H) 0 1)
                                   ((P P) 1 0)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun partition-tensor (tensor &key orbital-spaces partition)
+  (let ((name (car tensor))
+        (indices (cdr tensor))
+        (orbital-spaces-copy (copy-tree orbital-spaces))
+        new-indices-unexpanded)
+    (setq
+     new-indices-unexpanded
+     (mapcar
+      (lambda (index)
+        (mapcar
+         (lambda (leg)
+           (let* ((space (find-space-by-leg leg orbital-spaces))
+                  (space-name (car space))
+                  (partition (find space-name partition
+                                   :key #'car)))
+             (if partition
+                 ;; we found a partition
+                 (mapcar (lambda (-space-name)
+                           (let* ((space (find -space-name orbital-spaces-copy
+                                               :key #'car)))
+                             (if (cdr space) ;; available leg names
+                                 (pop (cdr space))
+                                 (error "Not enough leg names given for space ~a~%"
+                                        space))))
+                         ;; elements of the partition (e.g H P)
+                         (cdr partition))
+                 (list leg))))
+         index))
+      indices))
+    (let ((new-indices (eval `(cartesian-product
+                               ,@(mapcar (lambda (index-set)
+                                           (eval `(cartesian-product ,@index-set)))
+                                         new-indices-unexpanded)))))
+      `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
+                   new-indices)))))
+
+
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+
+  (partition-tensor '(f (p q))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)
+  (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LATEX
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun latex-tensor (tensor)
+  (format nil "~a^{~a}_{~a}"
+          (car tensor)
+          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
+          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
+
+(defun latex (tensor-expression &optional (stream t))
+  (case (car tensor-expression)
+    ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+                                                     (cdr tensor-expression))))
+    ('* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (t (latex-tensor tensor-expression))))
+
+
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+  (latex (partition-tensor '(f (p q))
+                           :orbital-spaces orbital-spaces
+                           :partition partition))
+  (latex (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)))
