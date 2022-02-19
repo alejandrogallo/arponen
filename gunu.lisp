@@ -65,6 +65,13 @@
                       '(H I J K L)))
        (assert (not (find-space-by-leg 'a '((H i j k l))))))
 
+(defun find-space-by-name (name orbital-spaces)
+  (find name orbital-spaces :key #'car))
+(progn
+  (assert
+   (equal (find-space-by-name 'p '((PQ p q r s) (p a b c)))
+          '(p a b c))))
+
 (defun all-permutations (lst &optional (remain lst))
   (cond ((null remain) nil)
         ((null (rest lst)) (list lst))
@@ -626,10 +633,63 @@ subsets of length up to N_c
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun partition-tensor (tensor &key orbital-spaces partition)
+
+(defun space-subseq (&key orbital-spaces from-index)
+  (mapcar (lambda (space)
+            (handler-case `(,(car space)
+                            ,@(subseq (cdr space) from-index))
+              (condition ()
+                (error (concatenate
+                        'string
+                        "Dear user: "
+                        "When partitioning tensors, all spaces "
+                        "should have a long enough length to cut "
+                        "through the leg names using from-index. "
+                        "~&In this case "
+                        "the space ~s needs at least more "
+                        "than ~s elements "
+                        "BUT it currently has ~s ")
+                       space from-index (length (cdr space))))))
+          orbital-spaces))
+
+(assert (equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
+                             :from-index 2)
+               '((H 3 4) (P c) (G))))
+
+(defun name-legs-by-space-name (tensor-description &key orbital-spaces (from-index 0))
+  (let ((orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index))))
+
+    `(,(car tensor-description)
+      ,@(loop for index-description in (cdr tensor-description)
+              collect
+              (loop for space-name in index-description
+                    collect
+                    (let ((space (find-space-by-name space-name orbital-spaces-copy)))
+                      (if (cdr space)
+                          (pop (cdr space))
+                          (error "Not enough leg names given for space ~a~%"
+                                 space))))))
+    ))
+
+(let ((vals '((0 . (t (h1 p1) (p2 h2)))
+              (1 . (t (h2 p2) (p3 h3)))
+              (2 . (t (h3 p3) (p4 h4))))))
+  (loop for (from-index . result) in vals
+        do (assert (equal
+                    (name-legs-by-space-name
+                     '(t (H P) (P H))
+                     :orbital-spaces '((H h1 h2 h3 h4) (P p1 p2 p3 p4))
+                     :from-index from-index)
+                    result))))
+
+(defun partition-tensor (tensor &key orbital-spaces partition (from-index 0))
   (let ((name (car tensor))
         (indices (cdr tensor))
-        (orbital-spaces-copy (copy-tree orbital-spaces))
+        (orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index)))
         new-indices-unexpanded)
     (setq
      new-indices-unexpanded
@@ -639,13 +699,13 @@ subsets of length up to N_c
          (lambda (leg)
            (let* ((space (find-space-by-leg leg orbital-spaces))
                   (space-name (car space))
-                  (partition (find space-name partition
-                                   :key #'car)))
+                  (partition (find space-name partition :key #'car)))
              (if partition
                  ;; we found a partition
                  (mapcar (lambda (-space-name)
-                           (let* ((space (find -space-name orbital-spaces-copy
-                                               :key #'car)))
+                           (let* ((space (find-space-by-name
+                                          -space-name
+                                          orbital-spaces-copy)))
                              (if (cdr space) ;; available leg names
                                  (pop (cdr space))
                                  (error "Not enough leg names given for space ~a~%"
