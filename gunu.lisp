@@ -586,9 +586,34 @@ subsets of length up to N_c
     (assert-with-env
      (find-contractions-in-product-by-target '(_ (H P))
                                              '((f (a b)) (t (c i))))
-     '())
+     '())))
 
-    )
+(defun contract-expressions-by-target
+    (target expression &key orbital-spaces contraction-rules)
+  (let ((products (expand-expression expression))
+        sums)
+    (setq sums
+          (loop
+            for product in products
+            appending
+            (progn (print product)
+                   (let ((contractions
+                           (find-contractions-in-product-by-target target product
+                                                                   :orbital-spaces
+                                                                   orbital-spaces
+                                                                   :contraction-rules
+                                                                   contraction-rules)))
+                     (mapcar (lambda (x) `((contraction ,x) ,@product))
+                             contractions)))))
+    `(+ ,@sums)))
 
-  )
 
+(contract-expressions-by-target '(_ (P H))
+                                '(* (+ (f (a b)) (f (i j)))
+                                  (t (c k)))
+                                :orbital-spaces
+                                '((H i j k)
+                                  (P a b c))
+                                :contraction-rules
+                                '(((H H) 0 1)
+                                  ((P P) 1 0)))
