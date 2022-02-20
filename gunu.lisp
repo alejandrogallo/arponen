@@ -36,12 +36,26 @@
                               (rest remain))))))
 
 (declaim (ftype (function (integer)) get-node-pairs))
-(defun get-node-pairs (n &key (group-lengths nil)
-  (loop for i from 0 below n
-        nconcing (loop for j from i below n
-                       collect `(,i ,j))))
+(defun get-node-pairs (n &key (group-lengths nil))
+  ;; check that group-lengths is well built
+  (when group-lengths (assert (eq n (apply #'+ group-lengths))))
+  (let ((successive-lengths
+          ;; successive-lengths
+          ;; should be simply (g0 (+ g0 g1) ... (+ g0 .. gn))
+          ;; where gj \in group-lengths
+          (reverse (maplist (lambda (lst) (apply #'+ lst))
+                            (reverse group-lengths)))))
+    (labels ((from-i (i)
+             (if group-lengths
+                 ;; find the first group where i
+                 ;; is smaller, this means the next group
+                 ;; starts there
+                 (find i successive-lengths :test #'<)
+                 i)))
+    (loop for i from 0 below n
+        nconcing (loop for j from (from-i i) below n
+                       collect `(,i ,j))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmacro ordered-subsets-with-repetition (n space-size)
   (let* ((vars (loop for i below n collect (gensym)))
          (deepest-level `(loop for ,(car (last vars))

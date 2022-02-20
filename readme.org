@@ -191,24 +191,97 @@ And tests
 #+end_src
 
 
-** Pairs and pair choices
+** Node pairs building
+
+In order to find contractions, we will be concerned with a product
+of tensors $(t_1, \ldots, t_n)$ and every tensor will have
+a series of nodes, let us denote the whole indices of the nodes
+from $0$ to $N - 1$ where
+
+$$
+N = \sum_i \#\mathrm{nodes}(t_i)
+$$
+
+=get-node-pairs= will give us pairs of nodes to search
+for contractions in.
+We have to restrict the possible pairs according to:
+
+- only one occurrence of a pair combination is allowed
+  in order not to search for the same contractions
+  twice, this means that only $(i, j)$ pairs
+  are allowed where $i \leq j$.
+- in the case we want to search only for contractions
+  between different tensors, we can provide
+  a =group-lengths= list which will only
+  allow for pairs of different groups.
+
 
 #+begin_src lisp :tangle gunu.lisp
 (declaim (ftype (function (integer)) get-node-pairs))
-(defun get-node-pairs (n &key (group-lengths nil)
-  (loop for i from 0 below n
-        nconcing (loop for j from i below n
-                       collect `(,i ,j))))
+(defun get-node-pairs (n &key (group-lengths nil))
+  ;; check that group-lengths is well built
+  (when group-lengths (assert (eq n (apply #'+ group-lengths))))
+  (let ((successive-lengths
+          ;; successive-lengths
+          ;; should be simply (g0 (+ g0 g1) ... (+ g0 .. gn))
+          ;; where gj \in group-lengths
+          (reverse (maplist (lambda (lst) (apply #'+ lst))
+                            (reverse group-lengths)))))
+    (labels ((from-i (i)
+             (if group-lengths
+                 ;; find the first group where i
+                 ;; is smaller, this means the next group
+                 ;; starts there
+                 (find i successive-lengths :test #'<)
+                 i)))
+    (loop for i from 0 below n
+        nconcing (loop for j from (from-i i) below n
+                       collect `(,i ,j))))))
 #+end_src
 
+#+RESULTS:
+: GET-NODE-PAIRS
+
+
 #+begin_src lisp :tangle t.lisp
+;; trivial examples
 (assert-equal (get-node-pairs 1) '((0 0)))
 (assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
 (assert-equal (get-node-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+
+;;   2        3
+;; (0 1 ||  2 3 4)
+(assert-equal (get-node-pairs 5 :group-lengths '(2 3))
+              '((0 2) (0 3) (0 4)
+                (1 2) (1 3) (1 4)))
+(assert-equal (get-node-pairs 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4)
+                (1 1) (1 2) (1 3) (1 4) (2 2)
+                (2 3) (2 4) (3 3) (3 4) (4 4)))
+
+;;   2        3       1       3
+;; (0 1 ||  2 3 4  || 5 ||  6 7 8)
+(assert-equal (get-node-pairs 9 :group-lengths '(2 3 1 3))
+              '((0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8)
+                (1 2) (1 3) (1 4) (1 5) (1 6) (1 7) (1 8)
+                (2 5) (2 6) (2 7) (2 8)
+                (3 5) (3 6) (3 7) (3 8)
+                (4 5) (4 6) (4 7) (4 8)
+                (5 6) (5 7) (5 8)))
 #+end_src
 
+#+RESULTS:
+: NIL
+
+** Pair combinations
+
+Given a product of tensors, we will want to have
+which pair of nodes can have contractions, this is given
+by the =get-node-pairs= function.
+But in general we will want to have $n_c$ contractions,
+taken from combinations of these node pairs =(node-a node-b)=.
+
 #+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defmacro ordered-subsets-with-repetition (n space-size)
   (let* ((vars (loop for i below n collect (gensym)))
          (deepest-level `(loop for ,(car (last vars))

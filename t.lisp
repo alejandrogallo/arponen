@@ -26,9 +26,31 @@
                 (C A D B) (C B D A) (C B A D)
                 (D A B C) (D A C B) (D B C A) (D B A C) (D C A B) (D C B A)))
 
+;; trivial examples
 (assert-equal (get-node-pairs 1) '((0 0)))
 (assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
 (assert-equal (get-node-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+
+;;   2        3
+;; (0 1 ||  2 3 4)
+(assert-equal (get-node-pairs 5 :group-lengths '(2 3))
+              '((0 2) (0 3) (0 4)
+                (1 2) (1 3) (1 4)))
+(assert-equal (get-node-pairs 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4)
+                (1 1) (1 2) (1 3) (1 4) (2 2)
+                (2 3) (2 4) (3 3) (3 4) (4 4)))
+
+;;   2        3       1       3
+;; (0 1 ||  2 3 4  || 5 ||  6 7 8)
+(assert-equal
+ (get-node-pairs 9 :group-lengths '(2 3 1 3))
+ '((0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8)
+   (1 2) (1 3) (1 4) (1 5) (1 6) (1 7) (1 8)
+   (2 5) (2 6) (2 7) (2 8)
+   (3 5) (3 6) (3 7) (3 8)
+   (4 5) (4 6) (4 7) (4 8)
+   (5 6) (5 7) (5 8)))
 
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))
