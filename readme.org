@@ -1,3 +1,4 @@
+#+TODO: EXPLAIN CLEAN | DONE
 * Todo [0%]
 
 - [ ] create the unit tensor operator and check that it plays well
@@ -433,6 +434,9 @@ if a given diagram is linked or not.
 #+begin_src lisp :tangle gunu.lisp
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
+
+(defun find-space-name-by-leg (leg orbital-spaces)
+  (car (find leg orbital-spaces :test #'match-index-to-space)))
 #+end_src
 
 #+begin_src lisp :tangle t.lisp
@@ -440,6 +444,17 @@ if a given diagram is linked or not.
  (find-space-by-name 'p '((PQ p q r s) (p a b c)))
  '(p a b c))
 #+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
+      (vals '((i . h)
+              (p . pq)
+              (q . pq)
+              (b . p))))
+  (loop for (v . result) in vals
+        do (assert (eq (find-space-name-by-leg v spaces) result))))
+#+end_src
+
 
 * Tensor matching
 
@@ -533,7 +548,15 @@ This is done by =contraction-to-temp-tensor=.
    (t (a i)))) =>> (tv (j i)) which would match (_ (H H))
 #+end_src
 
+** EXPLAIN Mergin nodes
 
+In this section we work on the fact that when
+a contraction is made between legs, then these legs
+disappear from the resulting tensor object having in general
+two legs less, i.e., one node less.
+
+TODO:: Think about why is not possible to contract
+       '(a c) '(a b) '(c d)...
 
 #+begin_src lisp :tangle gunu.lisp
 (defun stich-together (contraction node-a node-b)
@@ -582,91 +605,115 @@ This is done by =contraction-to-temp-tensor=.
 
 
 #+begin_src lisp :tangle gunu.lisp
-(defun find-and-replace-matching-indices
-    (contraction tensor-indices &key killed-pair)
-  (let* ((result (copy-tree tensor-indices))
-         (all-indices (reduce (lambda (x y)
-                                (concatenate 'list x y))
-                              result)))
-    (loop for index in all-indices
+(defun find-and-replace-matching-nodes (contraction tensor-nodes-list
+                                        &key killed-pair)
+  "tensor-nodes-list is a list of list of nodes"
+  (let* ((result (copy-tree tensor-nodes-list))
+         (all-nodes-flat (reduce #'append result)))
+    (loop for node in all-nodes-flat
           do
-             (case (length (intersection index contraction))
+             (case (length (intersection node contraction))
                (0 (continue))
-               ;; self contraction
-               (2 (return (subst killed-pair
-                                 index
-                                 result
-                                 :test #'equal)))
+               ;; self-contraction
+               (2 (return (subst killed-pair node result :test #'equal)))
                ;; usual contraction
                ;; x--<>---
                ;; we should find exactly ONE OTHER PLACE where this
                ;; contraction is linked by the contraction
                ;; otherwise it is an error
-               (1 (let* ((matching-indices (remove-if
-                                            (lambda (x) (equal x index))
-                                            (remove-if-not
-                                             (lambda (x)
-                                               (intersection x contraction))
-                                             all-indices))))
+               (1 (let ((matching-nodes
+                          (remove-if
+                           (lambda (x) (or (equal x node)
+                                           (not (intersection x contraction))))
+                           all-nodes-flat)))
                     (logger "~&current: ~s matching: ~s through: ~s"
-                            index matching-indices contraction)
-                    (case (length matching-indices)
+                            node matching-nodes contraction)
+                    (case (length matching-nodes)
                       (0 (error "Unbound contractiong ~a with ~a"
-                                index contraction))
+                                node contraction))
                       (1 (let ((stiched (stich-together contraction
-                                                        index
-                                                        (car matching-indices))))
-                           (return (subst
-                                    killed-pair
-                                    (car matching-indices)
-                                    (subst stiched index result)))))
-                      (t (error "Contraction arity(~a) error ~a contracts with ~a"
-                                (length matching-indices) index matching-indices)))
+                                                        node
+                                                        (car matching-nodes))))
+                           (return (subst killed-pair
+                                          (car matching-nodes)
+                                          (subst stiched node result)))))
+                      (t
+                       (error "Contraction arity(~a) error ~a contracts with ~a"
+                              (length matching-nodes) node matching-nodes)))
                     ))))))
 #+end_src
 
+#+RESULTS:
+: FIND-AND-REPLACE-MATCHING-NODES
+
 #+begin_src lisp :tangle t.lisp
 (macrolet ((assert-eq (index result)
-             `(assert (equal (find-and-replace-matching-indices ,index
+             `(assert (equal (find-and-replace-matching-nodes ,index
                                                                 original
                                                                 :killed-pair
                                                                 '(x x))
                              ,result))))
   (let ((original '(((a b) (c d))
                     ((e f) (g h))
-                    ((i j) (k l)))))
+                    ((i j) (k l) (h1 h2)))))
 
+    ;; 0-1 contraction
     (assert-eq '(e h) '(((a b) (c d))
                         ((g f) (x x))
-                        ((i j) (k l))))
+                        ((i j) (k l) (h1 h2))))
 
+    ;; self contraction
     (assert-eq '(k l) '(((a b) (c d))
                         ((e f) (g h))
-                        ((i j) (x x))))
+                        ((i j) (x x) (h1 h2))))
 
-    (assert-eq '(e h) '(((a b) (c d))
-                        ((g f) (x x))
-                        ((i j) (k l))))))
+    ;; 1-0 contraction
+    (assert-eq '(b k) '(((a l) (c d))
+                        ((e f) (g h))
+                        ((i j) (X X) (h1 h2))))
+
+    ;; contraction with tripes
+    (assert-eq '(a h2) '(((h1 b) (c d))
+                         ((e f) (g h))
+                         ((i j) (k l) (x x))))
+
+    ;; contraction within the tensor
+    (assert-eq '(a d) '(((c b) (X X))
+                        ((e f) (g h))
+                        ((i j) (k l) (h1 h2))))
+
+    ;; todo: test error messages
+
+    ))
 #+end_src
 
+#+RESULTS:
+: NIL
+
+
+This functions is a handy function to get
+from a contraction object
 
 #+begin_src lisp :tangle gunu.lisp
-(defun get-contracted-indices (contraction-tensor &key killed-pair)
+(defun get-contracted-nodes (contraction-tensor &key killed-pair)
+  ;; todo replace with contraction-p
   (assert (eq (caar contraction-tensor) 'contraction))
-  (let ((contracted-indices (copy-list (mapcar #'cdr (cdr contraction-tensor))))
+  (let ((contracted-nodes (copy-list (mapcar #'cdr (cdr contraction-tensor))))
         (contractions (cadar contraction-tensor)))
     (loop for contraction in contractions
           do
-             (setq contracted-indices
-                   (find-and-replace-matching-indices
-                    contraction
-                    contracted-indices
-                    :killed-pair killed-pair)))
-    contracted-indices))
+             (setq contracted-nodes
+                   (find-and-replace-matching-nodes contraction
+                                                    contracted-nodes
+                                                    :killed-pair killed-pair)))
+    contracted-nodes))
 #+end_src
 
+#+RESULTS:
+: GET-CONTRACTED-NODES
+
 #+begin_src lisp :tangle t.lisp
-(assert-equal (get-contracted-indices
+(assert-equal (get-contracted-nodes
                '((contraction ((e d) (k j)))
                  (v (a b) (c d))
                  (h (e f) (g h))
@@ -676,18 +723,30 @@ This is done by =contraction-to-temp-tensor=.
                 ((I L) (X X))))
 #+end_src
 
+#+RESULTS:
+: NIL
+
+
+** Effective temporary tensor
+
+Given a contraction, we will want to know what
+kind of tensor it will result when the contraction
+gets applied.
 
 #+begin_src lisp :tangle gunu.lisp
-(defun get-contracted-temp-tensor (contraction-tensor)
+(defun get-contracted-temp-tensor (contraction-tensor &key (name 'contracted))
   (let* ((killed-pair '(x x))
-         (x-indices (get-contracted-indices contraction-tensor
-                                           :killed-pair killed-pair))
-         (flat-indices (reduce (lambda (x y) (concatenate 'list x y))
-                               x-indices))
-         (cleaned-indices (remove-if (lambda (x) (equal x killed-pair))
-                                     flat-indices)))
-    `(contracted ,@cleaned-indices)))
+         (x-nodes (get-contracted-nodes contraction-tensor
+                                        :killed-pair killed-pair))
+         (flat-nodes (reduce (lambda (x y) (concatenate 'list x y))
+                             x-nodes))
+         (cleaned-nodes (remove-if (lambda (x) (equal x killed-pair))
+                                   flat-nodes)))
+    `(,name ,@cleaned-nodes)))
 #+end_src
+
+#+RESULTS:
+: GET-CONTRACTED-TEMP-TENSOR
 
 #+begin_src lisp :tangle t.lisp
 (assert-equal (get-contracted-temp-tensor
@@ -701,9 +760,15 @@ This is done by =contraction-to-temp-tensor=.
                '((contraction ((b a) (j k)))
                  (V (J I) (A B))
                  (T (C K))
-                 (R (G L))))
-              '(contracted (C I) (G L)))
+                 (R (G L))) :name '|v*t*r|)
+              '(|v*t*r| (C I) (G L)))
 #+end_src
+
+#+RESULTS:
+: NIL
+
+** Contraction discovery
+
 
 
 In this routine magic happens.
@@ -721,27 +786,7 @@ contraction. Therefore we need all ORDERED
 subsets of length up to N_c
 
 
-TODO : this function is duplicated
 #+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun orbital-space-name (index-name orbital-spaces)
-  (car (find index-name orbital-spaces
-             ;; this is important in order to have the same name
-             ;; for spaces as for indices but not checking the space
-             :test (lambda (el space) (member el (cdr space))))))
-(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
-      (vals '((i . h)
-              (p . pq)
-              (q . pq)
-              (b . p))))
-  (loop for (v . result) in vals
-        do (assert (eq (orbital-space-name v spaces) result))))
-#+end_src
-
-** Finding contractions
-
-#+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun compatible-contractions (node-a node-b &key
                                                 orbital-spaces
                                                 contraction-rules)
@@ -751,7 +796,7 @@ TODO : this function is duplicated
    #'null
    (loop for (a b) in (eval `(cartesian-product ,node-a ,node-b))
          collect (let* ((name-pair (mapcar (lambda (x)
-                                             (orbital-space-name
+                                             (find-space-name-by-leg
                                               x
                                               orbital-spaces))
                                            (list a b)))
@@ -766,6 +811,9 @@ TODO : this function is duplicated
                                  a b rule)
                          (list a b))))))))
 #+end_src
+
+#+RESULTS:
+: COMPATIBLE-CONTRACTIONS
 
 #+begin_src lisp :tangle t.lisp
 ;; test

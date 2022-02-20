@@ -105,6 +105,9 @@
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
 
+(defun find-space-name-by-leg (leg orbital-spaces)
+  (car (find leg orbital-spaces :test #'match-index-to-space)))
+
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (assert (eq (length target) (length tensor)))
   (notany #'null
@@ -149,86 +152,66 @@
             (setf (nth pos-a node-a) (car (delete 'x killed-b)))
             node-a))))))
 
-(defun find-and-replace-matching-indices
-    (contraction tensor-indices &key killed-pair)
-  (let* ((result (copy-tree tensor-indices))
-         (all-indices (reduce (lambda (x y)
-                                (concatenate 'list x y))
-                              result)))
-    (loop for index in all-indices
+(defun find-and-replace-matching-nodes (contraction tensor-nodes-list
+                                        &key killed-pair)
+  "tensor-nodes-list is a list of list of nodes"
+  (let* ((result (copy-tree tensor-nodes-list))
+         (all-nodes-flat (reduce #'append result)))
+    (loop for node in all-nodes-flat
           do
-             (case (length (intersection index contraction))
+             (case (length (intersection node contraction))
                (0 (continue))
-               ;; self contraction
-               (2 (return (subst killed-pair
-                                 index
-                                 result
-                                 :test #'equal)))
+               ;; self-contraction
+               (2 (return (subst killed-pair node result :test #'equal)))
                ;; usual contraction
                ;; x--<>---
                ;; we should find exactly ONE OTHER PLACE where this
                ;; contraction is linked by the contraction
                ;; otherwise it is an error
-               (1 (let* ((matching-indices (remove-if
-                                            (lambda (x) (equal x index))
-                                            (remove-if-not
-                                             (lambda (x)
-                                               (intersection x contraction))
-                                             all-indices))))
+               (1 (let ((matching-nodes
+                          (remove-if
+                           (lambda (x) (or (equal x node)
+                                           (not (intersection x contraction))))
+                           all-nodes-flat)))
                     (logger "~&current: ~s matching: ~s through: ~s"
-                            index matching-indices contraction)
-                    (case (length matching-indices)
+                            node matching-nodes contraction)
+                    (case (length matching-nodes)
                       (0 (error "Unbound contractiong ~a with ~a"
-                                index contraction))
+                                node contraction))
                       (1 (let ((stiched (stich-together contraction
-                                                        index
-                                                        (car matching-indices))))
-                           (return (subst
-                                    killed-pair
-                                    (car matching-indices)
-                                    (subst stiched index result)))))
-                      (t (error "Contraction arity(~a) error ~a contracts with ~a"
-                                (length matching-indices) index matching-indices)))
+                                                        node
+                                                        (car matching-nodes))))
+                           (return (subst killed-pair
+                                          (car matching-nodes)
+                                          (subst stiched node result)))))
+                      (t
+                       (error "Contraction arity(~a) error ~a contracts with ~a"
+                              (length matching-nodes) node matching-nodes)))
                     ))))))
 
-(defun get-contracted-indices (contraction-tensor &key killed-pair)
+(defun get-contracted-nodes (contraction-tensor &key killed-pair)
+  ;; todo replace with contraction-p
   (assert (eq (caar contraction-tensor) 'contraction))
-  (let ((contracted-indices (copy-list (mapcar #'cdr (cdr contraction-tensor))))
+  (let ((contracted-nodes (copy-list (mapcar #'cdr (cdr contraction-tensor))))
         (contractions (cadar contraction-tensor)))
     (loop for contraction in contractions
           do
-             (setq contracted-indices
-                   (find-and-replace-matching-indices
-                    contraction
-                    contracted-indices
-                    :killed-pair killed-pair)))
-    contracted-indices))
+             (setq contracted-nodes
+                   (find-and-replace-matching-nodes contraction
+                                                    contracted-nodes
+                                                    :killed-pair killed-pair)))
+    contracted-nodes))
 
-(defun get-contracted-temp-tensor (contraction-tensor)
+(defun get-contracted-temp-tensor (contraction-tensor &key (name 'contracted))
   (let* ((killed-pair '(x x))
-         (x-indices (get-contracted-indices contraction-tensor
-                                           :killed-pair killed-pair))
-         (flat-indices (reduce (lambda (x y) (concatenate 'list x y))
-                               x-indices))
-         (cleaned-indices (remove-if (lambda (x) (equal x killed-pair))
-                                     flat-indices)))
-    `(contracted ,@cleaned-indices)))
+         (x-nodes (get-contracted-nodes contraction-tensor
+                                        :killed-pair killed-pair))
+         (flat-nodes (reduce (lambda (x y) (concatenate 'list x y))
+                             x-nodes))
+         (cleaned-nodes (remove-if (lambda (x) (equal x killed-pair))
+                                   flat-nodes)))
+    `(,name ,@cleaned-nodes)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun orbital-space-name (index-name orbital-spaces)
-  (car (find index-name orbital-spaces
-             ;; this is important in order to have the same name
-             ;; for spaces as for indices but not checking the space
-             :test (lambda (el space) (member el (cdr space))))))
-(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
-      (vals '((i . h)
-              (p . pq)
-              (q . pq)
-              (b . p))))
-  (loop for (v . result) in vals
-        do (assert (eq (orbital-space-name v spaces) result))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun compatible-contractions (node-a node-b &key
                                                 orbital-spaces
                                                 contraction-rules)
@@ -238,7 +221,7 @@
    #'null
    (loop for (a b) in (eval `(cartesian-product ,node-a ,node-b))
          collect (let* ((name-pair (mapcar (lambda (x)
-                                             (orbital-space-name
+                                             (find-space-name-by-leg
                                               x
                                               orbital-spaces))
                                            (list a b)))

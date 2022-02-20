@@ -107,6 +107,14 @@
  (find-space-by-name 'p '((PQ p q r s) (p a b c)))
  '(p a b c))
 
+(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
+      (vals '((i . h)
+              (p . pq)
+              (q . pq)
+              (b . p))))
+  (loop for (v . result) in vals
+        do (assert (eq (find-space-name-by-leg v spaces) result))))
+
 (progn
   (assert (match-target-with-tensor-1 '(V (H P) (P))
                                       '(t (i b) (a))
@@ -147,28 +155,45 @@
                "The contraction (E C) does not link nodes (A D) and (E F)")
 
 (macrolet ((assert-eq (index result)
-             `(assert (equal (find-and-replace-matching-indices ,index
+             `(assert (equal (find-and-replace-matching-nodes ,index
                                                                 original
                                                                 :killed-pair
                                                                 '(x x))
                              ,result))))
   (let ((original '(((a b) (c d))
                     ((e f) (g h))
-                    ((i j) (k l)))))
+                    ((i j) (k l) (h1 h2)))))
 
+    ;; 0-1 contraction
     (assert-eq '(e h) '(((a b) (c d))
                         ((g f) (x x))
-                        ((i j) (k l))))
+                        ((i j) (k l) (h1 h2))))
 
+    ;; self contraction
     (assert-eq '(k l) '(((a b) (c d))
                         ((e f) (g h))
-                        ((i j) (x x))))
+                        ((i j) (x x) (h1 h2))))
 
-    (assert-eq '(e h) '(((a b) (c d))
-                        ((g f) (x x))
-                        ((i j) (k l))))))
+    ;; 1-0 contraction
+    (assert-eq '(b k) '(((a l) (c d))
+                        ((e f) (g h))
+                        ((i j) (X X) (h1 h2))))
 
-(assert-equal (get-contracted-indices
+    ;; contraction with tripes
+    (assert-eq '(a h2) '(((h1 b) (c d))
+                         ((e f) (g h))
+                         ((i j) (k l) (x x))))
+
+    ;; contraction within the tensor
+    (assert-eq '(a d) '(((c b) (X X))
+                        ((e f) (g h))
+                        ((i j) (k l) (h1 h2))))
+
+    ;; todo: test error messages
+
+    ))
+
+(assert-equal (get-contracted-nodes
                '((contraction ((e d) (k j)))
                  (v (a b) (c d))
                  (h (e f) (g h))
@@ -188,8 +213,8 @@
                '((contraction ((b a) (j k)))
                  (V (J I) (A B))
                  (T (C K))
-                 (R (G L))))
-              '(contracted (C I) (G L)))
+                 (R (G L))) :name '|v*t*r|)
+              '(|v*t*r| (C I) (G L)))
 
 ;; test
 (let ((spaces '((H I J K L)
