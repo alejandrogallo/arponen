@@ -15,9 +15,20 @@
 (assert-equal (cartesian-product (H (P)) ((a)))
               '((H (A)) ((P) (A))))
 
-(assert-equal (get-pairs 1) '((0 0)))
-(assert-equal (get-pairs 2) '((0 0) (0 1) (1 1)))
-(assert-equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+(assert-equal (all-permutations '(a b))
+              '((A B) (B A)))
+(assert-equal (all-permutations '(a b c))
+              '((A B C) (A C B) (B C A) (B A C) (C A B) (C B A)))
+(assert-equal (all-permutations '(a b c d))
+              '((A B C D) (A B D C) (A C D B) (A C B D) (A D B C) (A D C B)
+                (B C D A) (B C A D) (B D A C)
+                (B D C A) (B A C D) (B A D C) (C D A B) (C D B A) (C A B D)
+                (C A D B) (C B D A) (C B A D)
+                (D A B C) (D A C B) (D B C A) (D B A C) (D C A B) (D C B A)))
+
+(assert-equal (get-node-pairs 1) '((0 0)))
+(assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
+(assert-equal (get-node-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
 
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))

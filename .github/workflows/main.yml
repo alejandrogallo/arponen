@@ -49,6 +49,7 @@ jobs:
     - name: cmucl
       run: nix-shell --run './tools/run-tests.sh $CMU_PATH'
 
-    - name: gcl
-      run: nix-shell --run './tools/run-tests.sh gcl'
+    # gcl is kind of broken?? TODO
+    # - name: gcl
+    #   run: nix-shell --run './tools/run-tests.sh gcl'
 

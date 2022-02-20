@@ -1,6 +1,14 @@
 * Todo [0%]
 
 - [ ] create the unit tensor operator and check that it plays well
+- [ ] create an option to disallow contractions of the tensor with
+  itself.
+- [ ] create an option for only allowing linked contractions
+- [ ] implement symmetry filter:
+  Viajb should be the same as Vaibj and so on.
+  So the symmetry is a node Vertauschungssymmetrie.
+- [ ] compile with gcl
+- [ ] test with clasp (it takes too long to compile in nixos)
 
 * Nomenclature
 
@@ -35,7 +43,7 @@ manner:
 
 - A tensor
   #+begin_src lisp
-  (tensor-name [points])
+  (tensor-name [node])
   #+end_src
 - A contracted expression
   #+begin_src lisp
@@ -55,14 +63,64 @@ manner:
 
 * Main variables
 
+The following variables act as flags for the behaviour of the program,
+you can set them temporarily in a `let` block in order to use them
+or set them globally with `setq`.
+
+** Verbosity and logging
+To control the verbosity of the program, set the =*print-log*=
+variable.
 
 #+begin_src lisp  :tangle gunu.lisp
-(defvar print-log t
+(defvar *print-log* t
   "Wether to print the log messages for the contractions and so on")
+
+;; TODO: implement log levels
 (defmacro logger (fmt &rest args)
-  `(when print-log
+  `(when *print-log*
     (eval (format t ,fmt ,@args))))
 #+end_src
+
+** Contractions within the same tensor
+
+In general, the contraction searcher will search for contractions
+according to the contraction rules between all nodes.
+
+However, for most many-body diagrammatics, one is mostly interested in
+contractions between different tensors.
+
+#+begin_src lisp :tangle gunu.lisp
+(defvar *allow-self-contractions* nil
+  "Wether or not to allow a tensor to search for contractions with its
+  nodes.")
+#+end_src
+
+If you want to allow self-contractions you can set this option as
+
+#+begin_src lisp :eval no
+(setq *allow-self-contractions* t)
+#+end_src
+
+** Connected diagrams
+
+As in coupled-cluster theories, you can also only
+look for connected contraction possibilities.
+
+This settings is disables by default so you will
+have to explicitly set it to have connected diagrams,
+see the examples for coupled-cluster theories.
+
+;; TODO: maybe this should be called linked,
+;;       check with lindgren paper.
+#+begin_src lisp :tangle gunu.lisp
+(defvar *only-connected-diagrams* nil
+  "Wether to look for contractions that create connected diagrams.")
+#+end_src
+
+#+RESULTS:
+: *ONLY-CONNECTED-DIAGRAMS*
+
+
 
 * Combinatorics
 
@@ -71,6 +129,11 @@ this section describes their implementation in order to maintain
 the package self-contained.
 
 ** Cartesian product
+
+We implement a cartesian product in the form of a macro
+that avoids recursion but however writes it with depending
+on the loop macro.
+
 #+begin_src lisp :tangle gunu.lisp
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
@@ -113,21 +176,35 @@ With tests:
                               (rest remain))))))
 #+end_src
 
+And tests
+#+begin_src lisp :tangle t.lisp
+(assert-equal (all-permutations '(a b))
+              '((A B) (B A)))
+(assert-equal (all-permutations '(a b c))
+              '((A B C) (A C B) (B C A) (B A C) (C A B) (C B A)))
+(assert-equal (all-permutations '(a b c d))
+              '((A B C D) (A B D C) (A C D B) (A C B D) (A D B C) (A D C B)
+                (B C D A) (B C A D) (B D A C)
+                (B D C A) (B A C D) (B A D C) (C D A B) (C D B A) (C A B D)
+                (C A D B) (C B D A) (C B A D)
+                (D A B C) (D A C B) (D B C A) (D B A C) (D C A B) (D C B A)))
+#+end_src
+
+
 ** Pairs and pair choices
 
 #+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(declaim (ftype (function (integer)) get-pairs))
-(defun get-pairs (n)
+(declaim (ftype (function (integer)) get-node-pairs))
+(defun get-node-pairs (n &key (group-lengths nil)
   (loop for i from 0 below n
         nconcing (loop for j from i below n
                        collect `(,i ,j))))
 #+end_src
 
 #+begin_src lisp :tangle t.lisp
-(assert-equal (get-pairs 1) '((0 0)))
-(assert-equal (get-pairs 2) '((0 0) (0 1) (1 1)))
-(assert-equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+(assert-equal (get-node-pairs 1) '((0 0)))
+(assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
+(assert-equal (get-node-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
 #+end_src
 
 #+begin_src lisp :tangle gunu.lisp
@@ -624,7 +701,7 @@ Some filters used are the number of contractions
                             finally (return ls)))
          (space-size (length all-indices))
          ;; '((1 1) (1 2) (2 2)) if length all-indices = 2
-         (leg-pairs (get-pairs space-size))
+         (leg-pairs (get-node-pairs space-size))
          (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
                                                               ,(length leg-pairs))))
          results)

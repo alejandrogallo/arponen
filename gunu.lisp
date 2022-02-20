@@ -1,8 +1,17 @@
-(defvar print-log t
+(defvar *print-log* t
   "Wether to print the log messages for the contractions and so on")
+
+;; TODO: implement log levels
 (defmacro logger (fmt &rest args)
-  `(when print-log
+  `(when *print-log*
     (eval (format t ,fmt ,@args))))
+
+(defvar *allow-self-contractions* nil
+  "Wether or not to allow a tensor to search for contractions with its
+  nodes.")
+
+(defvar *only-connected-diagrams* nil
+  "Wether to look for contractions that create connected diagrams.")
 
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
@@ -26,9 +35,8 @@
             (all-permutations (append (rest lst) (list (first lst)))
                               (rest remain))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(declaim (ftype (function (integer)) get-pairs))
-(defun get-pairs (n)
+(declaim (ftype (function (integer)) get-node-pairs))
+(defun get-node-pairs (n &key (group-lengths nil)
   (loop for i from 0 below n
         nconcing (loop for j from i below n
                        collect `(,i ,j))))
@@ -252,7 +260,7 @@
                             finally (return ls)))
          (space-size (length all-indices))
          ;; '((1 1) (1 2) (2 2)) if length all-indices = 2
-         (leg-pairs (get-pairs space-size))
+         (leg-pairs (get-node-pairs space-size))
          (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
                                                               ,(length leg-pairs))))
          results)
