@@ -281,6 +281,25 @@ by the =get-node-pairs= function.
 But in general we will want to have $n_c$ contractions,
 taken from combinations of these node pairs =(node-a node-b)=.
 
+For example, if we are looking for 3 contractions in total,
+and we have the pairs of nodes where we can find these contractions
+=(p1 ... pn)=, then we will want to look for instance
+first three times in the pair of nodes =p1= for 3 successful
+contractions, in pair-index notation this would represent the
+list
+#+begin_src lisp :eval no
+(0 0 0)
+#+end_src
+where 0 is the index of the position of =p1= in the pair list.
+We call these lists /pair combinations/.
+
+A given /pair combination/ describes the potential connections
+of the tensors and represent a whole class of diagrams.
+In particular, the linkedness and connectedness of diagrams
+are encoded in these lists and we use them to decide
+if a given diagram is linked or not.
+;; TODO: check link or connected exactly
+
 #+begin_src lisp :tangle gunu.lisp
 (defmacro ordered-subsets-with-repetition (n space-size)
   (let* ((vars (loop for i below n collect (gensym)))
