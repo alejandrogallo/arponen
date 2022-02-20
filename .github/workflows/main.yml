@@ -39,8 +39,9 @@ jobs:
     - name: clisp
       run: nix-shell --run './tools/run-tests.sh clisp'
 
-    - name: clasp
-      run: nix-shell --run './tools/run-tests.sh clasp'
+    # it takes forever to compile...
+    # - name: clasp
+    #   run: nix-shell --run './tools/run-tests.sh clasp'
 
     - name: gcl
       run: nix-shell --run './tools/run-tests.sh gcl'
@@ -49,5 +50,5 @@ jobs:
       run: nix-shell --run './tools/run-tests.sh abcl'
 
     - name: cmucl
-      run: nix-shell --run './tools/run-tests.sh cmucl'
+      run: nix-shell --run './tools/run-tests.sh $CMU_PATH'
 
