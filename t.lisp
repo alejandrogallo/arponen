@@ -4,6 +4,16 @@
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
 
+(defmacro assert-condition (expr condition-type &rest body)
+  `(handler-case (progn ,expr
+                        (assert nil))
+     (,condition-type ,@body)))
+
+(defmacro assert-errmsg (expr condition-type error-message)
+  `(assert-condition ,expr ,condition-type
+                     (m) (assert-equal (format nil "~a" m)
+                                       ,error-message)))
+
 (assert-equal (cartesian-product (H P) (a b c) (1 2 3 5))
               '((H A 1) (H A 2) (H A 3) (H A 5)
                 (H B 1) (H B 2) (H B 3) (H B 5)
@@ -43,14 +53,13 @@
 
 ;;   2        3       1       3
 ;; (0 1 ||  2 3 4  || 5 ||  6 7 8)
-(assert-equal
- (get-node-pairs 9 :group-lengths '(2 3 1 3))
- '((0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8)
-   (1 2) (1 3) (1 4) (1 5) (1 6) (1 7) (1 8)
-   (2 5) (2 6) (2 7) (2 8)
-   (3 5) (3 6) (3 7) (3 8)
-   (4 5) (4 6) (4 7) (4 8)
-   (5 6) (5 7) (5 8)))
+(assert-equal (get-node-pairs 9 :group-lengths '(2 3 1 3))
+              '((0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8)
+                (1 2) (1 3) (1 4) (1 5) (1 6) (1 7) (1 8)
+                (2 5) (2 6) (2 7) (2 8)
+                (3 5) (3 6) (3 7) (3 8)
+                (4 5) (4 6) (4 7) (4 8)
+                (5 6) (5 7) (5 8)))
 
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))
@@ -128,6 +137,14 @@
 (assert-equal (stich-together '(b c)
                               '(a b) '(c d))
               '(a d))
+
+(assert-errmsg (stich-together '(a c) '(a d) '(e f))
+               simple-error
+               "The contraction (A C) does not link nodes (A D) and (E F)")
+
+(assert-errmsg (stich-together '(e c) '(a d) '(e f))
+               simple-error
+               "The contraction (E C) does not link nodes (A D) and (E F)")
 
 (macrolet ((assert-eq (index result)
              `(assert (equal (find-and-replace-matching-indices ,index

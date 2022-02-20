@@ -59,7 +59,20 @@ manner:
 
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
+
+(defmacro assert-condition (expr condition-type &rest body)
+  `(handler-case (progn ,expr
+                        (assert nil))
+     (,condition-type ,@body)))
+
+(defmacro assert-errmsg (expr condition-type error-message)
+  `(assert-condition ,expr ,condition-type
+                     (m) (assert-equal (format nil "~a" m)
+                                       ,error-message)))
 #+end_src
+
+#+RESULTS:
+: ASSERT-CONDITION
 
 * Main variables
 
@@ -338,7 +351,24 @@ if a given diagram is linked or not.
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
 #+end_src
 
+** Utils
+
+#+begin_src lisp :tangle gunu.lisp
+(defun flatten-list (ls)
+  (cond
+    ((and (consp ls)
+          (atom (car ls)))
+     `(,(car ls) ,@(flatten-list (cdr ls))))
+    ((and (consp ls)
+          (consp (car ls)))
+     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
+    (t ls)))
+#+end_src
+
+
 * Arithmetic expressions
+
+
 #+begin_src lisp :tangle gunu.lisp
 (defun expression-to-lists (exp)
   (ecase (car exp)
@@ -504,35 +534,30 @@ This is done by =contraction-to-temp-tensor=.
 #+end_src
 
 
-#+begin_src lisp :tangle gunu.lisp
-(defun flatten-list (ls)
-  (cond
-    ((and (consp ls)
-          (atom (car ls)))
-     `(,(car ls) ,@(flatten-list (cdr ls))))
-    ((and (consp ls)
-          (consp (car ls)))
-     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
-    (t ls)))
 
-(defun stich-together (contraction index-a index-b)
-  (labels ((kill-matching (i)
-                         ;; it will set x wherever the index belongs
-                         ;; to the contraction
-                         (subst 'x nil i
-                           :test (lambda (new old)
-                                   (declare (ignorable new))
-                                   (intersection (list old) contraction)))))
-    (let* ((pos-a (position 'x (kill-matching index-a)))
-           (killed-b (kill-matching index-b))
+#+begin_src lisp :tangle gunu.lisp
+(defun stich-together (contraction node-a node-b)
+  ;; contraction-assoc: ((c0 . x) (c1 . x))
+  (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
+      (labels ((kill-matching (i) (sublis contraction-assoc i)))
+    (let* ((killed-a (kill-matching node-a))
+           (pos-a (position 'x killed-a))
+           (killed-b (kill-matching node-b))
            (pos-b (position 'x killed-b)))
-      (if (eq pos-a pos-b)
+      (when (or (equal killed-a node-a)
+                (equal killed-b node-b))
+        (error "The contraction ~a does not link nodes ~a and ~a"
+               contraction node-a node-b))
+      (if (eq pos-a pos-b) ;; NUCLEAR-TODO
           (error "You are trying to contract ~a and ~a at the same position ~a"
-                 index-a index-b pos-a)
+                 node-a node-b pos-a)
           (progn
-            (setf (nth pos-a index-a) (car (delete 'x killed-b)))
-            index-a)))))
+            (setf (nth pos-a node-a) (car (delete 'x killed-b)))
+            node-a))))))
 #+end_src
+
+#+RESULTS:
+: STICH-TOGETHER
 
 #+begin_src lisp :tangle t.lisp
 (assert-equal (stich-together '(a d)
@@ -541,7 +566,18 @@ This is done by =contraction-to-temp-tensor=.
 (assert-equal (stich-together '(b c)
                               '(a b) '(c d))
               '(a d))
+
+(assert-errmsg (stich-together '(a c) '(a d) '(e f))
+               simple-error
+               "The contraction (A C) does not link nodes (A D) and (E F)")
+
+(assert-errmsg (stich-together '(e c) '(a d) '(e f))
+               simple-error
+               "The contraction (E C) does not link nodes (A D) and (E F)")
 #+end_src
+
+#+RESULTS:
+: NIL
 
 
 

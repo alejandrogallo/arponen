@@ -74,6 +74,16 @@
     `(let ((,init-var 0))
        ,body)))
 
+(defun flatten-list (ls)
+  (cond
+    ((and (consp ls)
+          (atom (car ls)))
+     `(,(car ls) ,@(flatten-list (cdr ls))))
+    ((and (consp ls)
+          (consp (car ls)))
+     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
+    (t ls)))
+
 (defun expression-to-lists (exp)
   (ecase (car exp)
     ('* (let ((operands
@@ -120,33 +130,24 @@
                   tt tensor
                   :orbital-spaces orbital-spaces))))
 
-(defun flatten-list (ls)
-  (cond
-    ((and (consp ls)
-          (atom (car ls)))
-     `(,(car ls) ,@(flatten-list (cdr ls))))
-    ((and (consp ls)
-          (consp (car ls)))
-     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
-    (t ls)))
-
-(defun stich-together (contraction index-a index-b)
-  (labels ((kill-matching (i)
-                         ;; it will set x wherever the index belongs
-                         ;; to the contraction
-                         (subst 'x nil i
-                           :test (lambda (new old)
-                                   (declare (ignorable new))
-                                   (intersection (list old) contraction)))))
-    (let* ((pos-a (position 'x (kill-matching index-a)))
-           (killed-b (kill-matching index-b))
+(defun stich-together (contraction node-a node-b)
+  ;; contraction-assoc: ((c0 . x) (c1 . x))
+  (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
+      (labels ((kill-matching (i) (sublis contraction-assoc i)))
+    (let* ((killed-a (kill-matching node-a))
+           (pos-a (position 'x killed-a))
+           (killed-b (kill-matching node-b))
            (pos-b (position 'x killed-b)))
-      (if (eq pos-a pos-b)
+      (when (or (equal killed-a node-a)
+                (equal killed-b node-b))
+        (error "The contraction ~a does not link nodes ~a and ~a"
+               contraction node-a node-b))
+      (if (eq pos-a pos-b) ;; NUCLEAR-TODO
           (error "You are trying to contract ~a and ~a at the same position ~a"
-                 index-a index-b pos-a)
+                 node-a node-b pos-a)
           (progn
-            (setf (nth pos-a index-a) (car (delete 'x killed-b)))
-            index-a)))))
+            (setf (nth pos-a node-a) (car (delete 'x killed-b)))
+            node-a))))))
 
 (defun find-and-replace-matching-indices
     (contraction tensor-indices &key killed-pair)
