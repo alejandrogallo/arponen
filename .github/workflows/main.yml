@@ -44,3 +44,10 @@ jobs:
 
     - name: gcl
       run: nix-shell --run './tools/run-tests.sh gcl'
+
+    - name: abcl
+      run: nix-shell --run './tools/run-tests.sh abcl'
+
+    - name: cmucl
+      run: nix-shell --run './tools/run-tests.sh cmucl'
+

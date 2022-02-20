@@ -8,7 +8,9 @@ pkgs.mkShell rec {
     clisp
     ecl
     gcl
-    clasp
+    clasp-common-lisp
+    cmucl_binary
+    abcl
   ];
 
 }
