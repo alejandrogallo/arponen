@@ -17,6 +17,41 @@
      :from-end t
      :initial-value initial-value)))
 
+(defun all-permutations (lst &optional (remain lst))
+  (cond ((null remain) nil)
+        ((null (rest lst)) (list lst))
+        (t (append
+            (mapcar (lambda (l) (cons (first lst) l))
+                    (all-permutations (rest lst)))
+            (all-permutations (append (rest lst) (list (first lst)))
+                              (rest remain))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(declaim (ftype (function (integer)) get-pairs))
+(defun get-pairs (n)
+  (loop for i from 0 below n
+        nconcing (loop for j from i below n
+                       collect `(,i ,j))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmacro ordered-subsets-with-repetition (n space-size)
+  (let* ((vars (loop for i below n collect (gensym)))
+         (deepest-level `(loop for ,(car (last vars))
+                               from ,(car (last (butlast vars)))
+                                 below ,space-size
+                               collect `(,,@vars)))
+         (init-var (gensym))
+         (body (reduce (lambda (x y)
+                         `(loop for ,(cadr x) from ,(car x) below ,space-size
+                                nconcing ,y))
+                       (butlast (mapcar #'list (append (list init-var)
+                                                       (butlast vars))
+                                        vars))
+                       :initial-value deepest-level
+                       :from-end t)))
+    `(let ((,init-var 0))
+       ,body)))
+
 (defun expression-to-lists (exp)
   (ecase (car exp)
     ('* (let ((operands
@@ -37,15 +72,6 @@
 
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
-
-(defun all-permutations (lst &optional (remain lst))
-  (cond ((null remain) nil)
-        ((null (rest lst)) (list lst))
-        (t (append
-            (mapcar (lambda (l) (cons (first lst) l))
-                    (all-permutations (rest lst)))
-            (all-permutations (append (rest lst) (list (first lst)))
-                              (rest remain))))))
 
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (assert (eq (length target) (length tensor)))
@@ -164,32 +190,6 @@
          (cleaned-indices (remove-if (lambda (x) (equal x killed-pair))
                                      flat-indices)))
     `(contracted ,@cleaned-indices)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(declaim (ftype (function (integer)) get-pairs))
-(defun get-pairs (n)
-  (loop for i from 0 below n
-        nconcing (loop for j from i below n
-                       collect `(,i ,j))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below n collect (gensym)))
-         (deepest-level `(loop for ,(car (last vars))
-                               from ,(car (last (butlast vars)))
-                                 below ,space-size
-                               collect `(,,@vars)))
-         (init-var (gensym))
-         (body (reduce (lambda (x y)
-                         `(loop for ,(cadr x) from ,(car x) below ,space-size
-                                nconcing ,y))
-                       (butlast (mapcar #'list (append (list init-var)
-                                                       (butlast vars))
-                                        vars))
-                       :initial-value deepest-level
-                       :from-end t)))
-    `(let ((,init-var 0))
-       ,body)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun orbital-space-name (index-name orbital-spaces)

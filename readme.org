@@ -2,7 +2,36 @@
 
 - [ ] create the unit tensor operator and check that it plays well
 
-* Types
+* Nomenclature
+
+In order to read better the code and organize it better, we
+should begin by having a clear nomenclature of the objects
+we are dealing with.
+
+A diagram is in its graph-theoretic sense
+a set of nodes with vertices.
+In the case of a diagram in chemistry a vertex is
+interpreted as a contraction and /uncontracted vertices/
+are legs of a diagram.
+
+We will not make the distinction between a legged-node
+and an unlegged-node, as we do not need it for our purposes.
+
+Therefore, a simple picture of a diagram can be akin to the
+following representation:
+
+#+begin_example
+\
+ \
+  \         v------------- Node
+   *========*
+  /          \
+ /            \ <--------- Leg 
+/              \
+#+end_example
+
+In Lisp, we will represent a short list of objects in the following
+manner:
 
 - A tensor
   #+begin_src lisp
@@ -13,8 +42,8 @@
   ((contraction (point-1 point-2)) (tensor-product))
   #+end_src
 
-* Implementation
-** Prolog
+
+* Prolog
 
 #+begin_src lisp :tangle t.lisp
 ;; todo define packages and all that
@@ -24,7 +53,7 @@
   `(assert (equal ,left ,right)))
 #+end_src
 
-** Main variables
+* Main variables
 
 
 #+begin_src lisp  :tangle gunu.lisp
@@ -35,13 +64,13 @@
     (eval (format t ,fmt ,@args))))
 #+end_src
 
-** Combinatorics
+* Combinatorics
 
 This code relies a lot on combinatorics and set-theoretic functions,
 this section describes their implementation in order to maintain
 the package self-contained.
 
-*** Cartesian product
+** Cartesian product
 #+begin_src lisp :tangle gunu.lisp
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
@@ -71,7 +100,76 @@ With tests:
               '((H (A)) ((P) (A))))
 #+end_src
 
-** Arithmetic expressions
+** Permutations
+
+#+begin_src lisp :tangle gunu.lisp
+(defun all-permutations (lst &optional (remain lst))
+  (cond ((null remain) nil)
+        ((null (rest lst)) (list lst))
+        (t (append
+            (mapcar (lambda (l) (cons (first lst) l))
+                    (all-permutations (rest lst)))
+            (all-permutations (append (rest lst) (list (first lst)))
+                              (rest remain))))))
+#+end_src
+
+** Pairs and pair choices
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(declaim (ftype (function (integer)) get-pairs))
+(defun get-pairs (n)
+  (loop for i from 0 below n
+        nconcing (loop for j from i below n
+                       collect `(,i ,j))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (get-pairs 1) '((0 0)))
+(assert-equal (get-pairs 2) '((0 0) (0 1) (1 1)))
+(assert-equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+#+end_src
+
+#+begin_src lisp :tangle gunu.lisp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defmacro ordered-subsets-with-repetition (n space-size)
+  (let* ((vars (loop for i below n collect (gensym)))
+         (deepest-level `(loop for ,(car (last vars))
+                               from ,(car (last (butlast vars)))
+                                 below ,space-size
+                               collect `(,,@vars)))
+         (init-var (gensym))
+         (body (reduce (lambda (x y)
+                         `(loop for ,(cadr x) from ,(car x) below ,space-size
+                                nconcing ,y))
+                       (butlast (mapcar #'list (append (list init-var)
+                                                       (butlast vars))
+                                        vars))
+                       :initial-value deepest-level
+                       :from-end t)))
+    `(let ((,init-var 0))
+       ,body)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (ordered-subsets-with-repetition 2 2)
+              '((0 0) (0 1) (1 1)))
+(assert-equal (ordered-subsets-with-repetition 2 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
+                (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4)))
+(assert-equal (ordered-subsets-with-repetition 3 3)
+              '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
+                (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2)))
+(assert-equal (ordered-subsets-with-repetition 4 4)
+              '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
+                (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
+                (0 1 1 3) (0 1 2 2) (0 1 2 3) (0 1 3 3) (0 2 2 2) (0 2 2 3)
+                (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
+                (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
+                (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
+#+end_src
+
+* Arithmetic expressions
 #+begin_src lisp :tangle gunu.lisp
 (defun expression-to-lists (exp)
   (ecase (car exp)
@@ -111,7 +209,7 @@ With tests:
    ((V (A I)) (T (A I) (B J)) (R (G I) (A J)))))
 #+end_src
 
-** Index spaces
+* Index spaces
 #+begin_src lisp :tangle gunu.lisp
 (defun match-index-to-space (index orbital-space)
   (find index (cdr orbital-space)))
@@ -144,17 +242,9 @@ With tests:
  '(p a b c))
 #+end_src
 
-** Tensor matching
-#+begin_src lisp :tangle gunu.lisp
-(defun all-permutations (lst &optional (remain lst))
-  (cond ((null remain) nil)
-        ((null (rest lst)) (list lst))
-        (t (append
-            (mapcar (lambda (l) (cons (first lst) l))
-                    (all-permutations (rest lst)))
-            (all-permutations (append (rest lst) (list (first lst)))
-                              (rest remain))))))
+* Tensor matching
 
+#+begin_src lisp :tangle gunu.lisp
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (assert (eq (length target) (length tensor)))
   (notany #'null
@@ -212,7 +302,7 @@ With tests:
                                            (P b a))))))
 #+end_src
 
-** Contractions
+* Contractions
 
 Contraction rules should be something that tells us
 which contractions are not zero.
@@ -425,59 +515,6 @@ N_c pairs of indices, where every index has a single
 contraction. Therefore we need all ORDERED
 subsets of length up to N_c
 
-#+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(declaim (ftype (function (integer)) get-pairs))
-(defun get-pairs (n)
-  (loop for i from 0 below n
-        nconcing (loop for j from i below n
-                       collect `(,i ,j))))
-#+end_src
-
-#+begin_src lisp :tangle t.lisp
-(assert-equal (get-pairs 1) '((0 0)))
-(assert-equal (get-pairs 2) '((0 0) (0 1) (1 1)))
-(assert-equal (get-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
-#+end_src
-
-#+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below n collect (gensym)))
-         (deepest-level `(loop for ,(car (last vars))
-                               from ,(car (last (butlast vars)))
-                                 below ,space-size
-                               collect `(,,@vars)))
-         (init-var (gensym))
-         (body (reduce (lambda (x y)
-                         `(loop for ,(cadr x) from ,(car x) below ,space-size
-                                nconcing ,y))
-                       (butlast (mapcar #'list (append (list init-var)
-                                                       (butlast vars))
-                                        vars))
-                       :initial-value deepest-level
-                       :from-end t)))
-    `(let ((,init-var 0))
-       ,body)))
-#+end_src
-
-#+begin_src lisp :tangle t.lisp
-(assert-equal (ordered-subsets-with-repetition 2 2)
-              '((0 0) (0 1) (1 1)))
-(assert-equal (ordered-subsets-with-repetition 2 5)
-              '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
-                (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4)))
-(assert-equal (ordered-subsets-with-repetition 3 3)
-              '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
-                (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2)))
-(assert-equal (ordered-subsets-with-repetition 4 4)
-              '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
-                (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
-                (0 1 1 3) (0 1 2 2) (0 1 2 3) (0 1 3 3) (0 2 2 2) (0 2 2 3)
-                (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
-                (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
-                (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
-#+end_src
 
 TODO : this function is duplicated
 #+begin_src lisp :tangle gunu.lisp
@@ -496,7 +533,7 @@ TODO : this function is duplicated
         do (assert (eq (orbital-space-name v spaces) result))))
 #+end_src
 
-*** Finding contractions
+** Finding contractions
 
 #+begin_src lisp :tangle gunu.lisp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
