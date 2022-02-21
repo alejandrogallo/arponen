@@ -237,6 +237,74 @@
                    (list a b)))))
            contraction-rules)))
 
+;;todo this is not good enough
+(defun is-connected-contraction (pair-combination node-pairs &key group-lengths)
+  (let* ((psums (mapcar (lambda (ls) (apply #'+ ls))
+                        (maplist #'identity (reverse group-lengths))))
+         ;; an interval represents a diagram
+         (intervals (mapcar #'cons psums (append (cdr psums) '(0))))
+         (diagrams-names (mapcar (lambda (i) (cons i (gensym "DIAGRAM-")))
+                                 intervals))
+         (node-indices (mapcar (lambda (pair-index) (nth pair-index node-pairs))
+                               pair-combination)))
+    ;; TODO: optimize this...
+    (labels ((diagram-of (i)
+               (cdr (assoc (find-if (lambda (interval)
+                                      (and (> (car interval) i)
+                                           (>= i (cdr interval))))
+                                    intervals)
+                           diagrams-names))))
+      (block :main-routine
+        (loop
+          for node-permutation in (all-permutations node-indices)
+          do (let ((db (make-hash-table))
+                   path
+                   node last-node)
+               (block :current-permutation
+                 (tagbody
+                    (loop for node in node-permutation
+                          do (let ((diagrams (mapcar #'diagram-of node)))
+                               (if (equal (intersection diagrams path)
+                                          diagrams)
+                                   (return-from :current-permutation)
+                                   (progn
+                                     (setq path
+                                           (append
+                                            path
+                                            (set-difference diagrams path)))
+                                     (when (>= (length path)
+                                               (length group-lengths))
+                                       (return-from :main-routine t))))))
+                    ))
+               ))))
+    ))
+
+
+(macrolet ((! (&rest pts)
+             `(mapcar (lambda (p)
+                        (position p node-pairs :test #'equal)) ',pts)))
+  (let ((node-pairs
+          '((0 1) (0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8) ;; | 1st -> all
+            (1 4) (1 5) (1 6) (1 7) (1 8)    ;; | 2nd diagram -> 3
+            (2 4) (2 5) (2 6) (2 7) (2 8)    ;; |
+            (3 4) (3 5) (3 6) (3 7) (3 8)))) ;; |
+
+    ;; this contraction only goes from the first diagram to the second
+    (assert! (is-connected-contraction (! (0 1) (0 2) (0 3))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this contraction only goes from the 2nd diagram to the 3rc
+    (assert! (is-connected-contraction (! (1 4) (1 6) (3 4) (3 7) (2 6))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is quick, it just goes to from 1 to 2 and to 3 directly
+    (assert (is-connected-contraction (! (0 1) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is less quick, it goes from 1 to 2 twice and then goes to 3
+    (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))))
+
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
@@ -246,11 +314,12 @@
                  2))
          (all-nodes (reduce #'append (mapcar #'cdr tensor-list)))
          (space-size (length all-nodes))
+         (group-lengths (mapcar #'length (cdr tensor-list)))
          ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
          (node-pairs (get-node-pairs space-size
                                      :group-lengths
                                      (unless *allow-self-contractions*
-                                       (mapcar #'length (cdr tensor-list)))))
+                                       group-lengths)))
          (which-pairs (eval
                        `(ordered-subsets-with-repetition ,N-c
                                                          ,(length node-pairs))))
@@ -262,17 +331,23 @@
     (logger "~&all combinations (of pairs) : ~s" which-pairs)
     (setq results
           (labels
-              ((indexing (indices lst) (mapcar (lambda (i) (nth i lst)) indices)))
+              ((indexing (indices lst) (mapcar (lambda (i) (nth i lst))
+                                               indices)))
             (loop
               for pair-indices in which-pairs
               nconcing
               (block :pairs-discovery
                 (tagbody
-                   (let ((pairs (indexing pair-indices node-pairs))
+                   (let* ((pairs (indexing pair-indices node-pairs))
+                          (nodes (mapcar (lambda (x)
+                                           (indexing x all-nodes)) pairs))
                          top-contractions)
                      (logger "~&combination: ~s pairs: ~s [~s]"
                              pair-indices
-                             pairs (mapcar (lambda (x) (indexing x all-nodes)) pairs))
+                             pairs nodes)
+                     ;; todo
+                     (when *only-connected-diagrams*
+                       nil)
                      (loop for pair in pairs
                            collect
                            (let* ((vertices (indexing pair all-nodes))

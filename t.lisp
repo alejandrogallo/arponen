@@ -4,6 +4,12 @@
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
 
+(defmacro assert! (expr &rest args)
+  `(assert (not ,expr) ,@args))
+
+(defmacro assert!-equal (left right)
+  `(assert! (equal ,left ,right)))
+
 (defmacro assert-condition (expr condition-type &rest body)
   `(handler-case (progn ,expr
                         (assert nil))
