@@ -84,6 +84,13 @@
      `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
     (t ls)))
 
+(defun symbols-repeated-p (lst)
+  (let ((symbols (flatten-list lst))
+        s)
+    (loop while (setq s (pop symbols))
+          if (> (count s symbols) 0)
+            do (return t))))
+
 (defun expression-to-lists (exp)
   (ecase (car exp)
     ('* (let ((operands
@@ -215,36 +222,21 @@
 (defun compatible-contractions (node-a node-b &key
                                                 orbital-spaces
                                                 contraction-rules)
-  (assert (eq (length node-a) 2))
-  (assert (eq (length node-a) (length node-b)))
+  (declare (cons node-a) (cons node-b))
+  (assert (and (eq (length node-a) 2) (eq (length node-a) (length node-b))))
   (remove-if
    #'null
-   (loop for (a b) in (eval `(cartesian-product ,node-a ,node-b))
-         collect (let* ((name-pair (mapcar (lambda (x)
-                                             (find-space-name-by-leg
-                                              x
-                                              orbital-spaces))
-                                           (list a b)))
-                        (rule (find name-pair contraction-rules
-                                    :test #'equal
-                                    :key #'car)))
-                   (when rule
-                     (let ((positions (list (position a node-a)
-                                            (position b node-b))))
-                       (when (equal positions (cdr rule))
-                         (logger "~&~8tcontraction ~a <> ~a through ~a"
-                                 a b rule)
-                         (list a b))))))))
+   (mapcar (lambda (rule)
+             (destructuring-bind ((space-a space-b) pos-a pos-b) rule
+               (let ((a (nth pos-a node-a))
+                     (b (nth pos-b node-b)))
+                 (when (and (eq (find-space-name-by-leg a orbital-spaces)
+                                space-a)
+                            (eq (find-space-name-by-leg b orbital-spaces)
+                                space-b))
+                   (list a b)))))
+           contraction-rules)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun symbols-repeated-p (lst)
-  (let ((symbols (flatten-list lst))
-        s)
-    (loop while (setq s (pop symbols))
-          if (> (count s symbols) 0)
-            do (return t))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
@@ -252,20 +244,21 @@
   (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
                     (length (flatten-list (cdr target))))
                  2))
-         (all-indices (loop for ts in (mapcar #'cdr tensor-list)
-                            with ls = nil
-                            do (setq ls (append ls ts))
-                            finally (return ls)))
-         (space-size (length all-indices))
-         ;; '((1 1) (1 2) (2 2)) if length all-indices = 2
-         (leg-pairs (get-node-pairs space-size))
-         (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
-                                                              ,(length leg-pairs))))
+         (all-nodes (reduce #'append (mapcar #'cdr tensor-list)))
+         (space-size (length all-nodes))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs space-size
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       (mapcar #'length (cdr tensor-list)))))
+         (which-pairs (eval
+                       `(ordered-subsets-with-repetition ,N-c
+                                                         ,(length node-pairs))))
          results)
     (logger "~&============")
     (logger "~&N-contractions: ~s" N-c)
-    (logger "~&all indices: ~s" all-indices)
-    (logger "~&all leg-pairs: ~s" leg-pairs)
+    (logger "~&all nodes: ~s" all-nodes)
+    (logger "~&all node-pairs: ~s" node-pairs)
     (logger "~&all combinations (of pairs) : ~s" which-pairs)
     (setq results
           (labels
@@ -275,14 +268,14 @@
               nconcing
               (block :pairs-discovery
                 (tagbody
-                   (let ((pairs (indexing pair-indices leg-pairs))
+                   (let ((pairs (indexing pair-indices node-pairs))
                          top-contractions)
                      (logger "~&combination: ~s pairs: ~s [~s]"
                              pair-indices
-                             pairs (mapcar (lambda (x) (indexing x all-indices)) pairs))
+                             pairs (mapcar (lambda (x) (indexing x all-nodes)) pairs))
                      (loop for pair in pairs
                            collect
-                           (let* ((vertices (indexing pair all-indices))
+                           (let* ((vertices (indexing pair all-nodes))
                                   (conts (compatible-contractions
                                           (car vertices)
                                           (cadr vertices)
@@ -441,7 +434,7 @@
           (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
           (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
 
-(defun latex (tensor-expression &optional (stream t))
+(defun latex (tensor-expression &optional (stream nil))
   (case (car tensor-expression)
     ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
                                                      (cdr tensor-expression))))

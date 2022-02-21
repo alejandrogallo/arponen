@@ -77,6 +77,12 @@
                 (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
 
+(let ((vals '(((a b c) . nil)
+              ((a (a) b c) . t)
+              ((((a)) ((b e f g)) ((((b))))) . t))))
+  (loop for (lst . val) in vals
+        do (assert (eq (symbols-repeated-p lst) val))))
+
 (assert-equal
  (expression-to-lists '(* (v (a i))
                         (+ 1 (t (a i)) (t (a i) (b j)))
@@ -219,27 +225,42 @@
 ;; test
 (let ((spaces '((H I J K L)
                 (P A B C D)
-                (G G)))
-      (rules '(((H H) 0 1)
-               ((P P) 1 0)))
-      (values '(((j i) (i a) . nil)
-                ((j i) (i k) . ((j k)))
-                ((a b) (c k) . ((b c)))
-                ((i a) (g l) . ((i l)))
-                ((i j) (k l) . ((i l)))
-                ((i a) (b j) . ((i j) (a b))))))
-  (loop for (a b . result) in values
-        do
-           (assert (equal (compatible-contractions a b
-                           :orbital-spaces spaces
-                           :contraction-rules rules)
-                          result))))
+                (G G))))
 
-(let ((vals '(((a b c) . nil)
-              ((a (a) b c) . t)
-              ((((a)) ((b e f g)) ((((b))))) . t))))
-  (loop for (lst . val) in vals
-        do (assert (eq (symbols-repeated-p lst) val))))
+  (let ((rules '(((H H) 0 1)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . nil)
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((b c)))
+                  ((i a) (g l) . ((i l)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result))))
+
+  (let ((spaces '((H I J K L)
+                  (P A B C D)
+                  (G G)))
+        ;; test with some absurd contraction rules
+        (rules '(((H H) 0 1)
+                 ((H P) 1 1)
+                 ((P H) 0 1)
+                 ((P G) 0 0)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . ((i a)))
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((a k) (b c)))
+                  ((a i) (g l) . ((a l) (a g)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result)))))
 
 (let ((orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
@@ -263,14 +284,17 @@
                                                     contraction-rules))
                         ,value))))
 
-    (assert-with-env
-     (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
-     '(((B A) (J I))
-       ((B C) (J I))
-       ((B A) (J K))
-       ((B C) (J K))
-       ((B A) (J L))
-       ((B C) (J L))))
+    ;; with self-contractions
+    (let ((*allow-self-contractions* t))
+
+      (assert-with-env
+       (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
+       '(((B A) (J I))
+         ((B C) (J I))
+         ((B A) (J K))
+         ((B C) (J K))
+         ((B A) (J L))
+         ((B C) (J L))))
 
     (assert-with-env
      (find-contractions-in-product-by-target '(_ (P H))
@@ -285,22 +309,23 @@
     (assert-with-env
      (find-contractions-in-product-by-target '(_ (H P))
                                              '((f (a b)) (t (c i))))
-     '())))
+     '()))))
 
-(assert-equal
- (contract-expressions-by-target '(_ (P H))
-                                 '(* (+ (f (a b)) (f (i j)))
-                                   (t (c k)))
-                                 :orbital-spaces
-                                 '((H i j k)
-                                   (P a b c))
-                                 :contraction-rules
-                                 '(((H H) 0 1)
-                                   ((P P) 1 0)))
- '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
+(let ((*allow-self-contractions* t))
+  (assert-equal
+   (contract-expressions-by-target '(_ (P H))
+                                   '(* (+ (f (a b)) (f (i j)))
+                                     (t (c k)))
+                                   :orbital-spaces
+                                   '((H i j k)
+                                     (P a b c))
+                                   :contraction-rules
+                                   '(((H H) 0 1)
+                                     ((P P) 1 0)))
+   '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
      ((CONTRACTION ((B C))) (F (A B)) (T (C K)))
      ((CONTRACTION ((I J))) (F (I J)) (T (C K)))
-     ((CONTRACTION ((I K))) (F (I J)) (T (C K)))))
+     ((CONTRACTION ((I K))) (F (I J)) (T (C K))))))
 
 (assert-equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
                             :from-index 2)

@@ -4,5 +4,5 @@ set -eu
 LISP=$1
 
 $LISP <<EOF
-(load "t.lisp")
+(time (load "t.lisp"))
 EOF

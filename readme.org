@@ -366,6 +366,22 @@ if a given diagram is linked or not.
     (t ls)))
 #+end_src
 
+#+begin_src lisp :tangle gunu.lisp
+(defun symbols-repeated-p (lst)
+  (let ((symbols (flatten-list lst))
+        s)
+    (loop while (setq s (pop symbols))
+          if (> (count s symbols) 0)
+            do (return t))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let ((vals '(((a b c) . nil)
+              ((a (a) b c) . t)
+              ((((a)) ((b e f g)) ((((b))))) . t))))
+  (loop for (lst . val) in vals
+        do (assert (eq (symbols-repeated-p lst) val))))
+#+end_src
 
 * Arithmetic expressions
 
@@ -770,6 +786,79 @@ gets applied.
 ** Contraction discovery
 
 
+This routing finds the possible contractions between two nodes.
+One could think that one should create all combinations
+of legs that belong to the node and then check according to the
+contraction rules. In fact, one just has to loop
+over the contraction rules and match every time against the two nodes
+since the position of the legs are encoded in the description of the
+contraction rules.
+
+#+begin_src lisp :tangle gunu.lisp
+(defun compatible-contractions (node-a node-b &key
+                                                orbital-spaces
+                                                contraction-rules)
+  (declare (cons node-a) (cons node-b))
+  (assert (and (eq (length node-a) 2) (eq (length node-a) (length node-b))))
+  (remove-if
+   #'null
+   (mapcar (lambda (rule)
+             (destructuring-bind ((space-a space-b) pos-a pos-b) rule
+               (let ((a (nth pos-a node-a))
+                     (b (nth pos-b node-b)))
+                 (when (and (eq (find-space-name-by-leg a orbital-spaces)
+                                space-a)
+                            (eq (find-space-name-by-leg b orbital-spaces)
+                                space-b))
+                   (list a b)))))
+           contraction-rules)))
+#+end_src
+
+#+RESULTS:
+: COMPATIBLE-CONTRACTIONS
+
+#+begin_src lisp :tangle t.lisp
+;; test
+(let ((spaces '((H I J K L)
+                (P A B C D)
+                (G G))))
+
+  (let ((rules '(((H H) 0 1)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . nil)
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((b c)))
+                  ((i a) (g l) . ((i l)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result))))
+
+  (let ((spaces '((H I J K L)
+                  (P A B C D)
+                  (G G)))
+        ;; test with some absurd contraction rules
+        (rules '(((H H) 0 1)
+                 ((H P) 1 1)
+                 ((P H) 0 1)
+                 ((P G) 0 0)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . ((i a)))
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((a k) (b c)))
+                  ((a i) (g l) . ((a l) (a g)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result)))))
+#+end_src
+
 
 In this routine magic happens.
 So we have a target tensor with
@@ -786,84 +875,15 @@ contraction. Therefore we need all ORDERED
 subsets of length up to N_c
 
 
-#+begin_src lisp :tangle gunu.lisp
-(defun compatible-contractions (node-a node-b &key
-                                                orbital-spaces
-                                                contraction-rules)
-  (assert (eq (length node-a) 2))
-  (assert (eq (length node-a) (length node-b)))
-  (remove-if
-   #'null
-   (loop for (a b) in (eval `(cartesian-product ,node-a ,node-b))
-         collect (let* ((name-pair (mapcar (lambda (x)
-                                             (find-space-name-by-leg
-                                              x
-                                              orbital-spaces))
-                                           (list a b)))
-                        (rule (find name-pair contraction-rules
-                                    :test #'equal
-                                    :key #'car)))
-                   (when rule
-                     (let ((positions (list (position a node-a)
-                                            (position b node-b))))
-                       (when (equal positions (cdr rule))
-                         (logger "~&~8tcontraction ~a <> ~a through ~a"
-                                 a b rule)
-                         (list a b))))))))
-#+end_src
-
-#+RESULTS:
-: COMPATIBLE-CONTRACTIONS
-
-#+begin_src lisp :tangle t.lisp
-;; test
-(let ((spaces '((H I J K L)
-                (P A B C D)
-                (G G)))
-      (rules '(((H H) 0 1)
-               ((P P) 1 0)))
-      (values '(((j i) (i a) . nil)
-                ((j i) (i k) . ((j k)))
-                ((a b) (c k) . ((b c)))
-                ((i a) (g l) . ((i l)))
-                ((i j) (k l) . ((i l)))
-                ((i a) (b j) . ((i j) (a b))))))
-  (loop for (a b . result) in values
-        do
-           (assert (equal (compatible-contractions a b
-                           :orbital-spaces spaces
-                           :contraction-rules rules)
-                          result))))
-#+end_src
-
-#+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun symbols-repeated-p (lst)
-  (let ((symbols (flatten-list lst))
-        s)
-    (loop while (setq s (pop symbols))
-          if (> (count s symbols) 0)
-            do (return t))))
-#+end_src
-
-#+begin_src lisp :tangle t.lisp
-(let ((vals '(((a b c) . nil)
-              ((a (a) b c) . t)
-              ((((a)) ((b e f g)) ((((b))))) . t))))
-  (loop for (lst . val) in vals
-        do (assert (eq (symbols-repeated-p lst) val))))
-#+end_src
-
 Here we apply the norm simply
 Find contractions in a product.
 Some filters used are the number of contractions
 
 #+begin_example
-     N-c = Sum (i) legs(product) - legs(target)
+     2 * N-c = Sum (i) legs(product) - legs(target)
 #+end_example
 
 #+begin_src lisp :tangle gunu.lisp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
@@ -871,20 +891,21 @@ Some filters used are the number of contractions
   (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
                     (length (flatten-list (cdr target))))
                  2))
-         (all-indices (loop for ts in (mapcar #'cdr tensor-list)
-                            with ls = nil
-                            do (setq ls (append ls ts))
-                            finally (return ls)))
-         (space-size (length all-indices))
-         ;; '((1 1) (1 2) (2 2)) if length all-indices = 2
-         (leg-pairs (get-node-pairs space-size))
-         (which-pairs (eval `(ordered-subsets-with-repetition ,N-c
-                                                              ,(length leg-pairs))))
+         (all-nodes (reduce #'append (mapcar #'cdr tensor-list)))
+         (space-size (length all-nodes))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs space-size
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       (mapcar #'length (cdr tensor-list)))))
+         (which-pairs (eval
+                       `(ordered-subsets-with-repetition ,N-c
+                                                         ,(length node-pairs))))
          results)
     (logger "~&============")
     (logger "~&N-contractions: ~s" N-c)
-    (logger "~&all indices: ~s" all-indices)
-    (logger "~&all leg-pairs: ~s" leg-pairs)
+    (logger "~&all nodes: ~s" all-nodes)
+    (logger "~&all node-pairs: ~s" node-pairs)
     (logger "~&all combinations (of pairs) : ~s" which-pairs)
     (setq results
           (labels
@@ -894,14 +915,14 @@ Some filters used are the number of contractions
               nconcing
               (block :pairs-discovery
                 (tagbody
-                   (let ((pairs (indexing pair-indices leg-pairs))
+                   (let ((pairs (indexing pair-indices node-pairs))
                          top-contractions)
                      (logger "~&combination: ~s pairs: ~s [~s]"
                              pair-indices
-                             pairs (mapcar (lambda (x) (indexing x all-indices)) pairs))
+                             pairs (mapcar (lambda (x) (indexing x all-nodes)) pairs))
                      (loop for pair in pairs
                            collect
-                           (let* ((vertices (indexing pair all-indices))
+                           (let* ((vertices (indexing pair all-nodes))
                                   (conts (compatible-contractions
                                           (car vertices)
                                           (cadr vertices)
@@ -967,6 +988,9 @@ Some filters used are the number of contractions
                 nil))))))
 #+end_src
 
+#+RESULTS:
+: FIND-CONTRACTIONS-IN-PRODUCT-BY-TARGET
+
 #+begin_src lisp :tangle t.lisp
 (let ((orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
@@ -990,14 +1014,17 @@ Some filters used are the number of contractions
                                                     contraction-rules))
                         ,value))))
 
-    (assert-with-env
-     (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
-     '(((B A) (J I))
-       ((B C) (J I))
-       ((B A) (J K))
-       ((B C) (J K))
-       ((B A) (J L))
-       ((B C) (J L))))
+    ;; with self-contractions
+    (let ((*allow-self-contractions* t))
+
+      (assert-with-env
+       (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
+       '(((B A) (J I))
+         ((B C) (J I))
+         ((B A) (J K))
+         ((B C) (J K))
+         ((B A) (J L))
+         ((B C) (J L))))
 
     (assert-with-env
      (find-contractions-in-product-by-target '(_ (P H))
@@ -1012,8 +1039,11 @@ Some filters used are the number of contractions
     (assert-with-env
      (find-contractions-in-product-by-target '(_ (H P))
                                              '((f (a b)) (t (c i))))
-     '())))
+     '()))))
 #+end_src
+
+#+RESULTS:
+: NIL
 
 #+begin_src lisp :tangle gunu.lisp
 (defun contract-expressions-by-target
@@ -1038,22 +1068,24 @@ Some filters used are the number of contractions
 
 #+begin_src lisp :tangle t.lisp
 
-(assert-equal
- (contract-expressions-by-target '(_ (P H))
-                                 '(* (+ (f (a b)) (f (i j)))
-                                   (t (c k)))
-                                 :orbital-spaces
-                                 '((H i j k)
-                                   (P a b c))
-                                 :contraction-rules
-                                 '(((H H) 0 1)
-                                   ((P P) 1 0)))
- '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
+(let ((*allow-self-contractions* t))
+  (assert-equal
+   (contract-expressions-by-target '(_ (P H))
+                                   '(* (+ (f (a b)) (f (i j)))
+                                     (t (c k)))
+                                   :orbital-spaces
+                                   '((H i j k)
+                                     (P a b c))
+                                   :contraction-rules
+                                   '(((H H) 0 1)
+                                     ((P P) 1 0)))
+   '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
      ((CONTRACTION ((B C))) (F (A B)) (T (C K)))
      ((CONTRACTION ((I J))) (F (I J)) (T (C K)))
-     ((CONTRACTION ((I K))) (F (I J)) (T (C K)))))
+     ((CONTRACTION ((I K))) (F (I J)) (T (C K))))))
 #+end_src
 
+* Help routines
 
 TOOD: Explain that all indices must be different and so on
 
@@ -1077,11 +1109,17 @@ TOOD: Explain that all indices must be different and so on
           orbital-spaces))
 #+end_src
 
+#+RESULTS:
+: SPACE-SUBSEQ
+
 #+begin_src lisp :tangle t.lisp
 (assert-equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
                             :from-index 2)
               '((H 3 4) (P c) (G)))
 #+end_src
+
+#+RESULTS:
+: NIL
 
 TODO:: Explain how one to do the naming of tensors so that everything works well
 #+begin_src lisp :tangle gunu.lisp
@@ -1103,6 +1141,9 @@ TODO:: Explain how one to do the naming of tensors so that everything works well
     ))
 #+end_src
 
+#+RESULTS:
+: NAME-LEGS-BY-SPACE-NAME
+
 #+begin_src lisp :tangle t.lisp
 (let ((vals '((0 . (t (h1 p1) (p2 h2)))
               (1 . (t (h2 p2) (p3 h3)))
@@ -1115,6 +1156,9 @@ TODO:: Explain how one to do the naming of tensors so that everything works well
                      :from-index from-index)
                     result))))
 #+end_src
+
+#+RESULTS:
+: NIL
 
 
 TODO: Explain the concept of partitioning and the format
@@ -1159,8 +1203,11 @@ TODO: Explain the concept of partitioning and the format
                    new-indices)))))
 #+end_src
 
+#+RESULTS:
+: PARTITION-TENSOR
 
-#+begin_src lisp :tangle t.lisp
+
+#+begin_src lisp :tangle t.lisp :results raw drawer
 (let ((orbital-spaces '((PQ p q r s)
                         (H i j k l)
                         (P a b c d)))
@@ -1175,6 +1222,13 @@ TODO: Explain the concept of partitioning and the format
 
 #+end_src
 
+#+RESULTS:
+:results:
+(+ (V (I J) (K L)) (V (I J) (K D)) (V (I J) (C L)) (V (I J) (C D)) (V (I B) (K L)) (V (I B) (K D))
+   (V (I B) (C L)) (V (I B) (C D)) (V (A J) (K L)) (V (A J) (K D)) (V (A J) (C L)) (V (A J) (C D))
+   (V (A B) (K L)) (V (A B) (K D)) (V (A B) (C L)) (V (A B) (C D)))
+:end:
+
 * Output formats
 ** TeX
 
@@ -1185,7 +1239,7 @@ TODO: Explain the concept of partitioning and the format
           (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
           (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
 
-(defun latex (tensor-expression &optional (stream t))
+(defun latex (tensor-expression &optional (stream nil))
   (case (car tensor-expression)
     ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
                                                      (cdr tensor-expression))))
@@ -1193,6 +1247,9 @@ TODO: Explain the concept of partitioning and the format
     (t (latex-tensor tensor-expression))))
 
 #+end_src
+
+#+RESULTS:
+: LATEX
 
 TODO actually to the tests
 #+begin_src lisp :tangle t.lisp
@@ -1207,4 +1264,3 @@ TODO actually to the tests
                     :orbital-spaces orbital-spaces
                     :partition partition)))
 #+end_src
-
