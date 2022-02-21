@@ -65,7 +65,7 @@ manner:
   `(assert (not ,expr) ,@args))
 
 (defmacro assert!-equal (left right)
-  `(assert! (equal ,left ,right)))
+  `(assert (not (equal ,left ,right))))
 
 (defmacro assert-condition (expr condition-type &rest body)
   `(handler-case (progn ,expr
@@ -938,8 +938,9 @@ Therefore, we can simply
                     ))
                ))))
     ))
+#+end_src
 
-
+#+begin_src lisp :tangle t.lisp
 (macrolet ((! (&rest pts)
              `(mapcar (lambda (p)
                         (position p node-pairs :test #'equal)) ',pts)))

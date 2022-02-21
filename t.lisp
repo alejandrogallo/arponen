@@ -8,7 +8,7 @@
   `(assert (not ,expr) ,@args))
 
 (defmacro assert!-equal (left right)
-  `(assert! (equal ,left ,right)))
+  `(assert (not (equal ,left ,right))))
 
 (defmacro assert-condition (expr condition-type &rest body)
   `(handler-case (progn ,expr
@@ -267,6 +267,31 @@
                                                      :orbital-spaces spaces
                                                      :contraction-rules rules)
                             result)))))
+
+(macrolet ((! (&rest pts)
+             `(mapcar (lambda (p)
+                        (position p node-pairs :test #'equal)) ',pts)))
+  (let ((node-pairs
+          '((0 1) (0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8) ;; | 1st -> all
+            (1 4) (1 5) (1 6) (1 7) (1 8)    ;; | 2nd diagram -> 3
+            (2 4) (2 5) (2 6) (2 7) (2 8)    ;; |
+            (3 4) (3 5) (3 6) (3 7) (3 8)))) ;; |
+
+    ;; this contraction only goes from the first diagram to the second
+    (assert! (is-connected-contraction (! (0 1) (0 2) (0 3))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this contraction only goes from the 2nd diagram to the 3rc
+    (assert! (is-connected-contraction (! (1 4) (1 6) (3 4) (3 7) (2 6))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is quick, it just goes to from 1 to 2 and to 3 directly
+    (assert (is-connected-contraction (! (0 1) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is less quick, it goes from 1 to 2 twice and then goes to 3
+    (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))))
 
 (let ((orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
