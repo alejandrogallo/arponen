@@ -1,3 +1,14 @@
+(defun contraction? (expr)
+  (and (listp expr)
+       (listp (car expr))
+       (eq (caar expr) 'contraction)
+       ;; body
+       (listp (cadr expr))))
+
+(defun tensor? (expr)
+  (and (listp expr)
+       (listp (cadr expr))))
+
 (defvar *print-log* t
   "Wether to print the log messages for the contractions and so on")
 
@@ -35,7 +46,6 @@
             (all-permutations (append (rest lst) (list (first lst)))
                               (rest remain))))))
 
-(declaim (ftype (function (integer)) get-node-pairs))
 (defun get-node-pairs (n &key (group-lengths nil))
   ;; check that group-lengths is well built
   (when group-lengths (assert (eq n (apply #'+ group-lengths))))
@@ -345,17 +355,20 @@
 
                      ;; START FILTERING
                      (return-from :pairs-discovery
-                       (loop
-                         for real-contraction in (eval `(cartesian-product
-                                                         ,@top-contractions))
-                         collect
-                         (block :filter-real-contractions
-                           (progn
-                             ;; photons say: repeated letters must go!
-                             (let ((letters (flatten-list real-contraction)))
-                               (when (symbols-repeated-p letters)
-                                 (return-from :filter-real-contractions)))
-                             (list real-contraction :from node-pair-combination :it II)))))
+                       (let (--result)
+                         (mapc (lambda (real-contraction)
+                                 ;; photons say: repeated letters must go!
+                                 (let ((letters (flatten-list real-contraction)))
+                                   (unless (symbols-repeated-p letters)
+                                     (pushnew real-contraction
+                                              --result
+                                              :test-not
+                                              (lambda (x y) (set-difference
+                                                             x y
+                                                             :test #'equal))))))
+                               (eval `(cartesian-product
+                                       ,@top-contractions)))
+                         --result))
                      ))))))
     (remove-if #'null results)
     ))
@@ -485,7 +498,7 @@
 
 (defun latex (tensor-expression &optional (stream nil))
   (case (car tensor-expression)
-    ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
                                                      (cdr tensor-expression))))
-    ('* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))

@@ -262,7 +262,6 @@ We have to restrict the possible pairs according to:
 
 
 #+begin_src lisp :tangle gunu.lisp
-(declaim (ftype (function (integer)) get-node-pairs))
 (defun get-node-pairs (n &key (group-lengths nil))
   ;; check that group-lengths is well built
   (when group-lengths (assert (eq n (apply #'+ group-lengths))))
