@@ -694,6 +694,62 @@ And it should of course work for higher dimensional tensors.
 #+RESULTS:
 : NIL
 
+Now the question in everyones minds is, wether or not
+we can restrict ourselves only to the contractions to apply
+the symmetries.
+
+
+The following is a text depiction of a diagram where
+we have numbered the nodes from 1 to 5.
+#+begin_example
+                             hh
+                            V              
+                             pp            
+                     1                    2
+                     x--------------------x
+                    ---                  ---
+                   /   \                /   \
+                  /     \              /     \
+                  |     |              |     |
+  .       .       ^     v              ^     v
+   .     .        |     |              |     |
+    v   ^         \     /              \     /
+     . .           \   /                \   /
+      .             ---                  ---
+      o==============o                 ===o===
+      3              4                    5
+             T                               T
+              2                               1
+                                              
+#+end_example
+
+In this case, the contractions will be
+#+begin_src lisp :eval no
+((h1 h4) (p1 p4) (h2 h5) (p2 p5))
+#+end_src
+
+The equivalent diagram linking through bubbles
+nodes \( (4, 2) \) and \( (1, 5) \)
+would be writted as
+#+begin_src lisp :eval no
+((h1 h5) (p1 p5) (h2 h4) (p2 p4))
+#+end_src
+
+If we are to apply the node symmetry of \( V \)
+to this contraction set we will get
+the original contraction as depicted in the diagram
+and thus it is enough to apply the symmetries
+to the contractions.
+
+Indeed, the contractions are the differntiating
+element that distinguish diagrams, it is therefore
+understandable that through them we can also identify
+equal diagrams.
+
+
+
+
+
 * Contractions
 
 Contraction rules should be something that tells us
