@@ -237,7 +237,6 @@
                    (list a b)))))
            contraction-rules)))
 
-;;todo this is not good enough
 (defun is-connected-contraction (pair-combination node-pairs &key group-lengths)
   (let* ((psums (mapcar (lambda (ls) (apply #'+ ls))
                         (maplist #'identity (reverse group-lengths))))
@@ -257,9 +256,7 @@
       (block :main-routine
         (loop
           for node-permutation in (all-permutations node-indices)
-          do (let ((db (make-hash-table))
-                   path
-                   node last-node)
+          do (let (path)
                (block :current-permutation
                  (tagbody
                     (loop for node in node-permutation
@@ -287,41 +284,44 @@
                     (length (flatten-list (cdr target))))
                  2))
          (all-nodes (reduce #'append (mapcar #'cdr tensor-list)))
-         (space-size (length all-nodes))
-         (group-lengths (mapcar #'length (cdr tensor-list)))
+         (group-lengths (mapcar (lambda (tsr) (length (cdr tsr))) tensor-list))
          ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
-         (node-pairs (get-node-pairs space-size
+         (node-pairs (get-node-pairs (length all-nodes)
                                      :group-lengths
                                      (unless *allow-self-contractions*
                                        group-lengths)))
-         (which-pairs (eval
-                       `(ordered-subsets-with-repetition ,N-c
-                                                         ,(length node-pairs))))
+         (node-pair-combinations
+           (eval `(ordered-subsets-with-repetition ,N-c
+                                                   ,(length node-pairs))))
          results)
     (logger "~&============")
     (logger "~&N-contractions: ~s" N-c)
     (logger "~&all nodes: ~s" all-nodes)
     (logger "~&all node-pairs: ~s" node-pairs)
-    (logger "~&all combinations (of pairs) : ~s" which-pairs)
+    (logger "~&all combinations (of pairs) : ~s" node-pair-combinations)
     (setq results
           (labels
               ((indexing (indices lst) (mapcar (lambda (i) (nth i lst))
                                                indices)))
             (loop
-              for pair-indices in which-pairs
+              for node-pair-combination in node-pair-combinations
               nconcing
               (block :pairs-discovery
                 (tagbody
-                   (let* ((pairs (indexing pair-indices node-pairs))
+                   (let* ((pairs (indexing node-pair-combination node-pairs))
                           (nodes (mapcar (lambda (x)
                                            (indexing x all-nodes)) pairs))
-                         top-contractions)
+                          (II 0)
+                          top-contractions)
                      (logger "~&combination: ~s pairs: ~s [~s]"
-                             pair-indices
+                             node-pair-combination
                              pairs nodes)
-                     ;; todo
+                     (incf II)
                      (when *only-connected-diagrams*
-                       nil)
+                       (unless (is-connected-contraction node-pair-combination node-pairs
+                                                         :group-lengths
+                                                         group-lengths)
+                         (return-from :pairs-discovery)))
                      (loop for pair in pairs
                            collect
                            (let* ((vertices (indexing pair all-nodes))
@@ -355,7 +355,7 @@
                              (let ((letters (flatten-list real-contraction)))
                                (when (symbols-repeated-p letters)
                                  (return-from :filter-real-contractions)))
-                             real-contraction))))
+                             (list real-contraction :from node-pair-combination :it II)))))
                      ))))))
     (remove-if #'null results)
     ))

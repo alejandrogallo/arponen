@@ -67,14 +67,29 @@
                 (4 5) (4 6) (4 7) (4 8)
                 (5 6) (5 7) (5 8)))
 
+;;   V     T1    T2
+;; (0 1 || 2 || 3 4)
+(assert-equal (get-node-pairs 5 :group-lengths '(2 1 2))
+              '((0 2) (0 3) (0 4)
+                (1 2) (1 3) (1 4)
+                (2 3) (2 4)))
+
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))
+
+(assert-equal (ordered-subsets-with-repetition 2 3)
+              '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+
 (assert-equal (ordered-subsets-with-repetition 2 5)
               '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
                 (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4)))
+
 (assert-equal (ordered-subsets-with-repetition 3 3)
               '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
                 (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2)))
+
+;; here we would need 4 contractions between a set of
+;; 4 pairs of nodes
 (assert-equal (ordered-subsets-with-repetition 4 4)
               '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
                 (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
@@ -240,7 +255,9 @@
                   ((a b) (c k) . ((b c)))
                   ((i a) (g l) . ((i l)))
                   ((i j) (k l) . ((i l)))
-                  ((i a) (b j) . ((i j) (a b))))))
+                  ((i a) (b j) . ((i j) (a b)))
+                  ((a i) (j b) . nil)
+                  ((a b) (c d) . ((b c))))))
     (loop for (a b . result) in values
           do (assert (equal (compatible-contractions a b
                                                      :orbital-spaces spaces
@@ -292,6 +309,26 @@
     ;; this is less quick, it goes from 1 to 2 twice and then goes to 3
     (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
                                       node-pairs :group-lengths '(1 3 5)))))
+
+(let ((orbital-spaces '((H i j k l m n o h1 h2 h3 h4 h5)
+                        (P a b c d e f g p1 p2 p3 p4 p5)))
+      (contraction-rules '(((H H) 0 1)
+                           ((P P) 1 0))))
+  (labels ((with-rules (target tensor)
+             (find-contractions-in-product-by-number-of-legs target tensor
+                                                             :orbital-spaces
+                                                             orbital-spaces
+                                                             :contraction-rules
+                                                             contraction-rules))
+           (with-rules-c (target tensor) (let ((*only-connected-diagrams* t)
+                                               (*allow-self-contractions* nil))
+                                           (with-rules target tensor))))
+    (with-rules-c '(_ (P H) #+nil(P H))
+      '((V (h1 p1) (h2 p2))
+        (T (p3 h3) (p4 h4))
+        (T (p5 h5))))
+
+    ))
 
 (let ((orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)

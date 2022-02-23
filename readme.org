@@ -1,4 +1,4 @@
-#+TODO: EXPLAIN CLEAN | DONE
+#+TODO: TODO EXPLAIN CLEAN | DONE
 * Todo [16%]
 
 - [ ] create the unit tensor operator and check that it plays well
@@ -39,6 +39,8 @@ following representation:
 /              \
 #+end_example
 
+** Types
+
 In Lisp, we will represent a short list of objects in the following
 manner:
 
@@ -50,6 +52,29 @@ manner:
   #+begin_src lisp
   ((contraction (point-1 point-2)) (tensor-product))
   #+end_src
+
+These conceps are simply represented as simple lisp predicates
+as follows
+#+begin_src lisp :tangle gunu.lisp
+(defun contraction? (expr)
+  (and (listp expr)
+       (listp (car expr))
+       (eq (caar expr) 'contraction)
+       ;; body
+       (listp (cadr expr))))
+
+(defun tensor? (expr)
+  (and (listp expr)
+       (listp (cadr expr))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert (contraction? '((contraction ((a b) (c d))) nil)))
+(assert (contraction? '((contraction nil) ((t (a i) (b j))))))
+(assert (tensor? '(t (a i) (b j))))
+(assert (tensor? '(1 nil)))
+(assert (tensor? '(0 nil)))
+#+end_src
 
 
 * Prolog
@@ -807,6 +832,7 @@ gets applied.
 ** Contraction discovery
 
 
+*** Compatible contractions
 This routing finds the possible contractions between two nodes.
 One could think that one should create all combinations
 of legs that belong to the node and then check according to the
@@ -882,29 +908,7 @@ contraction rules.
                             result)))))
 #+end_src
 
-
-In this routine magic happens.
-So we have a target tensor with
-  N_t operators
-and some product of tensors with N_i operators each.
-The number of contractions should be N_c,
-so filters for the number of contractions are
-
-  N_c = (Σ_i N_i) - N_t
-
-If we need N_c contractions, we can get up to
-N_c pairs of indices, where every index has a single
-contraction. Therefore we need all ORDERED
-subsets of length up to N_c
-
-
-Here we apply the norm simply
-Find contractions in a product.
-Some filters used are the number of contractions
-
-#+begin_example
-     2 * N-c = Sum (i) legs(product) - legs(target)
-#+end_example
+*** Checking for connectedness
 
 To calculate if a diagram is connected, it is not
 enough to check if the contractions touch all diagrams,
@@ -953,7 +957,6 @@ Therefore, we can simply
                ))))
     ))
 #+end_src
-
 #+begin_src lisp :tangle t.lisp
 (macrolet ((! (&rest pts)
              `(mapcar (lambda (p)
@@ -980,6 +983,30 @@ Therefore, we can simply
     (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
                                       node-pairs :group-lengths '(1 3 5)))))
 #+end_src
+
+*** Finding contractions by number of legs
+In this routine magic happens.
+So we have a target tensor with
+  N_t operators
+and some product of tensors with N_i operators each.
+The number of contractions should be N_c,
+so filters for the number of contractions are
+
+  N_c = (Σ_i N_i) - N_t
+
+If we need N_c contractions, we can get up to
+N_c pairs of indices, where every index has a single
+contraction. Therefore we need all ORDERED
+subsets of length up to N_c
+
+
+Here we apply the norm simply
+Find contractions in a product.
+Some filters used are the number of contractions
+
+#+begin_example
+     2 * N-c = Sum (i) legs(product) - legs(target)
+#+end_example
 
 #+begin_src lisp :tangle gunu.lisp
 (defun find-contractions-in-product-by-number-of-legs
@@ -1051,17 +1078,20 @@ Therefore, we can simply
 
                      ;; START FILTERING
                      (return-from :pairs-discovery
-                       (loop
-                         for real-contraction in (eval `(cartesian-product
-                                                         ,@top-contractions))
-                         collect
-                         (block :filter-real-contractions
-                           (progn
-                             ;; photons say: repeated letters must go!
-                             (let ((letters (flatten-list real-contraction)))
-                               (when (symbols-repeated-p letters)
-                                 (return-from :filter-real-contractions)))
-                             (list real-contraction :from node-pair-combination :it II)))))
+                       (let (--result)
+                         (mapc (lambda (real-contraction)
+                                 ;; photons say: repeated letters must go!
+                                 (let ((letters (flatten-list real-contraction)))
+                                   (unless (symbols-repeated-p letters)
+                                     (pushnew real-contraction
+                                              --result
+                                              :test-not
+                                              (lambda (x y) (set-difference
+                                                             x y
+                                                             :test #'equal))))))
+                               (eval `(cartesian-product
+                                       ,@top-contractions)))
+                         --result))
                      ))))))
     (remove-if #'null results)
     ))
@@ -1087,13 +1117,56 @@ Let us illustrage this function with some tests
            (with-rules-c (target tensor) (let ((*only-connected-diagrams* t)
                                                (*allow-self-contractions* nil))
                                            (with-rules target tensor))))
-    (with-rules-c '(_ (P H) #+nil(P H))
+    (with-rules-c '(_ (P H) (P H))
       '((V (h1 p1) (h2 p2))
         (T (p3 h3) (p4 h4))
         (T (p5 h5))))
 
     ))
+
+'((1 (P2 P5) (H2 H4) (H1 H3) (P1 P3))
+  (2 (H2 H5) (P2 P4) (H1 H3) (P1 P3))
+  (3 (H2 H5) (P2 P5) (H1 H3) (P1 P3))
+  (4 (P2 P5) (H2 H3) (H1 H4) (P1 P3))
+  (5 (H2 H5) (P2 P3) (P1 P4) (H1 H3))
+  (6 (P2 P5) (H2 H4) (P1 P4) (H1 H3))
+  (7 (H2 H5) (P2 P4) (H1 H4) (P1 P3))
+  (8 (H2 H5) (P2 P5) (P1 P4) (H1 H3))
+  (9 (H2 H5) (P2 P5) (H1 H4) (P1 P3))
+  (10 (P2 P4) (H2 H3) (H1 H5) (P1 P3))
+  (11 (H2 H4) (P2 P3) (P1 P5) (H1 H3))
+  (12 (P2 P5) (H2 H3) (H1 H5) (P1 P3))
+  (13 (H2 H5) (P2 P3) (P1 P5) (H1 H3))
+  (14 (H2 H4) (P2 P4) (P1 P5) (H1 H3))
+  (15 (H2 H4) (P2 P4) (H1 H5) (P1 P3))
+  (16 (P2 P5) (H2 H4) (H1 H5) (P1 P3))
+  (17 (H2 H5) (P2 P4) (P1 P5) (H1 H3))
+  (18 (P2 P5) (H2 H3) (H1 H4) (P1 P4))
+  (19 (H2 H5) (P2 P3) (H1 H4) (P1 P4))
+  (20 (H2 H5) (P2 P5) (H1 H4) (P1 P4))
+  (21 (H2 H3) (P2 P3) (P1 P5) (H1 H4))
+  (22 (H2 H3) (P2 P3) (H1 H5) (P1 P4))
+  (23 (P2 P4) (H2 H3) (P1 P5) (H1 H4))
+  (24 (H2 H4) (P2 P3) (H1 H5) (P1 P4))
+  (25 (P2 P5) (H2 H3) (H1 H5) (P1 P4))
+  (26 (H2 H5) (P2 P3) (P1 P5) (H1 H4))
+  (27 (P2 P5) (H2 H4) (H1 H5) (P1 P4))
+  (28 (H2 H5) (P2 P4) (P1 P5) (H1 H4))
+  (29 (H2 H3) (P2 P3) (H1 H5) (P1 P5))
+  (30 (P2 P4) (H2 H3) (H1 H5) (P1 P5))
+  (31 (H2 H4) (P2 P3) (H1 H5) (P1 P5))
+  (32 (H2 H4) (P2 P4) (H1 H5) (P1 P5)))
+
+,#+nil
+(defun find-duplicates (lst)
+  (mapcar (lambda (x)
+            (count x lst
+                   :test-not (lambda (-x -y)
+                           (set-difference -x -y :test #'equal))))
+          lst))
 #+end_src
+
+*** Finding contractions by target properties
 
 #+begin_src lisp :tangle gunu.lisp
 (defun find-contractions-in-product-by-target
@@ -1375,9 +1448,9 @@ TODO: Explain the concept of partitioning and the format
 
 (defun latex (tensor-expression &optional (stream nil))
   (case (car tensor-expression)
-    ('+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
                                                      (cdr tensor-expression))))
-    ('* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))
 
 #+end_src
@@ -1397,4 +1470,91 @@ TODO actually to the tests
   (latex (partition-tensor '(V (p q) (r s))
                     :orbital-spaces orbital-spaces
                     :partition partition)))
+#+end_src
+
+** TODO Dot diagrams
+
+This section defines some utilities to export the diagrams to dot
+format so that one can have some rough estimates for the diagrammatic
+form of the terms.
+
+#+begin_src lisp
+(defpackage :gunu/dot
+  (:use :cl))
+(in-package :gunu/dot)
+
+(unless (probe-file "penis")
+  (sb-posix:mkdir "penis" #x777)
+  )
+(defun symb (&rest args)
+  (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
+
+(defun subgraph (name &rest contents)
+  (format nil "~&subgraph cluster_~a {~%~{~t~a~^~%~}~%}" name contents))
+
+(defun declare-legs (tensor)
+  (format nil "~{~a~^, ~} [shape = point]"
+          (mapcar (lambda (x) (symb (car tensor) x))
+                  (cdr tensor))))
+
+(defun contraction-to-graphviz (contraction)
+  ;;(assert (cl-user::contraction? contraction))
+  (destructuring-bind ((contraction-symbol conts . nil) prods . nil) contraction
+    (loop
+      for tensor in prods
+      collect
+      (let ((tname (car tensor)))
+        (case tname
+          ((v t2) (subgraph tname
+                       (declare-legs tensor)))
+          (t1 (format nil "~&~tt1 [shape = box, height = 0.02, label=\"\""))))))
+  )
+(contraction-to-graphviz
+ '((contraction ((h1 h5) (p1 p5) (h2 h3)))
+   ((V (h1 h2 ) (p1 p2))
+    (t1 (p3 h3))
+    (t2 (p4 h4) (p5 h5)))))
+#+end_src
+
+An example output should be
+
+#+begin_src dot
+graph {
+  rankdir = TB
+  {
+    node [width = .3]
+    rank = same
+    heaven1, heaven2, heaven3, heaven4 [shape = none, label="", height=.01]
+  }
+
+  subgraph cluster_v {
+    rank = same
+    vleft, vright [shape = "point", label=""];
+    {
+      vleft -- vright [style = dashed]
+    }
+  }
+
+  subgraph cluster_t2 {
+    rank = same
+    style = filled
+    t2left, t2right [shape = "point", label=""];
+  }
+
+  t1 [shape = "box", height=.02, label=""]
+
+  //
+  // contractions
+  //
+  vleft -- t2left [dir = forward]
+  vleft -- t2left [dir = back]
+
+  vright -- t1 [dir=back]
+
+  heaven3 -- t2right [dir = forward, label="i"]
+  heaven2 -- t2right [dir = back, label="a"]
+  heaven4 -- t1 [dir = forward, label="j"]
+  heaven1 -- vright [dir = back, label="b"]
+
+}
 #+end_src
