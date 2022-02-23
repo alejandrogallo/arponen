@@ -577,6 +577,123 @@ if a given diagram is linked or not.
                                            (P b a))))))
 #+end_src
 
+* Symmetries
+
+This section discusses how to implement and encode symmetries of the
+diagrams.
+
+For instance, all operators in quantum chemistry
+have a node symmetry whereby exchanging the positions of the electrons
+the tensor remains unchanged. For instance, for the coulomb integrals
+\( V^{pq}_{rs} \) this is encoded in the relation
+\begin{equation*}
+V^{pq}_{rs} = V^{qp}_{sr}
+\end{equation*}
+and from the second-quantization point of view this is also
+transposing a pair number of times the \(q\)-operators.
+
+We can encode these properties in lisp by just
+saying by which replacements the tensors remain unchanged,
+for instance for
+#+begin_example
+(V (p s) (q r))
+#+end_example
+we would write as symmetries
+#+begin_src lisp :eval no
+;; main two-body node symmetry
+((p . q) (s . r))
+#+end_src
+
+and we can write a simple function to apply this symmetry to tensor nodes
+#+begin_src lisp :tangle gunu.lisp
+(defun apply-symmetry-to-nodes (symmetry-equivalence object)
+  (let* ((temp-symbols (mapcar (lambda (x) (gensym)) symmetry-equivalence))
+         (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
+                                     symmetry-equivalence temp-symbols))
+         (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
+                                      symmetry-equivalence temp-symbols)))
+    (sublis equiv-backward
+            (sublis symmetry-equivalence
+                    (sublis equiv-forward object)))))
+#+end_src
+
+And in fact  it is a very general function that works on every
+tree thanks to =sublis=:
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (apply-symmetry-to-nodes '((P . Q) (S . R))
+                                       '((P S) (Q R)))
+              ;;
+              '((Q R) (P S)))
+
+(assert-equal (apply-symmetry-to-nodes '((a . b) (i . j))
+                                       '(T (a i) (b j) (c k)))
+              ;;
+              '(T (B J) (A I) (C K)))
+
+(let ((contraction '((contraction (P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                     (V (h1 p1) (h2 p2))
+                     (T (p3 h3) (p4 h4))
+                     (T (p5 h5)))))
+  (destructuring-bind ((cts _ a b c) v tabij tai . nil) (apply-symmetry-to-nodes
+                                               '((p3 . p4) (h3 . h4))
+                                               contraction)
+    (assert-equal tabij '(T (p4 h4) (p3 h3)))
+    (assert-equal tai '(t (p5 h5)))
+    (assert-equal v '(V (h1 p1) (h2 p2)))
+    (assert-equal (list a b c) '((h2 h4) (h1 h3) (p1 p4)))))
+
+
+(assert-equal (apply-symmetry-to-nodes '((p . q))
+                                       '(V (P s) (q r)))
+              ;;
+              '(V (Q S) (P R)))
+#+end_src
+
+Mostly however it is quite tedious to write these equivalences
+by hand so we can use the =make-node-symmetry= function to
+create a well-named symmetry equivalence.
+
+#+begin_src lisp :tangle gunu.lisp
+(defun make-node-symmetry (nodes)
+  (let* ((n (length nodes))
+         (node-combinations
+           (loop for fst below n
+                 append (loop for snd from (1+ fst) below n
+                              collect (list fst snd)))))
+    (mapcar (lambda (combi)
+              (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
+                                                 combi))))
+            node-combinations)))
+#+end_src
+
+And it should of course work for higher dimensional tensors.
+
+#+begin_src lisp :tangle t.lisp
+;; fail gracefully for one dimensional diagrams
+(assert! (make-node-symmetry '((p q))))
+
+(assert-equal (make-node-symmetry '((p s) (q r)))
+              '(((P . Q) (S . R))))
+
+;; and it also works for n-dimensional nodal tensors
+(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3)))
+              '(((P1 . P2) (S1 . S2)) ;; node 1 <> node 2
+                ((P1 . P3) (S1 . S3)) ;; node 1 <> node 3
+                ((P2 . P3) (S2 . S3)))) ;; node 2 <> node 3
+
+(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3) (p4 s4)))
+              '(((P1 . P2) (S1 . S2))
+                ((P1 . P3) (S1 . S3))
+                ((P1 . P4) (S1 . S4))
+                ((P2 . P3) (S2 . S3))
+                ((P2 . P4) (S2 . S4))
+                ((P3 . P4) (S3 . S4))))
+#+end_src
+
+#+RESULTS:
+: NIL
+
 * Contractions
 
 Contraction rules should be something that tells us
@@ -1556,4 +1673,35 @@ graph {
   heaven1 -- vright [dir = back, label="b"]
 
 }
+#+end_src
+
+** TODO SVG
+#+begin_src lisp
+,#+quicklisp (ql:quickload 'cl-svg)
+,#+asdf (asdf:load-system 'cl-svg)
+
+(in-package :cl-svg)
+
+
+(defvar test-contraction nil)
+(setq test-contraction
+  '((contraction ((h1 h3) (h2 h4) (p1 p2) (p2 p5)))
+    (V (h1 p1) (h2 p2))
+    (T1 (p3 h3))
+    (T2 (p4 h4) (p5 h3))))
+
+(defun svg-diagram (contraction &key (node-length 50))
+  )
+
+(let* ((scene (make-svg-toplevel 'svg-1.1-toplevel :height 250 :width 250)))
+  (draw scene (:rect :x 0 :y 0 :height 250 :width 250) :fill "#CCCCCC")
+  (text scene (:x 25 :y 25) "this an tahtt and penis"
+    (tspan (:fill "red" :font-weight "bold" :font-size "2em") "circle"))
+  (draw scene (:circle :cx 200 :cy 20 :r 10) :fill "blue")
+  (draw scene (:circle :cx 100 :cy 20 :r 10) :fill "yellow")
+  (draw scene (:circle :cx 100 :cy 100 :r 10) :fill "red")
+  (draw scene (:circle :cx 200 :cy 100 :r 10) :fill "white")
+
+  (with-open-file (s #p"test.svg" :direction :output :if-exists :supersede)
+    (stream-out s scene)))
 #+end_src

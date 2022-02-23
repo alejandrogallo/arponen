@@ -172,6 +172,54 @@
                                          '((H i j)
                                            (P b a))))))
 
+(assert-equal (apply-symmetry-to-nodes '((P . Q) (S . R))
+                                       '((P S) (Q R)))
+              ;;
+              '((Q R) (P S)))
+
+(assert-equal (apply-symmetry-to-nodes '((a . b) (i . j))
+                                       '(T (a i) (b j) (c k)))
+              ;;
+              '(T (B J) (A I) (C K)))
+
+(let ((contraction '((contraction (P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                     (V (h1 p1) (h2 p2))
+                     (T (p3 h3) (p4 h4))
+                     (T (p5 h5)))))
+  (destructuring-bind ((cts _ a b c) v tabij tai . nil) (apply-symmetry-to-nodes
+                                               '((p3 . p4) (h3 . h4))
+                                               contraction)
+    (assert-equal tabij '(T (p4 h4) (p3 h3)))
+    (assert-equal tai '(t (p5 h5)))
+    (assert-equal v '(V (h1 p1) (h2 p2)))
+    (assert-equal (list a b c) '((h2 h4) (h1 h3) (p1 p4)))))
+
+
+(assert-equal (apply-symmetry-to-nodes '((p . q))
+                                       '(V (P s) (q r)))
+              ;;
+              '(V (Q S) (P R)))
+
+;; fail gracefully for one dimensional diagrams
+(assert! (make-node-symmetry '((p q))))
+
+(assert-equal (make-node-symmetry '((p s) (q r)))
+              '(((P . Q) (S . R))))
+
+;; and it also works for n-dimensional nodal tensors
+(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3)))
+              '(((P1 . P2) (S1 . S2)) ;; node 1 <> node 2
+                ((P1 . P3) (S1 . S3)) ;; node 1 <> node 3
+                ((P2 . P3) (S2 . S3)))) ;; node 2 <> node 3
+
+(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3) (p4 s4)))
+              '(((P1 . P2) (S1 . S2))
+                ((P1 . P3) (S1 . S3))
+                ((P1 . P4) (S1 . S4))
+                ((P2 . P3) (S2 . S3))
+                ((P2 . P4) (S2 . S4))
+                ((P3 . P4) (S3 . S4))))
+
 (assert-equal (stich-together '(a d)
                               '(a b) '(c d))
               '(c b))

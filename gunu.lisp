@@ -150,6 +150,27 @@
                   tt tensor
                   :orbital-spaces orbital-spaces))))
 
+(defun apply-symmetry-to-nodes (symmetry-equivalence object)
+  (let* ((temp-symbols (mapcar (lambda (x) (gensym)) symmetry-equivalence))
+         (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
+                                     symmetry-equivalence temp-symbols))
+         (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
+                                      symmetry-equivalence temp-symbols)))
+    (sublis equiv-backward
+            (sublis symmetry-equivalence
+                    (sublis equiv-forward object)))))
+
+(defun make-node-symmetry (nodes)
+  (let* ((n (length nodes))
+         (node-combinations
+           (loop for fst below n
+                 append (loop for snd from (1+ fst) below n
+                              collect (list fst snd)))))
+    (mapcar (lambda (combi)
+              (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
+                                                 combi))))
+            node-combinations)))
+
 (defun stich-together (contraction node-a node-b)
   ;; contraction-assoc: ((c0 . x) (c1 . x))
   (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
