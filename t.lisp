@@ -1,9 +1,3 @@
-(assert (contraction? '((contraction ((a b) (c d))) nil)))
-(assert (contraction? '((contraction nil) ((t (a i) (b j))))))
-(assert (tensor? '(t (a i) (b j))))
-(assert (tensor? '(1 nil)))
-(assert (tensor? '(0 nil)))
-
 ;; todo define packages and all that
 (load "gunu.lisp")
 
@@ -25,6 +19,12 @@
   `(assert-condition ,expr ,condition-type
                      (m) (assert-equal (format nil "~a" m)
                                        ,error-message)))
+
+(assert (contraction? '((contraction ((a b) (c d))) nil)))
+(assert (contraction? '((contraction nil) ((t (a i) (b j))))))
+(assert (tensor? '(t (a i) (b j))))
+(assert (tensor? '(1 nil)))
+(assert (tensor? '(0 nil)))
 
 (assert-equal (cartesian-product (H P) (a b c) (1 2 3 5))
               '((H A 1) (H A 2) (H A 3) (H A 5)

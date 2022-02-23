@@ -11,6 +11,35 @@
 - [ ] compile with gcl
 - [ ] test with clasp (it takes too long to compile in nixos)
 
+* Prolog
+
+#+begin_src lisp :tangle t.lisp
+;; todo define packages and all that
+(load "gunu.lisp")
+
+(defmacro assert-equal (left right)
+  `(assert (equal ,left ,right)))
+
+(defmacro assert! (expr &rest args)
+  `(assert (not ,expr) ,@args))
+
+(defmacro assert!-equal (left right)
+  `(assert (not (equal ,left ,right))))
+
+(defmacro assert-condition (expr condition-type &rest body)
+  `(handler-case (progn ,expr
+                        (assert nil))
+     (,condition-type ,@body)))
+
+(defmacro assert-errmsg (expr condition-type error-message)
+  `(assert-condition ,expr ,condition-type
+                     (m) (assert-equal (format nil "~a" m)
+                                       ,error-message)))
+#+end_src
+
+#+RESULTS:
+: ASSERT-CONDITION
+
 * Nomenclature
 
 In order to read better the code and organize it better, we
@@ -76,35 +105,6 @@ as follows
 (assert (tensor? '(0 nil)))
 #+end_src
 
-
-* Prolog
-
-#+begin_src lisp :tangle t.lisp
-;; todo define packages and all that
-(load "gunu.lisp")
-
-(defmacro assert-equal (left right)
-  `(assert (equal ,left ,right)))
-
-(defmacro assert! (expr &rest args)
-  `(assert (not ,expr) ,@args))
-
-(defmacro assert!-equal (left right)
-  `(assert (not (equal ,left ,right))))
-
-(defmacro assert-condition (expr condition-type &rest body)
-  `(handler-case (progn ,expr
-                        (assert nil))
-     (,condition-type ,@body)))
-
-(defmacro assert-errmsg (expr condition-type error-message)
-  `(assert-condition ,expr ,condition-type
-                     (m) (assert-equal (format nil "~a" m)
-                                       ,error-message)))
-#+end_src
-
-#+RESULTS:
-: ASSERT-CONDITION
 
 * Main variables
 
