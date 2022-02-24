@@ -1,10 +1,10 @@
 #+TODO: TODO EXPLAIN CLEAN | DONE
-* Todo [16%]
+* Todo [33%]
 
 - [ ] create the unit tensor operator and check that it plays well
 - [X] create an option to disallow contractions of the tensor with
   itself.
-- [ ] create an option for only allowing linked contractions
+- [X] create an option for only allowing linked contractions
 - [ ] implement symmetry filter:
   Viajb should be the same as Vaibj and so on.
   So the symmetry is a node Vertauschungssymmetrie.
@@ -400,6 +400,7 @@ if a given diagram is linked or not.
 ** Utils
 
 #+begin_src lisp :tangle gunu.lisp
+;; functions taken from uruk
 (defun flatten-list (ls)
   (cond
     ((and (consp ls)
@@ -409,6 +410,29 @@ if a given diagram is linked or not.
           (consp (car ls)))
      `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
     (t ls)))
+
+(defmacro thread-first (var &rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (cons init (cdr f))))))
+    init))
+
+(defmacro thread-last (var &rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (reverse (cons init
+                                                     (reverse (cdr f))))))))
+    init))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(progn
+  (assert (eq '(* (+ x 5) 8)
+              (macroexpand '(thread-first x
+                             (+ 5)
+                             (* 8))))))
 #+end_src
 
 #+begin_src lisp :tangle gunu.lisp
@@ -582,6 +606,7 @@ if a given diagram is linked or not.
 This section discusses how to implement and encode symmetries of the
 diagrams.
 
+** Node symmetry
 For instance, all operators in quantum chemistry
 have a node symmetry whereby exchanging the positions of the electrons
 the tensor remains unchanged. For instance, for the coulomb integrals
@@ -694,14 +719,15 @@ And it should of course work for higher dimensional tensors.
 #+RESULTS:
 : NIL
 
+** Filtering diagrams through contractions
+
 Now the question in everyones minds is, wether or not
 we can restrict ourselves only to the contractions to apply
 the symmetries.
 
-
 The following is a text depiction of a diagram where
 we have numbered the nodes from 1 to 5.
-#+begin_example
+#+begin_src artist
                              hh
                             V              
                              pp            
@@ -721,7 +747,8 @@ we have numbered the nodes from 1 to 5.
              T                               T
               2                               1
                                               
-#+end_example
+#+end_src
+
 
 In this case, the contractions will be
 #+begin_src lisp :eval no
@@ -746,8 +773,69 @@ element that distinguish diagrams, it is therefore
 understandable that through them we can also identify
 equal diagrams.
 
+** Filtering contractions through symmetries
 
+Given a set of diagrams, we should decide
+which ones are equivalent through a set of symmetries and which ones arent.
 
+The obvious way of checking the diagrams is through looping
+through a set of diagrams and a set of symmetries
+and check wether or not they are the same in terms of contractions
+and in the sense of sets through such a function like
+=find-duplicate-set=.
+
+#+begin_src lisp :tangle gunu.lisp
+(defun find-duplicate-set (element lst)
+  (find element lst :test-not (lambda (-x -y)
+                                (set-difference -x -y :test #'equal))))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (find-duplicate-set '((a . b) (c . d))
+                                  '(((c . e) (a . b))
+                                    ((c . d) (a . b))
+                                    ((a . b) (c . d))))
+              '((c . d) (a . b)))
+#+end_src
+
+However, this begs the question of given a set of symmetries
+as discussed so far, wether it is necessary to compute the minimal
+group containing them in order to discover equivalent diagrams.
+
+The symmetry group of a diagram is exactly the product group
+of the individual symmetry groups of every piece of the diagram.
+Which means that in general we should have to compute the product
+group of the symmetry components.
+However, since in general we will look for repeated diagrams
+in a set of contractions that is already been created by
+computing all combinations of contractions, simply computing
+the direct sum of the symmetry sets will be enough
+for these cases.
+
+In conclusion, the suitable function for filtering
+a set of contractions through a set of symmetries (which might
+be a group or not) is:
+
+#+begin_src lisp :tangle gunu.lisp
+(defun filter-contractions-by-symmetries (symmetries contractions)
+  (let ((-contractions (copy-tree contractions)))
+    (do (result seen-contractions)
+        ((null -contractions) result)
+      (let ((c (pop -contractions)))
+        (block :sym-searching
+          ;; go through all symmetries
+          (loop for sym in (cons nil symmetries)
+                do (let ((new-c (apply-symmetry-to-nodes sym c)))
+                     (when (find-duplicate-set new-c seen-contractions)
+                       (push new-c seen-contractions)
+                       (format t "~&~a is the same as ~a by virtue of ~a"
+                               c new-c sym)
+                       (return-from :sym-searching))))
+          ;; if I got here, then c is a new contraction
+          ;; never seen before
+          (push c result)
+          (push c seen-contractions))))))
+#+end_src
 
 
 * Contractions
@@ -1002,8 +1090,6 @@ gets applied.
 : NIL
 
 ** Contraction discovery
-
-
 *** Compatible contractions
 This routing finds the possible contractions between two nodes.
 One could think that one should create all combinations
@@ -1272,10 +1358,11 @@ Some filters used are the number of contractions
 #+RESULTS:
 : FIND-CONTRACTIONS-IN-PRODUCT-BY-NUMBER-OF-LEGS
 
+**** Case study: Vijab with T1 and T2 coupling to singles excitations
+
 Let us illustrage this function with some tests
 
 #+begin_src lisp :tangle t.lisp
-
 (let ((orbital-spaces '((H i j k l m n o h1 h2 h3 h4 h5)
                         (P a b c d e f g p1 p2 p3 p4 p5)))
       (contraction-rules '(((H H) 0 1)
@@ -1293,9 +1380,9 @@ Let us illustrage this function with some tests
       '((V (h1 p1) (h2 p2))
         (T (p3 h3) (p4 h4))
         (T (p5 h5))))
-
     ))
 
+,#+(or)
 '((1 (P2 P5) (H2 H4) (H1 H3) (P1 P3))
   (2 (H2 H5) (P2 P4) (H1 H3) (P1 P3))
   (3 (H2 H5) (P2 P5) (H1 H3) (P1 P3))
@@ -1329,13 +1416,61 @@ Let us illustrage this function with some tests
   (31 (H2 H4) (P2 P3) (H1 H5) (P1 P5))
   (32 (H2 H4) (P2 P4) (H1 H5) (P1 P5)))
 
-,#+nil
-(defun find-duplicates (lst)
+(defun count-duplicates (lst)
   (mapcar (lambda (x)
             (count x lst
                    :test-not (lambda (-x -y)
                            (set-difference -x -y :test #'equal))))
           lst))
+
+
+(let* ((tensors
+         '((V (h1 p1) (h2 p2))
+           (T (p3 h3) (p4 h4))
+           (T (p5 h5))))
+       (symmetries (thread-last tensors
+                                (mapcar #'cdr)
+                                (mapcar #'make-node-symmetry)
+                                (reduce #'union)))
+       (contractions
+         '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+           ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P4) (H1 H3)) ((P2 P5) (H2 H4) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P4) (H1 H4) (P1 P3)) ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P5) (H1 H4) (P1 P3)) ((P2 P4) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H4) (P2 P3) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P5) (H1 H3)) ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+           ((H2 H4) (P2 P4) (H1 H5) (P1 P3)) ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P4) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P4))
+           ((H2 H5) (P2 P3) (H1 H4) (P1 P4)) ((H2 H5) (P2 P5) (H1 H4) (P1 P4))
+           ((H2 H3) (P2 P3) (P1 P5) (H1 H4)) ((H2 H3) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P4) (H2 H3) (P1 P5) (H1 H4)) ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P5) (H2 H3) (H1 H5) (P1 P4)) ((H2 H5) (P2 P3) (P1 P5) (H1 H4))
+           ((P2 P5) (H2 H4) (H1 H5) (P1 P4)) ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+           ((H2 H3) (P2 P3) (H1 H5) (P1 P5)) ((P2 P4) (H2 H3) (H1 H5) (P1 P5))
+           ((H2 H4) (P2 P3) (H1 H5) (P1 P5)) ((H2 H4) (P2 P4) (H1 H5) (P1 P5)))))
+
+  ;; there are no duplicates
+  (assert (every (lambda (x) (eq x 1)) (count-duplicates contractions)))
+  (assert-equal  symmetries '(((P3 . P4) (H3 . H4)) ((H1 . H2) (P1 . P2))))
+  (let ((sym-conts (filter-contractions-by-symmetries symmetries contractions)))
+    (assert-equal sym-conts
+                  '(#| 32 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P5))
+                    #| 31 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P5))
+                    #| 28 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+                    #| 24 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+                    #| 23 |# ((P2 P4) (H2 H3) (P1 P5) (H1 H4))
+                    #| 17 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H3))
+                    #| 16 |# ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+                    #| 15 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P3))
+                    #| 14 |# ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+                    #| 12 |# ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+                    #| 8 |# ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+                    #| 5 |# ((H2 H5) (P2 P3) (P1 P4) (H1 H3))
+                    #| 4 |# ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                    #| 3 |# ((H2 H5) (P2 P5) (H1 H3) (P1 P3))
+                    #| 2 |# ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+                    #| 1 |# ((P2 P5) (H2 H4) (H1 H3) (P1 P3))))))
 #+end_src
 
 *** Finding contractions by target properties

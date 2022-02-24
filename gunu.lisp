@@ -84,6 +84,7 @@
     `(let ((,init-var 0))
        ,body)))
 
+;; functions taken from uruk
 (defun flatten-list (ls)
   (cond
     ((and (consp ls)
@@ -93,6 +94,21 @@
           (consp (car ls)))
      `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
     (t ls)))
+
+(defmacro thread-first (var &rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (cons init (cdr f))))))
+    init))
+
+(defmacro thread-last (var &rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (reverse (cons init
+                                                     (reverse (cdr f))))))))
+    init))
 
 (defun symbols-repeated-p (lst)
   (let ((symbols (flatten-list lst))
@@ -170,6 +186,29 @@
               (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
                                                  combi))))
             node-combinations)))
+
+(defun find-duplicate-set (element lst)
+  (find element lst :test-not (lambda (-x -y)
+                                (set-difference -x -y :test #'equal))))
+
+(defun filter-contractions-by-symmetries (symmetries contractions)
+  (let ((-contractions (copy-tree contractions)))
+    (do (result seen-contractions)
+        ((null -contractions) result)
+      (let ((c (pop -contractions)))
+        (block :sym-searching
+          ;; go through all symmetries
+          (loop for sym in (cons nil symmetries)
+                do (let ((new-c (apply-symmetry-to-nodes sym c)))
+                     (when (find-duplicate-set new-c seen-contractions)
+                       (push new-c seen-contractions)
+                       (format t "~&~a is the same as ~a by virtue of ~a"
+                               c new-c sym)
+                       (return-from :sym-searching))))
+          ;; if I got here, then c is a new contraction
+          ;; never seen before
+          (push c result)
+          (push c seen-contractions))))))
 
 (defun stich-together (contraction node-a node-b)
   ;; contraction-assoc: ((c0 . x) (c1 . x))

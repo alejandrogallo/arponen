@@ -104,6 +104,12 @@
                 (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
 
+(progn
+  (assert (eq '(* (+ x 5) 8)
+              (macroexpand '(thread-first x
+                             (+ 5)
+                             (* 8))))))
+
 (let ((vals '(((a b c) . nil)
               ((a (a) b c) . t)
               ((((a)) ((b e f g)) ((((b))))) . t))))
@@ -219,6 +225,12 @@
                 ((P2 . P3) (S2 . S3))
                 ((P2 . P4) (S2 . S4))
                 ((P3 . P4) (S3 . S4))))
+
+(assert-equal (find-duplicate-set '((a . b) (c . d))
+                                  '(((c . e) (a . b))
+                                    ((c . d) (a . b))
+                                    ((a . b) (c . d))))
+              '((c . d) (a . b)))
 
 (assert-equal (stich-together '(a d)
                               '(a b) '(c d))
@@ -381,9 +393,9 @@
       '((V (h1 p1) (h2 p2))
         (T (p3 h3) (p4 h4))
         (T (p5 h5))))
-
     ))
 
+#+(or)
 '((1 (P2 P5) (H2 H4) (H1 H3) (P1 P3))
   (2 (H2 H5) (P2 P4) (H1 H3) (P1 P3))
   (3 (H2 H5) (P2 P5) (H1 H3) (P1 P3))
@@ -417,13 +429,61 @@
   (31 (H2 H4) (P2 P3) (H1 H5) (P1 P5))
   (32 (H2 H4) (P2 P4) (H1 H5) (P1 P5)))
 
-#+nil
-(defun find-duplicates (lst)
+(defun count-duplicates (lst)
   (mapcar (lambda (x)
             (count x lst
                    :test-not (lambda (-x -y)
                            (set-difference -x -y :test #'equal))))
           lst))
+
+
+(let* ((tensors
+         '((V (h1 p1) (h2 p2))
+           (T (p3 h3) (p4 h4))
+           (T (p5 h5))))
+       (symmetries (thread-last tensors
+                                (mapcar #'cdr)
+                                (mapcar #'make-node-symmetry)
+                                (reduce #'union)))
+       (contractions
+         '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+           ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P4) (H1 H3)) ((P2 P5) (H2 H4) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P4) (H1 H4) (P1 P3)) ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P5) (H1 H4) (P1 P3)) ((P2 P4) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H4) (P2 P3) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P5) (H1 H3)) ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+           ((H2 H4) (P2 P4) (H1 H5) (P1 P3)) ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P4) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P4))
+           ((H2 H5) (P2 P3) (H1 H4) (P1 P4)) ((H2 H5) (P2 P5) (H1 H4) (P1 P4))
+           ((H2 H3) (P2 P3) (P1 P5) (H1 H4)) ((H2 H3) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P4) (H2 H3) (P1 P5) (H1 H4)) ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P5) (H2 H3) (H1 H5) (P1 P4)) ((H2 H5) (P2 P3) (P1 P5) (H1 H4))
+           ((P2 P5) (H2 H4) (H1 H5) (P1 P4)) ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+           ((H2 H3) (P2 P3) (H1 H5) (P1 P5)) ((P2 P4) (H2 H3) (H1 H5) (P1 P5))
+           ((H2 H4) (P2 P3) (H1 H5) (P1 P5)) ((H2 H4) (P2 P4) (H1 H5) (P1 P5)))))
+
+  ;; there are no duplicates
+  (assert (every (lambda (x) (eq x 1)) (count-duplicates contractions)))
+  (assert-equal  symmetries '(((P3 . P4) (H3 . H4)) ((H1 . H2) (P1 . P2))))
+  (let ((sym-conts (filter-contractions-by-symmetries symmetries contractions)))
+    (assert-equal sym-conts
+                  '(#| 32 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P5))
+                    #| 31 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P5))
+                    #| 28 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+                    #| 24 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+                    #| 23 |# ((P2 P4) (H2 H3) (P1 P5) (H1 H4))
+                    #| 17 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H3))
+                    #| 16 |# ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+                    #| 15 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P3))
+                    #| 14 |# ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+                    #| 12 |# ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+                    #| 8 |# ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+                    #| 5 |# ((H2 H5) (P2 P3) (P1 P4) (H1 H3))
+                    #| 4 |# ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                    #| 3 |# ((H2 H5) (P2 P5) (H1 H3) (P1 P3))
+                    #| 2 |# ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+                    #| 1 |# ((P2 P5) (H2 H4) (H1 H3) (P1 P3))))))
 
 (let ((orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
