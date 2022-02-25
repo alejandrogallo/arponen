@@ -80,6 +80,9 @@
                 (1 2) (1 3) (1 4)
                 (2 3) (2 4)))
 
+(assert-equal (ordered-subsets-with-repetition 1 2)
+              '((0) (1)))
+
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))
 
@@ -107,6 +110,11 @@
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-first x (+ 5) (* 8)))
   (assert-equal '(* (+ x 5) 8)
+                expression))
+
+(multiple-value-bind (expression _ )
+    (macroexpand '(thread-last x (+ 5) (* 8)))
+  (assert-equal '(* 8 (+ 5 x))
                 expression))
 
 (let ((vals '(((a b c) . nil)
@@ -224,6 +232,14 @@
                 ((P2 . P3) (S2 . S3))
                 ((P2 . P4) (S2 . S4))
                 ((P3 . P4) (S3 . S4))))
+
+(let* ((tensors '((V (h1 p1) (h2 p2))
+                  (T (p3 h3) (p4 h4))
+                  (T (p5 h5))))
+       (symmetries (make-symmetries-in-list tensors)))
+  (assert-equal symmetries
+                '(((H1 . H2) (P1 . P2))
+                  ((P3 . P4) (H3 . H4)))))
 
 (assert-equal (find-duplicate-set '((a . b) (c . d))
                                   '(((c . e) (a . b))
@@ -388,10 +404,11 @@
            (with-rules-c (target tensor) (let ((*only-connected-diagrams* t)
                                                (*allow-self-contractions* nil))
                                            (with-rules target tensor))))
-    (with-rules-c '(_ (P H) (P H))
-      '((V (h1 p1) (h2 p2))
-        (T (p3 h3) (p4 h4))
-        (T (p5 h5))))
+    (let ((*filter-node-symmetry* t))
+      (with-rules-c '(_ (P H) (P H))
+        '((V (h1 p1) (h2 p2))
+          (T (p3 h3) (p4 h4))
+          (T (p5 h5)))))
     ))
 
 #+(or)
@@ -440,10 +457,7 @@
          '((V (h1 p1) (h2 p2))
            (T (p3 h3) (p4 h4))
            (T (p5 h5))))
-       (symmetries (thread-last tensors
-                                (mapcar #'cdr)
-                                (mapcar #'make-node-symmetry)
-                                (reduce #'union)))
+       (symmetries (make-symmetries-in-list tensors))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
            ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
@@ -464,7 +478,6 @@
 
   ;; there are no duplicates
   (assert (every (lambda (x) (eq x 1)) (count-duplicates contractions)))
-  (assert-equal  symmetries '(((P3 . P4) (H3 . H4)) ((H1 . H2) (P1 . P2))))
   (let ((sym-conts (filter-contractions-by-symmetries symmetries contractions)))
     (assert-equal sym-conts
                   '(#| 32 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P5))
@@ -484,7 +497,8 @@
                     #| 2 |# ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
                     #| 1 |# ((P2 P5) (H2 H4) (H1 H3) (P1 P3))))))
 
-(let ((orbital-spaces '((H I J K L h1 h2 h3)
+(let ((*filter-node-symmetry* nil)
+      (orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
                         (G g)))
       (contraction-rules '(((H H) 0 1)
@@ -533,7 +547,8 @@
                                              '((f (a b)) (t (c i))))
      '()))))
 
-(let ((*allow-self-contractions* t))
+(let ((*allow-self-contractions* t)
+      (*filter-node-symmetry* nil))
   (assert-equal
    (contract-expressions-by-target '(_ (P H))
                                    '(* (+ (f (a b)) (f (i j)))

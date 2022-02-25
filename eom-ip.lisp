@@ -48,6 +48,7 @@
        (r1-like '(_ (G H)))
        (r2-like '(_ (G H) (P H))))
 
+  (setq *print-log* nil)
   (setq vpqrs (partition-tensor '(V (p q) (r s))
                                 :orbital-spaces orbital-spaces
                                 :partition partition))
@@ -75,15 +76,28 @@
 
   (format t "~&======~{~&=> ~a~}" (list vpqrs f t1 t2 r1 r2))
 
-  #+nil
-  (contract-expression r1-like
-                       (list '* f (list '+ t1 t2) (list '+ r1))
-                       :orbital-spaces orbital-spaces
-                       :contraction-rules contraction-rules)
+  (format t "~&~& DOING R1")
+  (with-open-file (s "eom-ip/r1.lisp"
+                      :direction :output
+                      :if-exists :supersede)
+    (time (format s "~s"
+                  (contract-expression r1-like
+                                       (list '* (tensor-sum f vpqrs)
+                                             (list '+ t1 t2) (list '+ r1 r2))
+                                       :orbital-spaces orbital-spaces
+                                       :contraction-rules contraction-rules))))
 
-  (contract-expression r1-like
-                       (list '* (tensor-sum f vpqrs)
-                             (list '+ t1 t2) (list '+ r1))
-                       :orbital-spaces orbital-spaces
-                       :contraction-rules contraction-rules)
+  (format t "~&~& DOING r2")
+  (with-open-file (s "eom-ip/r2.lisp"
+                           :direction :output
+                           :if-exists :supersede)
+    (time (format s "~s"
+            (contract-expression r2-like
+                                 (list '* (tensor-sum f vpqrs)
+                                       (list '+ t1 t2) (list '+ r1 r2))
+                                 :orbital-spaces orbital-spaces
+                                 :contraction-rules contraction-rules))))
+
+  (format t "~&~&Done")
+
   )

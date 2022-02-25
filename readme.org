@@ -167,6 +167,18 @@ see the examples for coupled-cluster theories.
 
 
 
+** Node symmetry
+
+If you do not want the contractions to be filtered automatically
+by node symmetry set this variable to =nil=.
+
+#+begin_src lisp :tangle gunu.lisp
+(defvar *filter-node-symmetry* t)
+#+end_src
+
+#+RESULTS:
+: *FILTER-NODE-SYMMETRY*
+
 * Combinatorics
 
 This code relies a lot on combinatorics and set-theoretic functions,
@@ -353,25 +365,25 @@ if a given diagram is linked or not.
 
 #+begin_src lisp :tangle gunu.lisp
 (defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below n collect (gensym)))
-         (deepest-level `(loop for ,(car (last vars))
-                               from ,(car (last (butlast vars)))
-                                 below ,space-size
-                               collect `(,,@vars)))
-         (init-var (gensym))
-         (body (reduce (lambda (x y)
-                         `(loop for ,(cadr x) from ,(car x) below ,space-size
-                                nconcing ,y))
-                       (butlast (mapcar #'list (append (list init-var)
-                                                       (butlast vars))
-                                        vars))
-                       :initial-value deepest-level
-                       :from-end t)))
-    `(let ((,init-var 0))
-       ,body)))
+  (let* ((vars (loop for i below (1+ n) collect (gensym))))
+    `(let ((,(car vars) 0))
+       ,(reduce (lambda (x other-loop)
+                  `(loop for ,(cdr x) from ,(car x) below ,space-size
+                         ,@(if (null other-loop)
+                               `(collect `(,,@(cdr vars)))
+                               (list 'nconcing other-loop))))
+                (mapcar #'cons vars (cdr vars))
+                :initial-value nil
+                :from-end t))))
 #+end_src
 
+#+RESULTS:
+: ORDERED-SUBSETS-WITH-REPETITION
+
 #+begin_src lisp :tangle t.lisp
+(assert-equal (ordered-subsets-with-repetition 1 2)
+              '((0) (1)))
+
 (assert-equal (ordered-subsets-with-repetition 2 2)
               '((0 0) (0 1) (1 1)))
 
@@ -396,6 +408,9 @@ if a given diagram is linked or not.
                 (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
 #+end_src
+
+#+RESULTS:
+: NIL
 
 ** Utils
 
@@ -435,7 +450,16 @@ if a given diagram is linked or not.
     (macroexpand '(thread-first x (+ 5) (* 8)))
   (assert-equal '(* (+ x 5) 8)
                 expression))
+
+(multiple-value-bind (expression _ )
+    (macroexpand '(thread-last x (+ 5) (* 8)))
+  (assert-equal '(* 8 (+ 5 x))
+                expression))
 #+end_src
+
+#+RESULTS:
+: NIL
+
 
 #+begin_src lisp :tangle gunu.lisp
 (defun symbols-repeated-p (lst)
@@ -634,7 +658,8 @@ we would write as symmetries
 and we can write a simple function to apply this symmetry to tensor nodes
 #+begin_src lisp :tangle gunu.lisp
 (defun apply-symmetry-to-nodes (symmetry-equivalence object)
-  (let* ((temp-symbols (mapcar (lambda (x) (gensym)) symmetry-equivalence))
+  (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
+                                 (gensym)) symmetry-equivalence))
          (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
                                      symmetry-equivalence temp-symbols))
          (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
@@ -722,11 +747,15 @@ In the case of a list of tensors
 we can define the following function
 #+begin_src lisp :tangle gunu.lisp
 (defun make-symmetries-in-list (list-of-tensors)
-  (thread-last list-of-tensors
+  (labels ((reducer (x) (reduce #'union x :from-end t)))
+    (thread-last list-of-tensors
                (mapcar #'cdr)
                (mapcar #'make-node-symmetry)
-               (reduce #'union)))
+               (reducer))))
 #+end_src
+
+#+RESULTS:
+: MAKE-SYMMETRIES-IN-LIST
 
 #+begin_src lisp :tangle t.lisp
 (let* ((tensors '((V (h1 p1) (h2 p2))
@@ -734,9 +763,12 @@ we can define the following function
                   (T (p5 h5))))
        (symmetries (make-symmetries-in-list tensors)))
   (assert-equal symmetries
-                '(((P3 . P4) (H3 . H4))
-                  ((H1 . H2) (P1 . P2)))))
+                '(((H1 . H2) (P1 . P2))
+                  ((P3 . P4) (H3 . H4)))))
 #+end_src
+
+#+RESULTS:
+: NIL
 
 
 
@@ -849,7 +881,7 @@ be a group or not) is:
                 do (let ((new-c (apply-symmetry-to-nodes sym c)))
                      (when (find-duplicate-set new-c seen-contractions)
                        (push new-c seen-contractions)
-                       (format t "~&~a is the same as ~a by virtue of ~a"
+                       (logger "~&~a is the same as ~a by virtue of ~a"
                                c new-c sym)
                        (return-from :sym-searching))))
           ;; if I got here, then c is a new contraction
@@ -857,6 +889,9 @@ be a group or not) is:
           (push c result)
           (push c seen-contractions))))))
 #+end_src
+
+#+RESULTS:
+: FILTER-CONTRACTIONS-BY-SYMMETRIES
 
 
 * Contractions
@@ -954,8 +989,7 @@ TODO:: Think about why is not possible to contract
   (let* ((result (copy-tree tensor-nodes-list))
          (all-nodes-flat (reduce #'append result)))
     (loop for node in all-nodes-flat
-          do
-             (case (length (intersection node contraction))
+          do (case (length (intersection node contraction))
                (0 (continue))
                ;; self-contraction
                (2 (return (subst killed-pair node result :test #'equal)))
@@ -979,7 +1013,9 @@ TODO:: Think about why is not possible to contract
                                                         (car matching-nodes))))
                            (return (subst killed-pair
                                           (car matching-nodes)
-                                          (subst stiched node result)))))
+                                          (subst stiched node result
+                                                 :test #'equal)
+                                          :test #'equal))))
                       (t
                        (error "Contraction arity(~a) error ~a contracts with ~a"
                               (length matching-nodes) node matching-nodes)))
@@ -1372,7 +1408,11 @@ Some filters used are the number of contractions
                                        ,@top-contractions)))
                          --result))
                      ))))))
-    (remove-if #'null results)
+    (let ((cleaned-results (remove-if #'null results)))
+      (if *filter-node-symmetry*
+          (let ((node-symmetries (make-symmetries-in-list tensor-list)))
+            (filter-contractions-by-symmetries node-symmetries cleaned-results))
+          cleaned-results))
     ))
 #+end_src
 
@@ -1397,10 +1437,11 @@ Let us illustrage this function with some tests
            (with-rules-c (target tensor) (let ((*only-connected-diagrams* t)
                                                (*allow-self-contractions* nil))
                                            (with-rules target tensor))))
-    (with-rules-c '(_ (P H) (P H))
-      '((V (h1 p1) (h2 p2))
-        (T (p3 h3) (p4 h4))
-        (T (p5 h5))))
+    (let ((*filter-node-symmetry* t))
+      (with-rules-c '(_ (P H) (P H))
+        '((V (h1 p1) (h2 p2))
+          (T (p3 h3) (p4 h4))
+          (T (p5 h5)))))
     ))
 
 ,#+(or)
@@ -1499,8 +1540,7 @@ Let us illustrage this function with some tests
                           contraction-rules)
   (let ((result (find-contractions-in-product-by-number-of-legs
                  target tensor-list :orbital-spaces orbital-spaces
-                                    :contraction-rules contraction-rules))
-        (all-indices (loop for i in (mapcar #'cdr tensor-list) appending i)))
+                                    :contraction-rules contraction-rules)))
     (logger "~&CONTRACTIONS TO CHECK: ~a" result)
     (remove-if #'null
      (loop for contraction in result
@@ -1523,7 +1563,8 @@ Let us illustrage this function with some tests
 : FIND-CONTRACTIONS-IN-PRODUCT-BY-TARGET
 
 #+begin_src lisp :tangle t.lisp
-(let ((orbital-spaces '((H I J K L h1 h2 h3)
+(let ((*filter-node-symmetry* nil)
+      (orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
                         (G g)))
       (contraction-rules '(((H H) 0 1)
@@ -1599,7 +1640,8 @@ Let us illustrage this function with some tests
 
 #+begin_src lisp :tangle t.lisp
 
-(let ((*allow-self-contractions* t))
+(let ((*allow-self-contractions* t)
+      (*filter-node-symmetry* nil))
   (assert-equal
    (contract-expressions-by-target '(_ (P H))
                                    '(* (+ (f (a b)) (f (i j)))
@@ -1760,6 +1802,7 @@ TODO: Explain the concept of partitioning and the format
    (V (A B) (K L)) (V (A B) (K D)) (V (A B) (C L)) (V (A B) (C D)))
 :end:
 
+* Examples
 * Output formats
 ** TeX
 

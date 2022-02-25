@@ -24,6 +24,8 @@
 (defvar *only-connected-diagrams* nil
   "Wether to look for contractions that create connected diagrams.")
 
+(defvar *filter-node-symmetry* t)
+
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
                         collect (gensym (format nil "~a-i-" i))))
@@ -67,22 +69,16 @@
                        collect `(,i ,j))))))
 
 (defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below n collect (gensym)))
-         (deepest-level `(loop for ,(car (last vars))
-                               from ,(car (last (butlast vars)))
-                                 below ,space-size
-                               collect `(,,@vars)))
-         (init-var (gensym))
-         (body (reduce (lambda (x y)
-                         `(loop for ,(cadr x) from ,(car x) below ,space-size
-                                nconcing ,y))
-                       (butlast (mapcar #'list (append (list init-var)
-                                                       (butlast vars))
-                                        vars))
-                       :initial-value deepest-level
-                       :from-end t)))
-    `(let ((,init-var 0))
-       ,body)))
+  (let* ((vars (loop for i below (1+ n) collect (gensym))))
+    `(let ((,(car vars) 0))
+       ,(reduce (lambda (x other-loop)
+                  `(loop for ,(cdr x) from ,(car x) below ,space-size
+                         ,@(if (null other-loop)
+                               `(collect `(,,@(cdr vars)))
+                               (list 'nconcing other-loop))))
+                (mapcar #'cons vars (cdr vars))
+                :initial-value nil
+                :from-end t))))
 
 ;; functions taken from uruk
 (defun flatten-list (ls)
@@ -167,7 +163,8 @@
                   :orbital-spaces orbital-spaces))))
 
 (defun apply-symmetry-to-nodes (symmetry-equivalence object)
-  (let* ((temp-symbols (mapcar (lambda (x) (gensym)) symmetry-equivalence))
+  (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
+                                 (gensym)) symmetry-equivalence))
          (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
                                      symmetry-equivalence temp-symbols))
          (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
@@ -187,6 +184,13 @@
                                                  combi))))
             node-combinations)))
 
+(defun make-symmetries-in-list (list-of-tensors)
+  (labels ((reducer (x) (reduce #'union x :from-end t)))
+    (thread-last list-of-tensors
+               (mapcar #'cdr)
+               (mapcar #'make-node-symmetry)
+               (reducer))))
+
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
                                 (set-difference -x -y :test #'equal))))
@@ -202,7 +206,7 @@
                 do (let ((new-c (apply-symmetry-to-nodes sym c)))
                      (when (find-duplicate-set new-c seen-contractions)
                        (push new-c seen-contractions)
-                       (format t "~&~a is the same as ~a by virtue of ~a"
+                       (logger "~&~a is the same as ~a by virtue of ~a"
                                c new-c sym)
                        (return-from :sym-searching))))
           ;; if I got here, then c is a new contraction
@@ -235,8 +239,7 @@
   (let* ((result (copy-tree tensor-nodes-list))
          (all-nodes-flat (reduce #'append result)))
     (loop for node in all-nodes-flat
-          do
-             (case (length (intersection node contraction))
+          do (case (length (intersection node contraction))
                (0 (continue))
                ;; self-contraction
                (2 (return (subst killed-pair node result :test #'equal)))
@@ -260,7 +263,9 @@
                                                         (car matching-nodes))))
                            (return (subst killed-pair
                                           (car matching-nodes)
-                                          (subst stiched node result)))))
+                                          (subst stiched node result
+                                                 :test #'equal)
+                                          :test #'equal))))
                       (t
                        (error "Contraction arity(~a) error ~a contracts with ~a"
                               (length matching-nodes) node matching-nodes)))
@@ -430,7 +435,11 @@
                                        ,@top-contractions)))
                          --result))
                      ))))))
-    (remove-if #'null results)
+    (let ((cleaned-results (remove-if #'null results)))
+      (if *filter-node-symmetry*
+          (let ((node-symmetries (make-symmetries-in-list tensor-list)))
+            (filter-contractions-by-symmetries node-symmetries cleaned-results))
+          cleaned-results))
     ))
 
 (defun find-contractions-in-product-by-target
@@ -439,8 +448,7 @@
                           contraction-rules)
   (let ((result (find-contractions-in-product-by-number-of-legs
                  target tensor-list :orbital-spaces orbital-spaces
-                                    :contraction-rules contraction-rules))
-        (all-indices (loop for i in (mapcar #'cdr tensor-list) appending i)))
+                                    :contraction-rules contraction-rules)))
     (logger "~&CONTRACTIONS TO CHECK: ~a" result)
     (remove-if #'null
      (loop for contraction in result
