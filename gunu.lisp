@@ -113,17 +113,21 @@
           if (> (count s symbols) 0)
             do (return t))))
 
-(defun expression-to-lists (exp)
-  (ecase (car exp)
-    ('* (let ((operands
-                (mapcar (lambda (e) (case (car e)
-                                      ('+ (cdr e))
-                                      (t (list e))))
-                        (cdr exp))))
-          operands))))
+(defun expr-to-lists (exp)
+    (case (if (atom exp) t (car exp))
+      (* (reduce (lambda (x y)
+                   (reduce #'append
+                           (loop for -x in x
+                                 collect (loop for -y in y
+                                               collect (append -x -y)))))
+                 (mapcar #'expr-to-lists (cdr exp))
+                 :initial-value '(nil)
+                 :from-end t))
+      (+ (reduce #'append (mapcar #'expr-to-lists (cdr exp))))
+      (t (list (list exp)))))
 
-(defun expand-expression (expr)
-  (eval `(cartesian-product ,@(expression-to-lists expr))))
+(defun expr-power (n expr)
+  `(* ,@(mapcar (constantly expr) (loop for i below n collect nil))))
 
 (defun match-index-to-space (index orbital-space)
   (find index (cdr orbital-space)))
@@ -468,7 +472,7 @@
 
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
-  (let ((products (expand-expression expression))
+  (let ((products (expr-to-lists expression))
         sums)
     (setq sums
           (loop

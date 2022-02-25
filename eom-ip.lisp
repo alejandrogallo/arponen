@@ -20,7 +20,7 @@
                                                       contraction-rules)))
         (when contractions
           (list `(contractions ,contractions) tensor-product))))
-    (expand-expression expr))))
+    (expr-to-lists expr))))
 
 (defun tensor-sum (&rest args)
   `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)

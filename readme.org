@@ -484,42 +484,158 @@ if a given diagram is linked or not.
 
 
 #+begin_src lisp :tangle gunu.lisp
-(defun expression-to-lists (exp)
-  (ecase (car exp)
-    ('* (let ((operands
-                (mapcar (lambda (e) (case (car e)
-                                      ('+ (cdr e))
-                                      (t (list e))))
-                        (cdr exp))))
-          operands))))
+(defun expr-to-lists (exp)
+    (case (if (atom exp) t (car exp))
+      (* (reduce (lambda (x y)
+                   (reduce #'append
+                           (loop for -x in x
+                                 collect (loop for -y in y
+                                               collect (append -x -y)))))
+                 (mapcar #'expr-to-lists (cdr exp))
+                 :initial-value '(nil)
+                 :from-end t))
+      (+ (reduce #'append (mapcar #'expr-to-lists (cdr exp))))
+      (t (list (list exp)))))
+
+(defun expr-power (n expr)
+  `(* ,@(mapcar (constantly expr) (loop for i below n collect nil))))
 #+end_src
+
+#+RESULTS:
+: EXPR-POWER
+
+Some extensive tests..
 
 #+begin_src lisp :tangle t.lisp
-(assert-equal
- (expression-to-lists '(* (v (a i))
-                        (+ 1 (t (a i)) (t (a i) (b j)))
-                        (+ (r (g i)) (r (g i) (a j)))))
- '(((V (A I)))
-   (1 (T (A I)) (T (A I) (B J)))
-   ((R (G I)) (R (G I) (A J)))))
-#+end_src
+(assert-equal (expr-to-lists '(* (a) (e))) '(((a) (e))))
+(assert-equal (expr-to-lists '(* a b c (* d e (* e f e))))
+              '((a b c d e e f e)))
 
-#+begin_src lisp :tangle gunu.lisp
-(defun expand-expression (expr)
-  (eval `(cartesian-product ,@(expression-to-lists expr))))
-#+end_src
+(assert-equal (expr-to-lists '(+ (+ (a) (e))
+                               (b)
+                               (c)))
+              '(((a)) ((e)) ((b)) ((c))))
 
-#+begin_src lisp :tangle t.lisp
+(assert-equal (expr-to-lists '(+ (+ a e) (+ b c)))
+              '((a) (e) (b) (c)))
+
+(assert-equal (expr-to-lists '(* a (+ b c) (+ d (* e l))))
+              '((A B D) (A B E L) (A C D) (A C E L)))
+
+
+(assert-equal (expr-to-lists '(* (+ f v)
+                               (+ 1 t1 t2 (* q1 q1) (* k1 k2) (* f2 f2))
+                               (+ r1 r2)
+                               |0>|))
+              '((F 1 R1 0>)
+                (F 1 R2 0>)
+                (F T1 R1 0>)
+                (F T1 R2 0>)
+                (F T2 R1 0>)
+                (F T2 R2 0>)
+                (F Q1 Q1 R1 0>)
+                (F Q1 Q1 R2 0>)
+                (F K1 K2 R1 0>)
+                (F K1 K2 R2 0>)
+                (F F2 F2 R1 0>)
+                (F F2 F2 R2 0>)
+                (V 1 R1 0>)
+                (V 1 R2 0>)
+                (V T1 R1 0>)
+                (V T1 R2 0>)
+                (V T2 R1 0>)
+                (V T2 R2 0>)
+                (V Q1 Q1 R1 0>)
+                (V Q1 Q1 R2 0>)
+                (V K1 K2 R1 0>)
+                (V K1 K2 R2 0>)
+                (V F2 F2 R1 0>)
+                (V F2 F2 R2 0>)))
+
+
+(assert-equal (expr-to-lists (expr-power 2 '(+ a b)))
+              '((A A) (A B) (B A) (B B)))
+
+(assert-equal (expr-to-lists (expr-power 3 '(+ a b)))
+              '((A A A) (A A B) (A B A) (A B B)
+                (B A A) (B A B) (B B A) (B B B)))
+
+(assert-equal (expr-to-lists (expr-power 4 '(+ a b)))
+              '((A A A A) (A A A B) (A A B A) (A A B B) (A B A A)
+                (A B A B) (A B B A) (A B B B) (B A A A) (B A A B) (B A B A)
+                (B A B B) (B B A A) (B B A B) (B B B A) (B B B B)))
+
 (assert-equal
- (expand-expression '(* (v (a i))
-                      (+ 1 (t (a i)) (t (a i) (b j)))
-                      (+ (r (g i)) (r (g i) (a j)))))
- '(((V (A I)) 1 (R (G I)))
-   ((V (A I)) 1 (R (G I) (A J)))
-   ((V (A I)) (T (A I)) (R (G I)))
-   ((V (A I)) (T (A I)) (R (G I) (A J)))
-   ((V (A I)) (T (A I) (B J)) (R (G I)))
-   ((V (A I)) (T (A I) (B J)) (R (G I) (A J)))))
+ (expr-to-lists
+  '(* (+ (fab) (fij) (fai) (fia) (vpqrs) (v...))
+    (+ (1) (t1) (t2) (* (t1) (t1)) (* (t1) (t2)) (* (t2) (t2)))
+    (+ (r1) (r2))))
+
+ '(((FAB) (1) (R1)) ((FAB) (1) (R2)) ((FAB) (T1) (R1)) ((FAB) (T1) (R2))
+   ((FAB) (T2) (R1)) ((FAB) (T2) (R2)) ((FAB) (T1) (T1) (R1))
+   ((FAB) (T1) (T1) (R2))
+   ((FAB) (T1) (T2) (R1)) ((FAB) (T1) (T2) (R2))
+   ((FAB) (T2) (T2) (R1)) ((FAB) (T2) (T2) (R2))
+   ((FIJ) (1) (R1))
+   ((FIJ) (1) (R2))
+   ((FIJ) (T1) (R1))
+   ((FIJ) (T1) (R2))
+   ((FIJ) (T2) (R1))
+   ((FIJ) (T2) (R2))
+   ((FIJ) (T1) (T1) (R1))
+   ((FIJ) (T1) (T1) (R2))
+   ((FIJ) (T1) (T2) (R1))
+   ((FIJ) (T1) (T2) (R2))
+   ((FIJ) (T2) (T2) (R1))
+   ((FIJ) (T2) (T2) (R2))
+   ((FAI) (1) (R1))
+   ((FAI) (1) (R2))
+   ((FAI) (T1) (R1))
+   ((FAI) (T1) (R2))
+   ((FAI) (T2) (R1))
+   ((FAI) (T2) (R2))
+   ((FAI) (T1) (T1) (R1))
+   ((FAI) (T1) (T1) (R2))
+   ((FAI) (T1) (T2) (R1))
+   ((FAI) (T1) (T2) (R2))
+   ((FAI) (T2) (T2) (R1))
+   ((FAI) (T2) (T2) (R2))
+   ((FIA) (1) (R1))
+   ((FIA) (1) (R2))
+   ((FIA) (T1) (R1))
+   ((FIA) (T1) (R2))
+   ((FIA) (T2) (R1))
+   ((FIA) (T2) (R2))
+   ((FIA) (T1) (T1) (R1))
+   ((FIA) (T1) (T1) (R2))
+   ((FIA) (T1) (T2) (R1))
+   ((FIA) (T1) (T2) (R2))
+   ((FIA) (T2) (T2) (R1))
+   ((FIA) (T2) (T2) (R2))
+   ((VPQRS) (1) (R1))
+   ((VPQRS) (1) (R2))
+   ((VPQRS) (T1) (R1))
+   ((VPQRS) (T1) (R2))
+   ((VPQRS) (T2) (R1))
+   ((VPQRS) (T2) (R2))
+   ((VPQRS) (T1) (T1) (R1))
+   ((VPQRS) (T1) (T1) (R2))
+   ((VPQRS) (T1) (T2) (R1))
+   ((VPQRS) (T1) (T2) (R2))
+   ((VPQRS) (T2) (T2) (R1))
+   ((VPQRS) (T2) (T2) (R2))
+   ((V...) (1) (R1))
+   ((V...) (1) (R2))
+   ((V...) (T1) (R1))
+   ((V...) (T1) (R2))
+   ((V...) (T2) (R1))
+   ((V...) (T2) (R2))
+   ((V...) (T1) (T1) (R1))
+   ((V...) (T1) (T1) (R2))
+   ((V...) (T1) (T2) (R1))
+   ((V...) (T1) (T2) (R2))
+   ((V...) (T2) (T2) (R1))
+   ((V...) (T2) (T2) (R2))))
 #+end_src
 
 * Index spaces
@@ -1622,7 +1738,7 @@ Let us illustrage this function with some tests
 #+begin_src lisp :tangle gunu.lisp
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
-  (let ((products (expand-expression expression))
+  (let ((products (expr-to-lists expression))
         sums)
     (setq sums
           (loop
