@@ -1537,6 +1537,7 @@ Some filters used are the number of contractions
 #+RESULTS:
 : FIND-CONTRACTIONS-IN-PRODUCT-BY-NUMBER-OF-LEGS
 
+
 **** Case study: Vijab with T1 and T2 coupling to singles excitations
 
 Let us illustrage this function with some tests
@@ -1930,6 +1931,12 @@ TODO: Explain the concept of partitioning and the format
                       (intern (format nil "~a~a" prefix i)))
                     (loop for i from 1 to n collect i))))
 
+(defun remove-1 (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
 (defun contract-expression (target expr &key orbital-spaces contraction-rules)
   (remove-if
    #'null
@@ -1945,7 +1952,9 @@ TODO: Explain the concept of partitioning and the format
                                                       contraction-rules)))
         (when contractions
           (list `(contractions ,contractions) tensor-product))))
-    (expr-to-lists expr))))
+    (remove-1 (expr-to-lists expr)))))
+
+
 
 (defun tensor-sum (&rest args)
   `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)
@@ -1971,7 +1980,9 @@ TODO: Explain the concept of partitioning and the format
        vpqrs f t1 t2 r1 r2
 
        (r1-like '(_ (G H)))
-       (r2-like '(_ (G H) (P H))))
+       (r2-like '(_ (G H) (P H)))
+
+       ccsd-expressions)
 
   (setq *print-log* nil)
   (setq vpqrs (partition-tensor '(V (p q) (r s))
@@ -1999,7 +2010,12 @@ TODO: Explain the concept of partitioning and the format
                                     :orbital-spaces orbital-spaces
                                     :from-index 10))
 
-  (format t "~&======~{~&=> ~a~}" (list vpqrs f t1 t2 r1 r2))
+
+  (setq ccsd-expressions
+        `(* ,(tensor-sum f vpqrs)
+                       (+ 1 ,t1 ,t2 (* ,t1 ,t1) (* ,t1 ,t2) (* ,t2 ,t2))
+                       (+ ,r1 ,r2)))
+  (format t "~&======~&=> ~a" ccsd-expressions)
 
   (format t "~&~& DOING R1")
   (with-open-file (s "r1.lisp"
@@ -2007,8 +2023,7 @@ TODO: Explain the concept of partitioning and the format
                       :if-exists :supersede)
     (time (format s "~s"
                   (contract-expression r1-like
-                                       (list '* (tensor-sum f vpqrs)
-                                             (list '+ t1 t2) (list '+ r1 r2))
+                                       ccsd-expressions
                                        :orbital-spaces orbital-spaces
                                        :contraction-rules contraction-rules))))
 
@@ -2018,14 +2033,11 @@ TODO: Explain the concept of partitioning and the format
                            :if-exists :supersede)
     (time (format s "~s"
             (contract-expression r2-like
-                                 (list '* (tensor-sum f vpqrs)
-                                       (list '+ t1 t2) (list '+ r1 r2))
+                                 ccsd-expressions
                                  :orbital-spaces orbital-spaces
                                  :contraction-rules contraction-rules))))
 
-  (format t "~&~&Done")
-
-  )
+  (format t "~&~&Done"))
 #+end_src
 
 * Output formats
