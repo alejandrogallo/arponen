@@ -448,11 +448,13 @@ if a given diagram is linked or not.
 #+begin_src lisp :tangle t.lisp
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-first x (+ 5) (* 8)))
+  (declare (ignorable _))
   (assert-equal '(* (+ x 5) 8)
                 expression))
 
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-last x (+ 5) (* 8)))
+  (declare (ignorable _))
   (assert-equal '(* 8 (+ 5 x))
                 expression))
 #+end_src

@@ -109,11 +109,13 @@
 
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-first x (+ 5) (* 8)))
+  (declare (ignorable _))
   (assert-equal '(* (+ x 5) 8)
                 expression))
 
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-last x (+ 5) (* 8)))
+  (declare (ignorable _))
   (assert-equal '(* 8 (+ 5 x))
                 expression))
 
