@@ -104,11 +104,10 @@
                 (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
 
-(progn
-  (assert (eq '(* (+ x 5) 8)
-              (macroexpand '(thread-first x
-                             (+ 5)
-                             (* 8))))))
+(multiple-value-bind (expression _ )
+    (macroexpand '(thread-first x (+ 5) (* 8)))
+  (assert-equal '(* (+ x 5) 8)
+                expression))
 
 (let ((vals '(((a b c) . nil)
               ((a (a) b c) . t)

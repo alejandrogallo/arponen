@@ -427,12 +427,14 @@ if a given diagram is linked or not.
     init))
 #+end_src
 
+#+RESULTS:
+: THREAD-LAST
+
 #+begin_src lisp :tangle t.lisp
-(progn
-  (assert (eq '(* (+ x 5) 8)
-              (macroexpand '(thread-first x
-                             (+ 5)
-                             (* 8))))))
+(multiple-value-bind (expression _ )
+    (macroexpand '(thread-first x (+ 5) (* 8)))
+  (assert-equal '(* (+ x 5) 8)
+                expression))
 #+end_src
 
 #+begin_src lisp :tangle gunu.lisp
@@ -716,8 +718,27 @@ And it should of course work for higher dimensional tensors.
                 ((P3 . P4) (S3 . S4))))
 #+end_src
 
-#+RESULTS:
-: NIL
+In the case of a list of tensors
+we can define the following function
+#+begin_src lisp :tangle gunu.lisp
+(defun make-symmetries-in-list (list-of-tensors)
+  (thread-last list-of-tensors
+               (mapcar #'cdr)
+               (mapcar #'make-node-symmetry)
+               (reduce #'union)))
+#+end_src
+
+#+begin_src lisp :tangle t.lisp
+(let* ((tensors '((V (h1 p1) (h2 p2))
+                  (T (p3 h3) (p4 h4))
+                  (T (p5 h5))))
+       (symmetries (make-symmetries-in-list tensors)))
+  (assert-equal symmetries
+                '(((P3 . P4) (H3 . H4))
+                  ((H1 . H2) (P1 . P2)))))
+#+end_src
+
+
 
 ** Filtering diagrams through contractions
 
@@ -1428,10 +1449,7 @@ Let us illustrage this function with some tests
          '((V (h1 p1) (h2 p2))
            (T (p3 h3) (p4 h4))
            (T (p5 h5))))
-       (symmetries (thread-last tensors
-                                (mapcar #'cdr)
-                                (mapcar #'make-node-symmetry)
-                                (reduce #'union)))
+       (symmetries (make-symmetries-in-list tensors))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
            ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
@@ -1452,7 +1470,6 @@ Let us illustrage this function with some tests
 
   ;; there are no duplicates
   (assert (every (lambda (x) (eq x 1)) (count-duplicates contractions)))
-  (assert-equal  symmetries '(((P3 . P4) (H3 . H4)) ((H1 . H2) (P1 . P2))))
   (let ((sym-conts (filter-contractions-by-symmetries symmetries contractions)))
     (assert-equal sym-conts
                   '(#| 32 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P5))
