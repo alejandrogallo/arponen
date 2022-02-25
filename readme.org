@@ -1938,21 +1938,25 @@ TODO: Explain the concept of partitioning and the format
           prod-list))
 
 (defun contract-expression (target expr &key orbital-spaces contraction-rules)
-  (remove-if
-   #'null
-   (mapcar
-    (lambda (tensor-product)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
 
-      (let ((contractions
-              (find-contractions-in-product-by-target target
-                                                      tensor-product
-                                                      :orbital-spaces
-                                                      orbital-spaces
-                                                      :contraction-rules
-                                                      contraction-rules)))
-        (when contractions
-          (list `(contractions ,contractions) tensor-product))))
-    (remove-1 (expr-to-lists expr)))))
+        (let ((contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
 
 
 
