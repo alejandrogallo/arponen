@@ -1996,6 +1996,103 @@ TODO: Explain the concept of partitioning and the format
    (V (A B) (K L)) (V (A B) (K D)) (V (A B) (C L)) (V (A B) (C D)))
 :end:
 
+* API
+In this section we will present most functions that will be useful
+using the library from a user perspective in order to contract
+expressions.
+
+From the discussion up to know, some points should be noted:
+
+- the names of the tensors is meaningful and they should be equal
+  only in reference to symmetries.
+  In general, one should name the many-body components
+  of a tensor differently, i.e. for instance
+  =(T2 (a i) (b j))=
+  and
+  =(T1 (a i))=.
+- All the legs in an expression should be named differently.
+
+** TODO Particle hole picture
+
+In order to design a good user interface, we should make it as clear
+and as modular as possible for the user, and reading these lines
+one should be convinced that it is not too much effort to design
+your own interface if this one does not suit you.
+
+Generally we will want to define tensors generally
+in the real vacuum description and partition the tensor
+in holes and particles.
+
+For our purposes let us denote fix the index space:
+#+begin_src lisp :eval no
+(PQ pq1 pq2 pq3 ...) ;; real vacuum indices
+(P  p1 p2 p3 ...)    ;; particle indices
+(H  h1 h2 h3 ...)    ;; hole indices
+#+end_src
+
+Then we will want to turn
+#+begin_src lisp :eval no
+(Vpqrs (PQ1 PQ2) (PQ3 PQ4))
+#+end_src
+into all 16 combinations
+#+begin_src lisp :eval no
+(Vhhpp (h1 p1) (h2 p2))
+(Vhphp (h1 h2) (p1 p2))
+;; ...
+#+end_src
+
+Actually we will want less combinations since
+by virtue of node symmetry we should consider
+#+begin_src lisp :eval no
+(Vhphp (h1 h2) (p1 p2))
+;; and
+(Vhphp (p1 p2) (h1 h2))
+#+end_src
+equivalent.
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defun make-space (name prefix n)
+  `(,name ,@(mapcar (lambda (i)
+                      (intern (format nil "~a~a" prefix i)))
+                    (loop for i from 1 to n collect i))))
+
+(defun remove-1-in-product-list (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+(defun contract-expression (target expr &key orbital-spaces contraction-rules)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+        (let ((begin (get-internal-run-time))
+              (contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
+
+
+(defmacro with-particle-hole)
+#+end_src
+
+
+
 * Examples
 ** IP Equation of motion CCSD
 #+begin_src lisp :tangle eom-ip/input.lisp :mkdirp t
