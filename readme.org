@@ -1480,6 +1480,42 @@ Some filters used are the number of contractions
      2 * N-c = Sum (i) legs(product) - legs(target)
 #+end_example
 
+Some contractiosn might be combinatorially very expensive
+to go through but a quick check can solve the issue.
+Every contraction reduces the number of legs by two.
+If we count the number of legs in the target
+and we loop over contractions we can see if at all
+there can be contractions appearing, this
+can serve as a quick check for some terms that might
+be very expensive and where it is clear that
+the combinatorial search will have a negative
+result.
+
+#+begin_src lisp :tangle gunu.lisp
+#+nil
+(defun is-a-contraction-possible-by-number-of-legs
+    (target tensor-list &key
+                          orbital-spaces
+                          contraction-rules)
+  (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
+                    (length (flatten-list (cdr target))))
+                 2))
+         (all-nodes (copy-tree (reduce #'append (mapcar #'cdr tensor-list))))
+         (group-lengths (mapcar (lambda (tsr) (length (cdr tsr))) tensor-list))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs (length all-nodes)
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       group-lengths)))
+         (node-pair-combinations
+           (eval `(ordered-subsets-with-repetition ,N-c
+                                                   ,(length node-pairs))))
+         results)
+
+  ))
+#+end_src
+
+
 #+begin_src lisp :tangle gunu.lisp
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
@@ -1985,14 +2021,17 @@ TODO: Explain the concept of partitioning and the format
      (mapcar
       (lambda (tensor-product)
         (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-
-        (let ((contractions
+        (let ((begin (get-internal-run-time))
+              (contractions
                 (find-contractions-in-product-by-target target
                                                         tensor-product
                                                         :orbital-spaces
                                                         orbital-spaces
                                                         :contraction-rules
                                                         contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
           (when contractions
             (list `(contractions ,contractions) tensor-product))))
       expanded))))

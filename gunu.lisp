@@ -365,6 +365,28 @@
                ))))
     ))
 
+#+nil
+(defun is-a-contraction-possible-by-number-of-legs
+    (target tensor-list &key
+                          orbital-spaces
+                          contraction-rules)
+  (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
+                    (length (flatten-list (cdr target))))
+                 2))
+         (all-nodes (copy-tree (reduce #'append (mapcar #'cdr tensor-list))))
+         (group-lengths (mapcar (lambda (tsr) (length (cdr tsr))) tensor-list))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs (length all-nodes)
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       group-lengths)))
+         (node-pair-combinations
+           (eval `(ordered-subsets-with-repetition ,N-c
+                                                   ,(length node-pairs))))
+         results)
+
+  ))
+
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
