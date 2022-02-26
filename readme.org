@@ -751,6 +751,7 @@ This section discusses how to implement and encode symmetries of the
 diagrams.
 
 ** Node symmetry
+
 For instance, all operators in quantum chemistry
 have a node symmetry whereby exchanging the positions of the electrons
 the tensor remains unchanged. For instance, for the coulomb integrals
@@ -864,10 +865,20 @@ And it should of course work for higher dimensional tensors.
 In the case of a list of tensors
 we can define the following function
 #+begin_src lisp :tangle gunu.lisp
+(defun find-effective-nodes-list (list-of-tensors)
+  (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))
+         (result-alist (mapcar (lambda (k) (cons k '())) keys)))
+    (mapc (lambda (tsr)
+            (let ((current (assoc (car tsr) result-alist)))
+              (rplacd (assoc (car tsr) result-alist)
+                    (append (cdr current) (cdr tsr)))))
+          list-of-tensors)
+    (mapcar #'cdr result-alist)))
+
 (defun make-symmetries-in-list (list-of-tensors)
   (labels ((reducer (x) (reduce #'union x :from-end t)))
     (thread-last list-of-tensors
-               (mapcar #'cdr)
+               (mapcar #'find-effective-nodes-list)
                (mapcar #'make-node-symmetry)
                (reducer))))
 #+end_src
@@ -876,6 +887,24 @@ we can define the following function
 : MAKE-SYMMETRIES-IN-LIST
 
 #+begin_src lisp :tangle t.lisp
+(assert-equal (find-effective-nodes-list
+               '((V (p q) (r s)) (T2 (a b) (c d))))
+              '(((p q) (r s)) ((a b) (c d))))
+
+(assert-equal (find-effective-nodes-list '((V (p q) (r s))
+                                           (T2 (a b) (c d)) (T2 (a2 b2) (c2 d2))
+                                           (R2 (g h) (h2 g2))))
+              '(((P Q) (R S))
+                ((A B) (C D) (A2 B2) (C2 D2))
+                ((G H) (H2 G2))))
+
+(assert-equal (find-effective-nodes-list '((V (p r) (q s))
+                                           (T1 (a i)) (T1 (aa ii))
+                                           (R1 (g e))))
+              '(((p r) (q s))
+                ((a i) (aa ii))
+                ((g e))))
+
 (let* ((tensors '((V (h1 p1) (h2 p2))
                   (T (p3 h3) (p4 h4))
                   (T (p5 h5))))
@@ -887,8 +916,6 @@ we can define the following function
 
 #+RESULTS:
 : NIL
-
-
 
 ** Filtering diagrams through contractions
 
@@ -1998,33 +2025,39 @@ TODO: Explain the concept of partitioning and the format
                             :partition partition
                             :from-index 4))
 
-  (setq t1 (name-legs-by-space-name '(T (P H))
+  (setq t1 (name-legs-by-space-name '(T1 (P H))
                                     :orbital-spaces orbital-spaces
                                     :from-index 6))
 
-  (setq t2 (name-legs-by-space-name '(T (P H) (P H))
-                                    :orbital-spaces orbital-spaces
-                                    :from-index 7))
+  (setq -t1 (name-legs-by-space-name '(T1 (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 7))
 
-  (setq r1 (name-legs-by-space-name '(R (G H))
+  (setq t2 (name-legs-by-space-name '(T2 (P H) (P H))
                                     :orbital-spaces orbital-spaces
-                                    :from-index 9))
+                                    :from-index 8))
 
-  (setq r2 (name-legs-by-space-name '(R (G H) (P H))
+  (setq -t2 (name-legs-by-space-name '(T2 (P H) (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 10))
+
+  (setq r1 (name-legs-by-space-name '(R1 (G H))
                                     :orbital-spaces orbital-spaces
-                                    :from-index 10))
+                                    :from-index 12))
+
+  (setq r2 (name-legs-by-space-name '(R2 (G H) (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 13))
 
 
   (setq ccsd-expressions
         `(* ,(tensor-sum f vpqrs)
-                       (+ 1 ,t1 ,t2 (* ,t1 ,t1) (* ,t1 ,t2) (* ,t2 ,t2))
+                       (+ 1 ,t1 ,t2 (* ,t1 ,-t1) (* ,t1 ,t2) (* ,t2 ,-t2))
                        (+ ,r1 ,r2)))
   (format t "~&======~&=> ~a" ccsd-expressions)
 
   (format t "~&~& DOING R1")
-  (with-open-file (s "r1.lisp"
-                      :direction :output
-                      :if-exists :supersede)
+  (with-open-file (s "r1.lisp" :direction :output :if-exists :supersede)
     (time (format s "~s"
                   (contract-expression r1-like
                                        ccsd-expressions
@@ -2032,9 +2065,7 @@ TODO: Explain the concept of partitioning and the format
                                        :contraction-rules contraction-rules))))
 
   (format t "~&~& DOING r2")
-  (with-open-file (s "r2.lisp"
-                           :direction :output
-                           :if-exists :supersede)
+  (with-open-file (s "r2.lisp" :direction :output :if-exists :supersede)
     (time (format s "~s"
             (contract-expression r2-like
                                  ccsd-expressions
