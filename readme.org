@@ -788,6 +788,9 @@ and we can write a simple function to apply this symmetry to tensor nodes
                     (sublis equiv-forward object)))))
 #+end_src
 
+#+RESULTS:
+: APPLY-SYMMETRY-TO-NODES
+
 And in fact  it is a very general function that works on every
 tree thanks to =sublis=:
 
@@ -821,6 +824,9 @@ tree thanks to =sublis=:
               '(V (Q S) (P R)))
 #+end_src
 
+#+RESULTS:
+: NIL
+
 Mostly however it is quite tedious to write these equivalences
 by hand so we can use the =make-node-symmetry= function to
 create a well-named symmetry equivalence.
@@ -837,6 +843,9 @@ create a well-named symmetry equivalence.
                                                  combi))))
             node-combinations)))
 #+end_src
+
+#+RESULTS:
+: MAKE-NODE-SYMMETRY
 
 And it should of course work for higher dimensional tensors.
 
@@ -862,6 +871,9 @@ And it should of course work for higher dimensional tensors.
                 ((P3 . P4) (S3 . S4))))
 #+end_src
 
+#+RESULTS:
+: NIL
+
 In the case of a list of tensors
 we can define the following function
 #+begin_src lisp :tangle gunu.lisp
@@ -878,7 +890,7 @@ we can define the following function
 (defun make-symmetries-in-list (list-of-tensors)
   (labels ((reducer (x) (reduce #'union x :from-end t)))
     (thread-last list-of-tensors
-               (mapcar #'find-effective-nodes-list)
+               (find-effective-nodes-list)
                (mapcar #'make-node-symmetry)
                (reducer))))
 #+end_src
@@ -906,8 +918,8 @@ we can define the following function
                 ((g e))))
 
 (let* ((tensors '((V (h1 p1) (h2 p2))
-                  (T (p3 h3) (p4 h4))
-                  (T (p5 h5))))
+                  (T2 (p3 h3) (p4 h4))
+                  (T1 (p5 h5))))
        (symmetries (make-symmetries-in-list tensors)))
   (assert-equal symmetries
                 '(((H1 . H2) (P1 . P2))
@@ -1586,8 +1598,8 @@ Let us illustrage this function with some tests
     (let ((*filter-node-symmetry* t))
       (with-rules-c '(_ (P H) (P H))
         '((V (h1 p1) (h2 p2))
-          (T (p3 h3) (p4 h4))
-          (T (p5 h5)))))
+          (T2 (p3 h3) (p4 h4))
+          (T1 (p5 h5)))))
     ))
 
 ,#+(or)
@@ -1634,8 +1646,8 @@ Let us illustrage this function with some tests
 
 (let* ((tensors
          '((V (h1 p1) (h2 p2))
-           (T (p3 h3) (p4 h4))
-           (T (p5 h5))))
+           (T2 (p3 h3) (p4 h4))
+           (T1 (p5 h5))))
        (symmetries (make-symmetries-in-list tensors))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))

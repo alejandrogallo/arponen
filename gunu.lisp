@@ -188,10 +188,20 @@
                                                  combi))))
             node-combinations)))
 
+(defun find-effective-nodes-list (list-of-tensors)
+  (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))
+         (result-alist (mapcar (lambda (k) (cons k '())) keys)))
+    (mapc (lambda (tsr)
+            (let ((current (assoc (car tsr) result-alist)))
+              (rplacd (assoc (car tsr) result-alist)
+                    (append (cdr current) (cdr tsr)))))
+          list-of-tensors)
+    (mapcar #'cdr result-alist)))
+
 (defun make-symmetries-in-list (list-of-tensors)
   (labels ((reducer (x) (reduce #'union x :from-end t)))
     (thread-last list-of-tensors
-               (mapcar #'cdr)
+               (find-effective-nodes-list)
                (mapcar #'make-node-symmetry)
                (reducer))))
 

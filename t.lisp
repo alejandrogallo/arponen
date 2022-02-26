@@ -346,9 +346,27 @@
                 ((P2 . P4) (S2 . S4))
                 ((P3 . P4) (S3 . S4))))
 
+(assert-equal (find-effective-nodes-list
+               '((V (p q) (r s)) (T2 (a b) (c d))))
+              '(((p q) (r s)) ((a b) (c d))))
+
+(assert-equal (find-effective-nodes-list '((V (p q) (r s))
+                                           (T2 (a b) (c d)) (T2 (a2 b2) (c2 d2))
+                                           (R2 (g h) (h2 g2))))
+              '(((P Q) (R S))
+                ((A B) (C D) (A2 B2) (C2 D2))
+                ((G H) (H2 G2))))
+
+(assert-equal (find-effective-nodes-list '((V (p r) (q s))
+                                           (T1 (a i)) (T1 (aa ii))
+                                           (R1 (g e))))
+              '(((p r) (q s))
+                ((a i) (aa ii))
+                ((g e))))
+
 (let* ((tensors '((V (h1 p1) (h2 p2))
-                  (T (p3 h3) (p4 h4))
-                  (T (p5 h5))))
+                  (T2 (p3 h3) (p4 h4))
+                  (T1 (p5 h5))))
        (symmetries (make-symmetries-in-list tensors)))
   (assert-equal symmetries
                 '(((H1 . H2) (P1 . P2))
@@ -520,8 +538,8 @@
     (let ((*filter-node-symmetry* t))
       (with-rules-c '(_ (P H) (P H))
         '((V (h1 p1) (h2 p2))
-          (T (p3 h3) (p4 h4))
-          (T (p5 h5)))))
+          (T2 (p3 h3) (p4 h4))
+          (T1 (p5 h5)))))
     ))
 
 #+(or)
@@ -568,8 +586,8 @@
 
 (let* ((tensors
          '((V (h1 p1) (h2 p2))
-           (T (p3 h3) (p4 h4))
-           (T (p5 h5))))
+           (T2 (p3 h3) (p4 h4))
+           (T1 (p5 h5))))
        (symmetries (make-symmetries-in-list tensors))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
