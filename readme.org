@@ -2225,18 +2225,107 @@ graph {
     (T1 (p3 h3))
     (T2 (p4 h4) (p5 h3))))
 
-(defun svg-diagram (contraction &key (node-length 50))
-  )
+(defun svg-diagram (contraction &key (node-length 100) (diagram-height 100)
+                                  (diagram-box-height 20)
+                                  (out-file nil))
+  (labels ((box-pos (i) (cons (+ (* i node-length) (* (mod i 2) 10))
+                              (* i diagram-height)))
+           (node-position (node) (let* ((-i (position node contraction
+                                                     :key #'cdr :test #'find))
+                                        (i (- -i 1))
+                                        (tsr (nth -i contraction ))
+                                        (-j (position node tsr :test #'equal))
+                                        (j (- -j 1)))
+                                   (cons (+ (car (box-pos i))
+                                            (* j node-length))
+                                         (+ (cdr (box-pos i))
+                                            (/ diagram-box-height 2)))
+                                   ))
+           (nodes-of-contraction (leg-a leg-b)
+             (let* ((tsr-a (find leg-a (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (tsr-b (find leg-b (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (a (find leg-a (cdr tsr-a) :test #'member))
+                    (b (find leg-b (cdr tsr-b) :test #'member)))
+               (assert (and a b))
+               (list a b))))
+    (let* ((n-nodes (reduce (lambda (x n)
+                              (+ n (length (cdr x))))
+                            (cdr contraction)
+                            :initial-value 0
+                            :from-end t))
+           (n-diagrams (length (cdr contraction)))
+           (width (* n-nodes node-length))
+           (height (* n-diagrams diagram-height))
+           (scene (make-svg-toplevel 'svg-1.1-toplevel
+                                     :height height :width width))
+           (iotas (loop for i below n-nodes collect i)))
+      ;; draw blocks
 
-(let* ((scene (make-svg-toplevel 'svg-1.1-toplevel :height 250 :width 250)))
-  (draw scene (:rect :x 0 :y 0 :height 250 :width 250) :fill "#CCCCCC")
-  (text scene (:x 25 :y 25) "this an tahtt and penis"
-    (tspan (:fill "red" :font-weight "bold" :font-size "2em") "circle"))
-  (draw scene (:circle :cx 200 :cy 20 :r 10) :fill "blue")
-  (draw scene (:circle :cx 100 :cy 20 :r 10) :fill "yellow")
-  (draw scene (:circle :cx 100 :cy 100 :r 10) :fill "red")
-  (draw scene (:circle :cx 200 :cy 100 :r 10) :fill "white")
+      ;; DRAW BODIES
+      (mapc (lambda (i tsr)
+              (let* ((nodes (cdr tsr))
+                     (n (length nodes))
+                     (box-width (if (> n 1)
+                                    (* node-length (- n 1))
+                                    (/ node-length 2)))
+                     (box-pos (box-pos i)))
+                ;;; DRAW BOX
+                (draw scene
+                    (:rect :x (car box-pos)
+                           :y (cdr box-pos)
+                           :width box-width
+                           :height diagram-box-height)
+                    :fill "#000000")
+                ;; TEXT
+                (text scene (:x (- (+ (car box-pos)
+                                      (/ box-width 2))
+                                   (/ diagram-box-height 2))
+                             :y (+ (cdr box-pos)
+                                   diagram-box-height))
+                  (tspan (:fill "red"
+                          :font-weight "bold"
+                          :font-size diagram-box-height)
+                         (symbol-name (car tsr))))
 
-  (with-open-file (s #p"test.svg" :direction :output :if-exists :supersede)
-    (stream-out s scene)))
+                ;;; NODE POINTS
+                (mapc (lambda (node)
+                        (let ((node-pos (node-position node)))
+                          (draw scene (:circle :cx (car node-pos)
+                                               :cy (cdr node-pos)
+                                               :r (/ diagram-box-height 5))
+                                :fill "#ff0000")))
+                      nodes)))
+            iotas (cdr contraction))
+
+      ;; DRAW CONTRACTIONS
+      (mapc (lambda (c)
+              (destructuring-bind (node-a node-b) (nodes-of-contraction (car c) (cadr c))
+                (let ((pos-a (node-position node-a))
+                      (pos-b (node-position node-b)))
+                  (draw scene (:line :x1 (car pos-a)
+                                     :y1 (cdr pos-a)
+                                     :x2 (car pos-b)
+                                     :y2 (cdr pos-b))
+                        :stroke "green"))))
+            (cadar contraction))
+
+      (if out-file
+          (with-open-file (s out-file :direction :output :if-exists :supersede)
+            (stream-out s scene))
+          (with-output-to-string (s nil)
+            (stream-out s scene)
+            s)))))
+
+(svg-diagram '((contraction ((h1 i) (h2 i2) (p1 a2)))
+               (V (h1 h2) (p1 p2))
+               (t2 (a i) (b j))
+               (t1 (a2 i2)))
+             :out-file "test.svg")
+
+(svg-diagram test-contraction
+             :out-file "test.svg")
 #+end_src
