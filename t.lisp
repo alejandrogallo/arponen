@@ -1,5 +1,6 @@
 ;; todo define packages and all that
 (load "gunu.lisp")
+(in-package :gunu)
 
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))

@@ -13,9 +13,17 @@
 
 * Prolog
 
+#+begin_src lisp :tangle gunu.lisp
+(defpackage :gunu
+  (:use :cl))
+(in-package :gunu)
+#+end_src
+
+
 #+begin_src lisp :tangle t.lisp
 ;; todo define packages and all that
 (load "gunu.lisp")
+(in-package :gunu)
 
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
@@ -685,6 +693,33 @@ Some extensive tests..
 #+end_src
 
 
+TODO: Tests
+#+begin_src lisp :tangle gunu.lisp
+(defun traverse-nodes (fn tensor)
+  (destructuring-bind (name . nodes) tensor
+    `(,name ,@(mapcar fn nodes))))
+
+(defun traverse-legs (fn tensor)
+  (traverse-nodes (lambda (node) (mapcar fn node)) tensor))
+
+(defun tensor-to-description (tensor &key orbital-spaces)
+  (traverse-legs (lambda (leg) (find-space-name-by-leg leg orbital-spaces))
+                 tensor))
+#+end_src
+
+#+RESULTS:
+: TENSOR-TO-DESCRIPTION
+
+#+begin_src lisp :tangle t.lisp
+(assert-equal (tensor-to-description '(V (i k) (l a))
+                                     :orbital-spaces
+                                     '((H i j k l) (P a b c d)))
+              '(V (H H) (H P)))
+#+end_src
+
+
+
+
 * Tensor matching
 
 #+begin_src lisp :tangle gunu.lisp
@@ -839,8 +874,10 @@ create a well-named symmetry equivalence.
                  append (loop for snd from (1+ fst) below n
                               collect (list fst snd)))))
     (mapcar (lambda (combi)
-              (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
-                                                 combi))))
+              (remove-duplicates
+               (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
+                                                combi)))
+               :test #'equal))
             node-combinations)))
 #+end_src
 
@@ -869,6 +906,10 @@ And it should of course work for higher dimensional tensors.
                 ((P2 . P3) (S2 . S3))
                 ((P2 . P4) (S2 . S4))
                 ((P3 . P4) (S3 . S4))))
+
+;; remove duplicates
+(assert-equal (make-node-symmetry '((P P) (H H)))
+              '(((P . H))))
 #+end_src
 
 #+RESULTS:
@@ -1927,7 +1968,7 @@ TODO:: Explain how one to do the naming of tensors so that everything works well
 #+RESULTS:
 : NIL
 
-
+** Partitions
 TODO: Explain the concept of partitioning and the format
 
 #+begin_src lisp :tangle gunu.lisp
@@ -1991,237 +2032,23 @@ TODO: Explain the concept of partitioning and the format
 
 #+RESULTS:
 :results:
-(+ (V (I J) (K L)) (V (I J) (K D)) (V (I J) (C L)) (V (I J) (C D)) (V (I B) (K L)) (V (I B) (K D))
-   (V (I B) (C L)) (V (I B) (C D)) (V (A J) (K L)) (V (A J) (K D)) (V (A J) (C L)) (V (A J) (C D))
-   (V (A B) (K L)) (V (A B) (K D)) (V (A B) (C L)) (V (A B) (C D)))
+(+ (V (I J) (K L))
+   (V (I J) (K D))
+   (V (I J) (C L))
+   (V (I J) (C D))
+   (V (I B) (K L))
+   (V (I B) (K D))
+   (V (I B) (C L))
+   (V (I B) (C D))
+   (V (A J) (K L))
+   (V (A J) (K D))
+   (V (A J) (C L))
+   (V (A J) (C D))
+   (V (A B) (K L))
+   (V (A B) (K D))
+   (V (A B) (C L))
+   (V (A B) (C D)))
 :end:
-
-* API
-In this section we will present most functions that will be useful
-using the library from a user perspective in order to contract
-expressions.
-
-From the discussion up to know, some points should be noted:
-
-- the names of the tensors is meaningful and they should be equal
-  only in reference to symmetries.
-  In general, one should name the many-body components
-  of a tensor differently, i.e. for instance
-  =(T2 (a i) (b j))=
-  and
-  =(T1 (a i))=.
-- All the legs in an expression should be named differently.
-
-** TODO Particle hole picture
-
-In order to design a good user interface, we should make it as clear
-and as modular as possible for the user, and reading these lines
-one should be convinced that it is not too much effort to design
-your own interface if this one does not suit you.
-
-Generally we will want to define tensors generally
-in the real vacuum description and partition the tensor
-in holes and particles.
-
-For our purposes let us denote fix the index space:
-#+begin_src lisp :eval no
-(PQ pq1 pq2 pq3 ...) ;; real vacuum indices
-(P  p1 p2 p3 ...)    ;; particle indices
-(H  h1 h2 h3 ...)    ;; hole indices
-#+end_src
-
-Then we will want to turn
-#+begin_src lisp :eval no
-(Vpqrs (PQ1 PQ2) (PQ3 PQ4))
-#+end_src
-into all 16 combinations
-#+begin_src lisp :eval no
-(Vhhpp (h1 p1) (h2 p2))
-(Vhphp (h1 h2) (p1 p2))
-;; ...
-#+end_src
-
-Actually we will want less combinations since
-by virtue of node symmetry we should consider
-#+begin_src lisp :eval no
-(Vhphp (h1 h2) (p1 p2))
-;; and
-(Vhphp (p1 p2) (h1 h2))
-#+end_src
-equivalent.
-
-
-#+begin_src lisp :tangle gunu.lisp
-(defun make-space (name prefix n)
-  `(,name ,@(mapcar (lambda (i)
-                      (intern (format nil "~a~a" prefix i)))
-                    (loop for i from 1 to n collect i))))
-
-(defun remove-1-in-product-list (prod-list)
-  (mapcar (lambda (product)
-            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
-                       product))
-          prod-list))
-
-(defun contract-expression (target expr &key orbital-spaces contraction-rules)
-  (let* ((expanded (remove-1 (expr-to-lists expr)))
-         (n (length expanded))
-         (i 0))
-    (remove-if
-     #'null
-     (mapcar
-      (lambda (tensor-product)
-        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-        (let ((begin (get-internal-run-time))
-              (contractions
-                (find-contractions-in-product-by-target target
-                                                        tensor-product
-                                                        :orbital-spaces
-                                                        orbital-spaces
-                                                        :contraction-rules
-                                                        contraction-rules)))
-          (format t "~2t in (~,1f seconds)"
-                  (/ (- (get-internal-run-time) begin)
-                     internal-time-units-per-second))
-          (when contractions
-            (list `(contractions ,contractions) tensor-product))))
-      expanded))))
-
-
-(defmacro with-particle-hole)
-#+end_src
-
-
-
-* Examples
-** IP Equation of motion CCSD
-#+begin_src lisp :tangle eom-ip/input.lisp :mkdirp t
-(load "gunu.lisp")
-
-(defun make-space (name prefix n)
-  `(,name ,@(mapcar (lambda (i)
-                      (intern (format nil "~a~a" prefix i)))
-                    (loop for i from 1 to n collect i))))
-
-(defun remove-1 (prod-list)
-  (mapcar (lambda (product)
-            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
-                       product))
-          prod-list))
-
-(defun contract-expression (target expr &key orbital-spaces contraction-rules)
-  (let* ((expanded (remove-1 (expr-to-lists expr)))
-         (n (length expanded))
-         (i 0))
-    (remove-if
-     #'null
-     (mapcar
-      (lambda (tensor-product)
-        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-        (let ((begin (get-internal-run-time))
-              (contractions
-                (find-contractions-in-product-by-target target
-                                                        tensor-product
-                                                        :orbital-spaces
-                                                        orbital-spaces
-                                                        :contraction-rules
-                                                        contraction-rules)))
-          (format t "~2t in (~,1f seconds)"
-                  (/ (- (get-internal-run-time) begin)
-                     internal-time-units-per-second))
-          (when contractions
-            (list `(contractions ,contractions) tensor-product))))
-      expanded))))
-
-
-
-(defun tensor-sum (&rest args)
-  `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)
-                                     ('+ (append (cdr tsr) rest))
-                                     (t (cons tsr rest))))
-                args
-                :from-end t
-                :initial-value nil)))
-
-(let* ((orbital-spaces
-         (list (append (make-space 'H 'h 20) '(i j k l m n))
-               (append (make-space 'P 'p 20) '(a b c d e f))
-               (make-space 'G 'g 20)
-               (append (make-space 'pq 'pq- 20) '(p q r s))))
-
-       (partition '((PQ H P)))
-
-       (contraction-rules
-         '(((H H) 0 1)
-           ((P P) 1 0)))
-
-       ;; tensors
-       vpqrs f t1 t2 r1 r2
-
-       (r1-like '(_ (G H)))
-       (r2-like '(_ (G H) (P H)))
-
-       ccsd-expressions)
-
-  (setq *print-log* nil)
-  (setq vpqrs (partition-tensor '(V (p q) (r s))
-                                :orbital-spaces orbital-spaces
-                                :partition partition))
-
-  (setq f (partition-tensor '(f (p q))
-                            :orbital-spaces orbital-spaces
-                            :partition partition
-                            :from-index 4))
-
-  (setq t1 (name-legs-by-space-name '(T1 (P H))
-                                    :orbital-spaces orbital-spaces
-                                    :from-index 6))
-
-  (setq -t1 (name-legs-by-space-name '(T1 (P H))
-                                     :orbital-spaces orbital-spaces
-                                     :from-index 7))
-
-  (setq t2 (name-legs-by-space-name '(T2 (P H) (P H))
-                                    :orbital-spaces orbital-spaces
-                                    :from-index 8))
-
-  (setq -t2 (name-legs-by-space-name '(T2 (P H) (P H))
-                                     :orbital-spaces orbital-spaces
-                                     :from-index 10))
-
-  (setq r1 (name-legs-by-space-name '(R1 (G H))
-                                    :orbital-spaces orbital-spaces
-                                    :from-index 12))
-
-  (setq r2 (name-legs-by-space-name '(R2 (G H) (P H))
-                                    :orbital-spaces orbital-spaces
-                                    :from-index 13))
-
-
-  (setq ccsd-expressions
-        `(* ,(tensor-sum f vpqrs)
-                       (+ 1 ,t1 ,t2 (* ,t1 ,-t1) (* ,t1 ,t2) (* ,t2 ,-t2))
-                       (+ ,r1 ,r2)))
-  (format t "~&======~&=> ~a" ccsd-expressions)
-
-  (format t "~&~& DOING R1")
-  (with-open-file (s "r1.lisp" :direction :output :if-exists :supersede)
-    (time (format s "~s"
-                  (contract-expression r1-like
-                                       ccsd-expressions
-                                       :orbital-spaces orbital-spaces
-                                       :contraction-rules contraction-rules))))
-
-  (format t "~&~& DOING r2")
-  (with-open-file (s "r2.lisp" :direction :output :if-exists :supersede)
-    (time (format s "~s"
-            (contract-expression r2-like
-                                 ccsd-expressions
-                                 :orbital-spaces orbital-spaces
-                                 :contraction-rules contraction-rules))))
-
-  (format t "~&~&Done"))
-#+end_src
 
 * Output formats
 ** TeX
@@ -2464,4 +2291,388 @@ graph {
 
 (svg-diagram test-contraction
              :out-file "test.svg")
+#+end_src
+
+* API
+In this section we will present most functions that will be useful
+using the library from a user perspective in order to contract
+expressions.
+
+From the discussion up to know, some points should be noted:
+
+- the names of the tensors is meaningful and they should be equal
+  only in reference to symmetries.
+  In general, one should name the many-body components
+  of a tensor differently, i.e. for instance
+  =(T2 (a i) (b j))=
+  and
+  =(T1 (a i))=.
+- All the legs in an expression should be named differently.
+
+** TODO Particle hole picture
+
+In order to design a good user interface, we should make it as clear
+and as modular as possible for the user, and reading these lines
+one should be convinced that it is not too much effort to design
+your own interface if this one does not suit you.
+
+Generally we will want to define tensors generally
+in the real vacuum description and partition the tensor
+in holes and particles.
+
+For our purposes let us denote fix the index space:
+#+begin_src lisp :eval no
+(PQ pq1 pq2 pq3 ...) ;; real vacuum indices
+(P  p1 p2 p3 ...)    ;; particle indices
+(H  h1 h2 h3 ...)    ;; hole indices
+#+end_src
+
+Then we will want to turn
+#+begin_src lisp :eval no
+(Vpqrs (PQ1 PQ2) (PQ3 PQ4))
+#+end_src
+into all 16 combinations
+#+begin_src lisp :eval no
+(Vhhpp (h1 p1) (h2 p2))
+(Vhphp (h1 h2) (p1 p2))
+;; ...
+#+end_src
+
+Actually we will want less combinations since
+by virtue of node symmetry we should consider
+#+begin_src lisp :eval no
+(Vhphp (h1 h2) (p1 p2))
+;; and
+(Vhphp (p1 p2) (h1 h2))
+#+end_src
+equivalent.
+
+
+#+begin_src lisp :tangle gunu.lisp
+(defpackage :gunu/hole-particle-picture
+  (:use :cl :gunu)
+  (:nicknames :hp))
+(in-package :gunu/hole-particle-picture)
+
+(defconstant +default-orbital-spaces+
+  '((H)   ;; holes
+    (P)   ;; particles
+    (G)   ;; general (or rather ghosts)
+    (PH)) ;; particle-holes (real vacuum)
+  "Orbital space for the default particle-hole picture")
+(defvar *orbital-spaces* (copy-tree +default-orbital-spaces+))
+
+
+(defconstant +default-orbital-spaces-counter+
+  '((H . 0)
+    (P . 0)
+    (G . 0)
+    (PH . 0))
+  "Current index for the orbital spaces")
+(defvar *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+
+(defconstant +default-space-partition+
+  '((PH H P)))
+(defvar *space-partition* (copy-tree +default-space-partition+))
+
+(defun reset-spaces ()
+  (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+  (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
+  (values *orbital-spaces* *orbital-spaces-counter*))
+
+(defun genindex (space-name)
+  (let ((counter (find space-name *orbital-spaces-counter* :key #'car))
+        (space (position space-name *orbital-spaces* :key #'car)))
+    (unless (and counter space) (error "~&The name ~s is not one of ~s"
+                                       space-name
+                                       (mapcar #'car *orbital-spaces*)))
+    (let ((new-index
+            (intern (format nil "~a~a" space-name (incf (cdr counter))))))
+      (setf (nth space *orbital-spaces*)
+            (append (nth space *orbital-spaces*) (list new-index)))
+      new-index)))
+
+;; test
+(progn
+  (reset-spaces)
+  (print +default-orbital-spaces+)
+  (dotimes (i 10)
+    (when (zerop (mod i 2)) (genindex 'P))
+    (genindex 'H))
+  (assert (eq (genindex 'H) 'H11))
+  (assert (eq (genindex 'H) 'H12))
+  (assert (eq (genindex 'P) 'P6))
+  (assert (eq (genindex 'G) 'G1))
+  (assert (eq (genindex 'ph) 'ph1))
+  (reset-spaces)
+  (assert (eq (genindex 'H) 'H1))
+  (reset-spaces))
+
+
+(defun name-legs-by-space-name-1 (tensor-description)
+  (gunu::traverse-legs #'genindex tensor-description))
+
+
+(name-legs-by-space-name-1 '(t2 (P H) (P H)))
+
+(defun do-partition-node-description (node &key partition)
+  (eval `(gunu::cartesian-product
+          ,@(mapcar (lambda (leg)
+                      (let ((p (find leg partition :key #'car)))
+                        (if p (cdr p) (list leg))))
+                    node))))
+
+(assert (equal (do-partition-node-description '(H P) :partition '((PH H P)))
+              '((H P))))
+(assert (equal (do-partition-node-description '(H P) :partition '((P |a| A)))
+              '((H |a|) (H A))))
+(assert (equal (do-partition-node-description '(PH P) :partition '((PH H P)))
+              '((H P) (P P))))
+(assert (equal (do-partition-node-description '(PH PH) :partition '((PH H P)))
+              '((H H) (H P) (P H) (P P))))
+
+(defun partition-tensor-description (tensor-description &key partition)
+  (destructuring-bind (name . nodes) tensor-description
+    (let* ((p-node-lists (mapcar (lambda (n)
+                                   (do-partition-node-description n
+                                     :partition partition)) nodes))
+           (new-node-lists (eval `(gunu::cartesian-product ,@p-node-lists))))
+      (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
+
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP))
+                                                  :partition '((HP P H)))
+                    '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP H))
+                                                  :partition '((HP P H)))
+                    '((T2 (P H)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
+                                                  :partition '((HP H P)))
+                    '((T2 (H H) (H H))
+                      (T2 (H H) (H P))
+                      (T2 (H H) (P H))
+                      (T2 (H H) (P P))
+                      (T2 (H P) (H H))
+                      (T2 (H P) (H P))
+                      (T2 (H P) (P H))
+                      (T2 (H P) (P P))
+                      (T2 (P H) (H H))
+                      (T2 (P H) (H P))
+                      (T2 (P H) (P H))
+                      (T2 (P H) (P P))
+                      (T2 (P P) (H H))
+                      (T2 (P P) (H P))
+                      (T2 (P P) (P H))
+                      (T2 (P P) (P P))))
+
+(defun remove-1-in-product-list (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+
+(gunu::apply-symmetry-to-nodes
+ '((P . H))
+ '(T2 (P P) (H H)))
+(gunu::make-node-symmetry '((P P) (H H)))
+
+(defun filter-tensors-by-symmetries (symmetries-list tensor-list)
+  (let (result)
+    (mapc (lambda (sym tsr)
+            (let ((new-tsrs (gunu::apply-symmetry-to-nodes sym tsr)))
+              (unless (intersection (cons tsr new-tsrs) result :test #'equal)
+                (push tsr result))))
+          symmetries-list tensor-list)
+    (reverse result)))
+
+(defun filter-tensors-by-description (tensor-list &key orbital-spaces)
+  (remove-duplicates
+   tensor-list :test (lambda (x y) (equal (gunu::tensor-to-description
+                                           x :orbital-spaces orbital-spaces)
+                                          (gunu::tensor-to-description
+                                           y :orbital-spaces orbital-spaces)))))
+
+(filter-tensors-by-description '((T2 (i a)) (T2 (j b)))
+                               :orbital-spaces '((H i j) (P a b)))
+
+(let* ((tsrs
+         (mapcar #'name-legs-by-space-name-1
+                 (partition-tensor-description
+                  '(V (PH PH) (PH PH))
+                  :partition *space-partition*)))
+       (syms (mapcar (lambda (tsr) (gunu::make-node-symmetry (cdr tsr))) tsrs)))
+  syms
+  (filter-tensors-by-description
+   (filter-tensors-by-symmetries syms tsrs)
+   :orbital-spaces *orbital-spaces*)
+  ,*orbital-spaces*)
+
+
+,#+nil
+(defun partition (tensor-description)
+  (let ((td-list
+          (partition-tensor-description tensor-description)))
+    (when gunu::*filter-node-symmetry*
+      (setq partition-tensor-description
+            (gunu::filter-contractions-by-symmetries)))
+
+    ))
+
+#|
+(defun contract-expression (target expr &key orbital-spaces contraction-rules)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+        (let ((begin (get-internal-run-time))
+              (contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
+|#
+#+end_src
+
+
+
+* Examples
+** IP Equation of motion CCSD
+#+begin_src lisp :tangle eom-ip/input.lisp :mkdirp t
+(load "gunu.lisp")
+
+(defun make-space (name prefix n)
+  `(,name ,@(mapcar (lambda (i)
+                      (intern (format nil "~a~a" prefix i)))
+                    (loop for i from 1 to n collect i))))
+
+(defun remove-1 (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+(defun contract-expression (target expr &key orbital-spaces contraction-rules)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+        (let ((begin (get-internal-run-time))
+              (contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
+
+
+
+(defun tensor-sum (&rest args)
+  `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)
+                                     ('+ (append (cdr tsr) rest))
+                                     (t (cons tsr rest))))
+                args
+                :from-end t
+                :initial-value nil)))
+
+(let* ((orbital-spaces
+         (list (append (make-space 'H 'h 20) '(i j k l m n))
+               (append (make-space 'P 'p 20) '(a b c d e f))
+               (make-space 'G 'g 20)
+               (append (make-space 'pq 'pq- 20) '(p q r s))))
+
+       (partition '((PQ H P)))
+
+       (contraction-rules
+         '(((H H) 0 1)
+           ((P P) 1 0)))
+
+       ;; tensors
+       vpqrs f t1 t2 r1 r2
+
+       (r1-like '(_ (G H)))
+       (r2-like '(_ (G H) (P H)))
+
+       ccsd-expressions)
+
+  (setq *print-log* nil)
+  (setq vpqrs (partition-tensor '(V (p q) (r s))
+                                :orbital-spaces orbital-spaces
+                                :partition partition))
+
+  (setq f (partition-tensor '(f (p q))
+                            :orbital-spaces orbital-spaces
+                            :partition partition
+                            :from-index 4))
+
+  (setq t1 (name-legs-by-space-name '(T1 (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 6))
+
+  (setq -t1 (name-legs-by-space-name '(T1 (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 7))
+
+  (setq t2 (name-legs-by-space-name '(T2 (P H) (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 8))
+
+  (setq -t2 (name-legs-by-space-name '(T2 (P H) (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 10))
+
+  (setq r1 (name-legs-by-space-name '(R1 (G H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 12))
+
+  (setq r2 (name-legs-by-space-name '(R2 (G H) (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 13))
+
+
+  (setq ccsd-expressions
+        `(* ,(tensor-sum f vpqrs)
+                       (+ 1 ,t1 ,t2 (* ,t1 ,-t1) (* ,t1 ,t2) (* ,t2 ,-t2))
+                       (+ ,r1 ,r2)))
+  (format t "~&======~&=> ~a" ccsd-expressions)
+
+  (format t "~&~& DOING R1")
+  (with-open-file (s "r1.lisp" :direction :output :if-exists :supersede)
+    (time (format s "~s"
+                  (contract-expression r1-like
+                                       ccsd-expressions
+                                       :orbital-spaces orbital-spaces
+                                       :contraction-rules contraction-rules))))
+
+  (format t "~&~& DOING r2")
+  (with-open-file (s "r2.lisp" :direction :output :if-exists :supersede)
+    (time (format s "~s"
+            (contract-expression r2-like
+                                 ccsd-expressions
+                                 :orbital-spaces orbital-spaces
+                                 :contraction-rules contraction-rules))))
+
+  (format t "~&~&Done"))
 #+end_src

@@ -1,3 +1,7 @@
+(defpackage :gunu
+  (:use :cl))
+(in-package :gunu)
+
 (defun contraction? (expr)
   (and (listp expr)
        (listp (car expr))
@@ -606,3 +610,43 @@
                                                      (cdr tensor-expression))))
     (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))
+
+(defpackage :gunu/hole-particle-picture
+  (:use :cl :gunu)
+  (:nicknames :g/hp))
+(in-package :gunu/hole-particle-picture)
+
+(defun make-space (name prefix n)
+  `(,name ,@(mapcar (lambda (i)
+                      (intern (format nil "~a~a" prefix i)))
+                    (loop for i from 1 to n collect i))))
+
+(defun remove-1-in-product-list (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+(defun contract-expression (target expr &key orbital-spaces contraction-rules)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+        (let ((begin (get-internal-run-time))
+              (contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
