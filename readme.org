@@ -1,11 +1,11 @@
 #+TODO: TODO EXPLAIN CLEAN | DONE
-* Todo [33%]
+* Todo [50%]
 
-- [ ] create the unit tensor operator and check that it plays well
+- [-] create the unit tensor operator and check that it plays well
 - [X] create an option to disallow contractions of the tensor with
   itself.
 - [X] create an option for only allowing linked contractions
-- [ ] implement symmetry filter:
+- [X] implement symmetry filter:
   Viajb should be the same as Vaibj and so on.
   So the symmetry is a node Vertauschungssymmetrie.
 - [ ] compile with gcl
@@ -18,6 +18,9 @@
   (:use :cl))
 (in-package :gunu)
 #+end_src
+
+#+RESULTS:
+: #<PACKAGE "GUNU">
 
 
 #+begin_src lisp :tangle t.lisp
@@ -104,6 +107,9 @@ as follows
   (and (listp expr)
        (listp (cadr expr))))
 #+end_src
+
+#+RESULTS:
+: TENSOR\?
 
 #+begin_src lisp :tangle t.lisp
 (assert (contraction? '((contraction ((a b) (c d))) nil)))
@@ -213,6 +219,9 @@ on the loop macro.
      :from-end t
      :initial-value initial-value)))
 #+end_src
+
+#+RESULTS:
+: CARTESIAN-PRODUCT
 
 With tests:
 #+begin_src lisp :tangle t.lisp
@@ -2308,6 +2317,61 @@ From the discussion up to know, some points should be noted:
   and
   =(T1 (a i))=.
 - All the legs in an expression should be named differently.
+
+** User input for hole particle picture
+
+#+begin_src lisp
+(in-package :ki/hp)
+
+(defmacro ! (name &rest nodes)
+  `(list ',name ',@nodes))
+
+(! V (H P) (A B))
+
+;; declare tensors
+(let* ((V (hp! V (HP HP) (HP HP)))
+
+       (F (! F (HP HP)))
+
+       (T1 (!  T1 (P H)))
+       (T1- (! T1 (P H)))
+
+       (T2  (! T2 (P P) _ H H ))
+       (T2- (! T2 (P H) (P H)))
+
+       (R1 (! (R1 (G H))))
+       (R2 (! R2 (P H) (G H)))
+
+       (expression (* (+ F V)
+                      ;; exponential
+                      (+ 1 T1 T2 (* T1 T1) (* T1 T2) (* T2 T2))
+                      (+ R1 R2)))
+
+       (r1-target '(! _ (G H)))
+       (r2-target '(! _ (P H) (G H)))
+
+       (r1-contractions (contract r1-target
+                                  expressions
+                                  :restricted t
+                                  ;; :unrestricted t
+                                  :connected t
+                                  ))
+
+       (r2-contractions (contract r1-target
+                                  expressions
+                                  :restricted t
+                                  ;; :unrestricted t
+                                  :connected t
+                                  ))
+       )
+
+
+  (save-to-file)
+
+
+  )
+#+end_src
+
 
 ** TODO Particle hole picture
 
