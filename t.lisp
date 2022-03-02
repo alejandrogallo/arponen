@@ -275,6 +275,11 @@
   (loop for (v . result) in vals
         do (assert (eq (find-space-name-by-leg v spaces) result))))
 
+(assert-equal (tensor-to-description '(V (i k) (l a))
+                                     :orbital-spaces
+                                     '((H i j k l) (P a b c d)))
+              '(V (H H) (H P)))
+
 (progn
   (assert (match-target-with-tensor-1 '(V (H P) (P))
                                       '(t (i b) (a))
@@ -346,6 +351,10 @@
                 ((P2 . P3) (S2 . S3))
                 ((P2 . P4) (S2 . S4))
                 ((P3 . P4) (S3 . S4))))
+
+;; remove duplicates
+(assert-equal (make-node-symmetry '((P P) (H H)))
+              '(((P . H))))
 
 (assert-equal (find-effective-nodes-list
                '((V (p q) (r s)) (T2 (a b) (c d))))
@@ -733,3 +742,76 @@
   (latex (partition-tensor '(V (p q) (r s))
                     :orbital-spaces orbital-spaces
                     :partition partition)))
+
+(in-package :hp)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(progn
+  (reset-spaces)
+  (print +default-orbital-spaces+)
+  (dotimes (i 10)
+    (when (zerop (mod i 2)) (genindex 'P))
+    (genindex 'H))
+  (assert (eq (genindex 'H) 'H11))
+  (assert (eq (genindex 'H) 'H12))
+  (assert (eq (genindex 'P) 'P6))
+  (assert (eq (genindex 'G) 'G1))
+  (assert (eq (genindex 'ph) 'ph1))
+  (reset-spaces)
+  (assert (eq (genindex 'H) 'H1))
+  (reset-spaces))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(assert (equal (do-partition-node-description '(H P) :partition '((PH H P)))
+              '((H P))))
+(assert (equal (do-partition-node-description '(H P) :partition '((P |a| A)))
+              '((H |a|) (H A))))
+(assert (equal (do-partition-node-description '(PH P) :partition '((PH H P)))
+              '((H P) (P P))))
+(assert (equal (do-partition-node-description '(PH PH) :partition '((PH H P)))
+              '((H H) (H P) (P H) (P P))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(name-legs-by-space-name-1 '(t2 (P H) (P H)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP))
+                                                  :partition '((HP P H)))
+                    '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP H))
+                                                  :partition '((HP P H)))
+                    '((T2 (P H)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
+                                                  :partition '((HP H P)))
+                    '((T2 (H H) (H H))
+                      (T2 (H H) (H P))
+                      (T2 (H H) (P H))
+                      (T2 (H H) (P P))
+                      (T2 (H P) (H H))
+                      (T2 (H P) (H P))
+                      (T2 (H P) (P H))
+                      (T2 (H P) (P P))
+                      (T2 (P H) (H H))
+                      (T2 (P H) (H P))
+                      (T2 (P H) (P H))
+                      (T2 (P H) (P P))
+                      (T2 (P P) (H H))
+                      (T2 (P P) (H P))
+                      (T2 (P P) (P H))
+                      (T2 (P P) (P P))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(filter-tensors-by-description '((T2 (i a)) (T2 (j b)))
+                               :orbital-spaces '((H i j) (P a b)))
+
+(let* ((tsrs
+         (mapcar #'name-legs-by-space-name-1
+                 (partition-tensor-description
+                  '(V (PH PH) (PH PH))
+                  :partition *space-partition*)))
+       (syms (mapcar (lambda (tsr) (gunu::make-node-symmetry (cdr tsr))) tsrs)))
+  syms
+  (filter-tensors-by-description
+   (filter-tensors-by-symmetries syms tsrs)
+   :orbital-spaces *orbital-spaces*)
+  *orbital-spaces*)

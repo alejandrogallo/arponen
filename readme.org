@@ -10,6 +10,7 @@
   So the symmetry is a node Vertauschungssymmetrie.
 - [ ] compile with gcl
 - [ ] test with clasp (it takes too long to compile in nixos)
+- [ ] implement antisymmetric symmetry
 
 * Prolog
 
@@ -978,6 +979,19 @@ we can define the following function
 
 #+RESULTS:
 : NIL
+
+** TODO Antisymmetry
+
+For fermionic diagrams where the tensors
+are represented by real antisymmetric objects,
+there is a further symmetry to be considered.
+
+#+begin_src lisp :tangle gunu.lisp
+(defun make-antisymmetry-symmetry (nodes)
+  (error "TODO"))
+#+end_src
+
+
 
 ** Filtering diagrams through contractions
 
@@ -2318,61 +2332,6 @@ From the discussion up to know, some points should be noted:
   =(T1 (a i))=.
 - All the legs in an expression should be named differently.
 
-** User input for hole particle picture
-
-#+begin_src lisp
-(in-package :ki/hp)
-
-(defmacro ! (name &rest nodes)
-  `(list ',name ',@nodes))
-
-(! V (H P) (A B))
-
-;; declare tensors
-(let* ((V (hp! V (HP HP) (HP HP)))
-
-       (F (! F (HP HP)))
-
-       (T1 (!  T1 (P H)))
-       (T1- (! T1 (P H)))
-
-       (T2  (! T2 (P P) _ H H ))
-       (T2- (! T2 (P H) (P H)))
-
-       (R1 (! (R1 (G H))))
-       (R2 (! R2 (P H) (G H)))
-
-       (expression (* (+ F V)
-                      ;; exponential
-                      (+ 1 T1 T2 (* T1 T1) (* T1 T2) (* T2 T2))
-                      (+ R1 R2)))
-
-       (r1-target '(! _ (G H)))
-       (r2-target '(! _ (P H) (G H)))
-
-       (r1-contractions (contract r1-target
-                                  expressions
-                                  :restricted t
-                                  ;; :unrestricted t
-                                  :connected t
-                                  ))
-
-       (r2-contractions (contract r1-target
-                                  expressions
-                                  :restricted t
-                                  ;; :unrestricted t
-                                  :connected t
-                                  ))
-       )
-
-
-  (save-to-file)
-
-
-  )
-#+end_src
-
-
 ** TODO Particle hole picture
 
 In order to design a good user interface, we should make it as clear
@@ -2456,28 +2415,9 @@ equivalent.
             (append (nth space *orbital-spaces*) (list new-index)))
       new-index)))
 
-;; test
-(progn
-  (reset-spaces)
-  (print +default-orbital-spaces+)
-  (dotimes (i 10)
-    (when (zerop (mod i 2)) (genindex 'P))
-    (genindex 'H))
-  (assert (eq (genindex 'H) 'H11))
-  (assert (eq (genindex 'H) 'H12))
-  (assert (eq (genindex 'P) 'P6))
-  (assert (eq (genindex 'G) 'G1))
-  (assert (eq (genindex 'ph) 'ph1))
-  (reset-spaces)
-  (assert (eq (genindex 'H) 'H1))
-  (reset-spaces))
-
-
 (defun name-legs-by-space-name-1 (tensor-description)
   (gunu::traverse-legs #'genindex tensor-description))
 
-
-(name-legs-by-space-name-1 '(t2 (P H) (P H)))
 
 (defun do-partition-node-description (node &key partition)
   (eval `(gunu::cartesian-product
@@ -2486,14 +2426,6 @@ equivalent.
                         (if p (cdr p) (list leg))))
                     node))))
 
-(assert (equal (do-partition-node-description '(H P) :partition '((PH H P)))
-              '((H P))))
-(assert (equal (do-partition-node-description '(H P) :partition '((P |a| A)))
-              '((H |a|) (H A))))
-(assert (equal (do-partition-node-description '(PH P) :partition '((PH H P)))
-              '((H P) (P P))))
-(assert (equal (do-partition-node-description '(PH PH) :partition '((PH H P)))
-              '((H H) (H P) (P H) (P P))))
 
 (defun partition-tensor-description (tensor-description &key partition)
   (destructuring-bind (name . nodes) tensor-description
@@ -2503,30 +2435,6 @@ equivalent.
            (new-node-lists (eval `(gunu::cartesian-product ,@p-node-lists))))
       (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
 
-(gunu::assert-equal (partition-tensor-description '(T2 (HP HP))
-                                                  :partition '((HP P H)))
-                    '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
-(gunu::assert-equal (partition-tensor-description '(T2 (HP H))
-                                                  :partition '((HP P H)))
-                    '((T2 (P H)) (T2 (H H))))
-(gunu::assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
-                                                  :partition '((HP H P)))
-                    '((T2 (H H) (H H))
-                      (T2 (H H) (H P))
-                      (T2 (H H) (P H))
-                      (T2 (H H) (P P))
-                      (T2 (H P) (H H))
-                      (T2 (H P) (H P))
-                      (T2 (H P) (P H))
-                      (T2 (H P) (P P))
-                      (T2 (P H) (H H))
-                      (T2 (P H) (H P))
-                      (T2 (P H) (P H))
-                      (T2 (P H) (P P))
-                      (T2 (P P) (H H))
-                      (T2 (P P) (H P))
-                      (T2 (P P) (P H))
-                      (T2 (P P) (P P))))
 
 (defun remove-1-in-product-list (prod-list)
   (mapcar (lambda (product)
@@ -2556,20 +2464,6 @@ equivalent.
                                           (gunu::tensor-to-description
                                            y :orbital-spaces orbital-spaces)))))
 
-(filter-tensors-by-description '((T2 (i a)) (T2 (j b)))
-                               :orbital-spaces '((H i j) (P a b)))
-
-(let* ((tsrs
-         (mapcar #'name-legs-by-space-name-1
-                 (partition-tensor-description
-                  '(V (PH PH) (PH PH))
-                  :partition *space-partition*)))
-       (syms (mapcar (lambda (tsr) (gunu::make-node-symmetry (cdr tsr))) tsrs)))
-  syms
-  (filter-tensors-by-description
-   (filter-tensors-by-symmetries syms tsrs)
-   :orbital-spaces *orbital-spaces*)
-  ,*orbital-spaces*)
 
 
 ,#+nil
@@ -2609,6 +2503,135 @@ equivalent.
 |#
 #+end_src
 
+
+#+begin_src lisp :tangle t.lisp
+(in-package :hp)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(progn
+  (reset-spaces)
+  (print +default-orbital-spaces+)
+  (dotimes (i 10)
+    (when (zerop (mod i 2)) (genindex 'P))
+    (genindex 'H))
+  (assert (eq (genindex 'H) 'H11))
+  (assert (eq (genindex 'H) 'H12))
+  (assert (eq (genindex 'P) 'P6))
+  (assert (eq (genindex 'G) 'G1))
+  (assert (eq (genindex 'ph) 'ph1))
+  (reset-spaces)
+  (assert (eq (genindex 'H) 'H1))
+  (reset-spaces))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(assert (equal (do-partition-node-description '(H P) :partition '((PH H P)))
+              '((H P))))
+(assert (equal (do-partition-node-description '(H P) :partition '((P |a| A)))
+              '((H |a|) (H A))))
+(assert (equal (do-partition-node-description '(PH P) :partition '((PH H P)))
+              '((H P) (P P))))
+(assert (equal (do-partition-node-description '(PH PH) :partition '((PH H P)))
+              '((H H) (H P) (P H) (P P))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(name-legs-by-space-name-1 '(t2 (P H) (P H)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP))
+                                                  :partition '((HP P H)))
+                    '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP H))
+                                                  :partition '((HP P H)))
+                    '((T2 (P H)) (T2 (H H))))
+(gunu::assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
+                                                  :partition '((HP H P)))
+                    '((T2 (H H) (H H))
+                      (T2 (H H) (H P))
+                      (T2 (H H) (P H))
+                      (T2 (H H) (P P))
+                      (T2 (H P) (H H))
+                      (T2 (H P) (H P))
+                      (T2 (H P) (P H))
+                      (T2 (H P) (P P))
+                      (T2 (P H) (H H))
+                      (T2 (P H) (H P))
+                      (T2 (P H) (P H))
+                      (T2 (P H) (P P))
+                      (T2 (P P) (H H))
+                      (T2 (P P) (H P))
+                      (T2 (P P) (P H))
+                      (T2 (P P) (P P))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(filter-tensors-by-description '((T2 (i a)) (T2 (j b)))
+                               :orbital-spaces '((H i j) (P a b)))
+
+(let* ((tsrs
+         (mapcar #'name-legs-by-space-name-1
+                 (partition-tensor-description
+                  '(V (PH PH) (PH PH))
+                  :partition *space-partition*)))
+       (syms (mapcar (lambda (tsr) (gunu::make-node-symmetry (cdr tsr))) tsrs)))
+  syms
+  (filter-tensors-by-description
+   (filter-tensors-by-symmetries syms tsrs)
+   :orbital-spaces *orbital-spaces*)
+  ,*orbital-spaces*)
+#+end_src
+
+** User input for hole particle picture
+
+#+begin_src lisp
+(in-package :gunu/hp)
+
+(defmacro : (name &rest nodes)
+  `(list ',name ',@nodes))
+
+
+;; declare tensors
+,#+nil
+(let* ((V (: V (HP HP) (HP HP)))
+
+       (F (: F (HP HP)))
+
+       (T1 (:  T1 (P H)))
+       (T1- (: T1 (P H)))
+
+       (T2  (: T2 (P P) _ H H ))
+       (T2- (: T2 (P H) (P H)))
+
+       (R1 (: (R1 (G H))))
+       (R2 (: R2 (P H) (G H)))
+
+       (expression (* (+ F V)
+                      ;; exponential
+                      (+ 1 T1 T2 (* T1 T1) (* T1 T2) (* T2 T2))
+                      (+ R1 R2)))
+
+       (r1-target '(: _ (G H)))
+       (r2-target '(: _ (P H) (G H)))
+
+       (r1-contractions (contract r1-target
+                                  expressions
+                                  :restricted t
+                                  ;; :unrestricted t
+                                  :connected t
+                                  ))
+
+       (r2-contractions (contract r1-target
+                                  expressions
+                                  :restricted t
+                                  ;; :unrestricted t
+                                  :connected t
+                                  ))
+       )
+
+
+  (save-to-file)
+
+
+  )
+#+end_src
 
 
 * Examples

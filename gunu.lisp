@@ -145,6 +145,17 @@
 (defun find-space-name-by-leg (leg orbital-spaces)
   (car (find leg orbital-spaces :test #'match-index-to-space)))
 
+(defun traverse-nodes (fn tensor)
+  (destructuring-bind (name . nodes) tensor
+    `(,name ,@(mapcar fn nodes))))
+
+(defun traverse-legs (fn tensor)
+  (traverse-nodes (lambda (node) (mapcar fn node)) tensor))
+
+(defun tensor-to-description (tensor &key orbital-spaces)
+  (traverse-legs (lambda (leg) (find-space-name-by-leg leg orbital-spaces))
+                 tensor))
+
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (assert (eq (length target) (length tensor)))
   (notany #'null
@@ -188,8 +199,10 @@
                  append (loop for snd from (1+ fst) below n
                               collect (list fst snd)))))
     (mapcar (lambda (combi)
-              (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
-                                                 combi))))
+              (remove-duplicates
+               (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
+                                                combi)))
+               :test #'equal))
             node-combinations)))
 
 (defun find-effective-nodes-list (list-of-tensors)
@@ -208,6 +221,9 @@
                (find-effective-nodes-list)
                (mapcar #'make-node-symmetry)
                (reducer))))
+
+(defun make-antisymmetry-symmetry (nodes)
+  (error "TODO"))
 
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
@@ -613,13 +629,67 @@
 
 (defpackage :gunu/hole-particle-picture
   (:use :cl :gunu)
-  (:nicknames :g/hp))
+  (:nicknames :hp))
 (in-package :gunu/hole-particle-picture)
 
-(defun make-space (name prefix n)
-  `(,name ,@(mapcar (lambda (i)
-                      (intern (format nil "~a~a" prefix i)))
-                    (loop for i from 1 to n collect i))))
+(defconstant +default-orbital-spaces+
+  '((H)   ;; holes
+    (P)   ;; particles
+    (G)   ;; general (or rather ghosts)
+    (PH)) ;; particle-holes (real vacuum)
+  "Orbital space for the default particle-hole picture")
+(defvar *orbital-spaces* (copy-tree +default-orbital-spaces+))
+
+
+(defconstant +default-orbital-spaces-counter+
+  '((H . 0)
+    (P . 0)
+    (G . 0)
+    (PH . 0))
+  "Current index for the orbital spaces")
+(defvar *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+
+(defconstant +default-space-partition+
+  '((PH H P)))
+(defvar *space-partition* (copy-tree +default-space-partition+))
+
+(defun reset-spaces ()
+  (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+  (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
+  (values *orbital-spaces* *orbital-spaces-counter*))
+
+(defun genindex (space-name)
+  (let ((counter (find space-name *orbital-spaces-counter* :key #'car))
+        (space (position space-name *orbital-spaces* :key #'car)))
+    (unless (and counter space) (error "~&The name ~s is not one of ~s"
+                                       space-name
+                                       (mapcar #'car *orbital-spaces*)))
+    (let ((new-index
+            (intern (format nil "~a~a" space-name (incf (cdr counter))))))
+      (setf (nth space *orbital-spaces*)
+            (append (nth space *orbital-spaces*) (list new-index)))
+      new-index)))
+
+(defun name-legs-by-space-name-1 (tensor-description)
+  (gunu::traverse-legs #'genindex tensor-description))
+
+
+(defun do-partition-node-description (node &key partition)
+  (eval `(gunu::cartesian-product
+          ,@(mapcar (lambda (leg)
+                      (let ((p (find leg partition :key #'car)))
+                        (if p (cdr p) (list leg))))
+                    node))))
+
+
+(defun partition-tensor-description (tensor-description &key partition)
+  (destructuring-bind (name . nodes) tensor-description
+    (let* ((p-node-lists (mapcar (lambda (n)
+                                   (do-partition-node-description n
+                                     :partition partition)) nodes))
+           (new-node-lists (eval `(gunu::cartesian-product ,@p-node-lists))))
+      (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
+
 
 (defun remove-1-in-product-list (prod-list)
   (mapcar (lambda (product)
@@ -627,6 +697,41 @@
                        product))
           prod-list))
 
+
+(gunu::apply-symmetry-to-nodes
+ '((P . H))
+ '(T2 (P P) (H H)))
+(gunu::make-node-symmetry '((P P) (H H)))
+
+(defun filter-tensors-by-symmetries (symmetries-list tensor-list)
+  (let (result)
+    (mapc (lambda (sym tsr)
+            (let ((new-tsrs (gunu::apply-symmetry-to-nodes sym tsr)))
+              (unless (intersection (cons tsr new-tsrs) result :test #'equal)
+                (push tsr result))))
+          symmetries-list tensor-list)
+    (reverse result)))
+
+(defun filter-tensors-by-description (tensor-list &key orbital-spaces)
+  (remove-duplicates
+   tensor-list :test (lambda (x y) (equal (gunu::tensor-to-description
+                                           x :orbital-spaces orbital-spaces)
+                                          (gunu::tensor-to-description
+                                           y :orbital-spaces orbital-spaces)))))
+
+
+
+#+nil
+(defun partition (tensor-description)
+  (let ((td-list
+          (partition-tensor-description tensor-description)))
+    (when gunu::*filter-node-symmetry*
+      (setq partition-tensor-description
+            (gunu::filter-contractions-by-symmetries)))
+
+    ))
+
+#|
 (defun contract-expression (target expr &key orbital-spaces contraction-rules)
   (let* ((expanded (remove-1 (expr-to-lists expr)))
          (n (length expanded))
@@ -650,3 +755,4 @@
           (when contractions
             (list `(contractions ,contractions) tensor-product))))
       expanded))))
+|#
