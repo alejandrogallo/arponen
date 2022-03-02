@@ -2638,6 +2638,7 @@ equivalent.
 ** IP Equation of motion CCSD
 #+begin_src lisp :tangle eom-ip/input.lisp :mkdirp t
 (load "gunu.lisp")
+(in-package :gunu)
 
 (defun make-space (name prefix n)
   `(,name ,@(mapcar (lambda (i)
@@ -2689,6 +2690,8 @@ equivalent.
                (append (make-space 'P 'p 20) '(a b c d e f))
                (make-space 'G 'g 20)
                (append (make-space 'pq 'pq- 20) '(p q r s))))
+
+       (*only-connected-diagrams* t)
 
        (partition '((PQ H P)))
 
