@@ -2694,71 +2694,6 @@ equivalent.
               '(V (a b) (c d)))
 #+end_src
 
-** Idea User input for hole particle picture
-
-#+begin_src lisp
-(in-package :gunu/hole-particle-picture)
-
-
-
-(! T (a b) (c d))
-
-(defmacro .* (&rest args)
-  `(list '* ,@args))
-
-(defmacro .+ (&rest args)
-  `(list '+ ,@args))
-
-(let ((a (! T))
-      (b (! B (a b))))
-  (.* (! T (a b) (c d))
-      (.+ A b)))
-
-,#+nil
-(let* ((V (: V (HP HP) (HP HP)))
-
-       (F (: F (HP HP)))
-
-       (T1 (:  T1 (P H)))
-       (T1- (: T1 (P H)))
-
-       (T2  (: T2 (P P) _ H H ))
-       (T2- (: T2 (P H) (P H)))
-
-       (R1 (: (R1 (G H))))
-       (R2 (: R2 (P H) (G H)))
-
-       (expression (* (+ F V)
-                      ;; exponential
-                      (+ 1 T1 T2 (* T1 T1) (* T1 T2) (* T2 T2))
-                      (+ R1 R2)))
-
-       (r1-target '(: _ (G H)))
-       (r2-target '(: _ (P H) (G H)))
-
-       (r1-contractions (contract r1-target
-                                  expressions
-                                  :restricted t
-                                  ;; :unrestricted t
-                                  :connected t
-                                  ))
-
-       (r2-contractions (contract r1-target
-                                  expressions
-                                  :restricted t
-                                  ;; :unrestricted t
-                                  :connected t
-                                  ))
-       )
-
-
-  (save-to-file)
-
-
-  )
-#+end_src
-
-
 * Examples
 
 ** Ccsd equations 
@@ -2766,9 +2701,16 @@ equivalent.
 #+begin_src lisp :tangle ccsd/input.lisp :mkdirp t
 (load "gunu.lisp")
 (in-package :hp)
-(setq gunu::*print-log* nil)
-(let* ((v (!! V (PH PH) (PH PH )))
+(let* ((gunu::*print-log* nil)
+
+       ;; define the hamiltonian through
+       ;; a particle-hole partition PH
+       ;;
+       ;; one-body matrix
        (f (!! f (PH PH)))
+       ;; two-body matrix
+       (v (!! V (PH PH) (PH PH )))
+       ;; the sum
        (h (.+ v f))
 
        ;; t1 amplitudes
@@ -2788,9 +2730,16 @@ equivalent.
        ;; targets for the diagrams search space
        (singles (! _ (P H)))
        (doubles (! _ (P H) (P H))))
-  (save-contractions "singles.lisp" (contract singles expression))
-  (save-contractions "doubles.lisp" (contract doubles expression))
-  )
+
+  (format nil "Processing singles~%")
+  (save-contractions "singles.lisp"
+                     (contract singles expression
+                               :only-connected t))
+
+  (format nil "Processing doubles~%")
+  (save-contractions "doubles.lisp"
+                     (contract doubles expression
+                               :only-connected t)))
 #+end_src
 
 
