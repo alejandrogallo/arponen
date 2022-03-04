@@ -2562,22 +2562,24 @@ equivalent.
          (gunu::*only-connected-diagrams* connected)
          (gunu::*allow-self-contractions* nil)
          (i 0))
-    (mapcar (lambda (tensor-product)
-              (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-              (let ((begin (get-internal-run-time))
-                    (contractions
-                      (gunu::find-contractions-in-product-by-target target
-                                                              tensor-product
-                                                              :orbital-spaces
-                                                              ,*orbital-spaces*
-                                                              :contraction-rules
-                                                              ,*contraction-rules*)))
-                (format t "~2t in (~,1f seconds)"
-                        (/ (- (get-internal-run-time) begin)
-                           internal-time-units-per-second))
-                (when contractions
-                  (list `(contractions ,contractions) tensor-product))))
-        expanded)))
+    (remove-if #'null
+               (mapcar (lambda (tensor-product)
+                         (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+                         (let ((begin (get-internal-run-time))
+                               (contractions
+                                 (gunu::find-contractions-in-product-by-target
+                                  target
+                                  tensor-product
+                                  :orbital-spaces
+                                  ,*orbital-spaces*
+                                  :contraction-rules
+                                  ,*contraction-rules*)))
+                           (format t "~2t in (~,1f seconds)"
+                                   (/ (- (get-internal-run-time) begin)
+                                      internal-time-units-per-second))
+                           (when contractions
+                             (list `(contractions ,contractions) tensor-product))))
+                       expanded))))
 
 (defun save-contractions (file-name contractions &key format)
   (with-open-file (s file-name :if-exists :supersede :direction :output)
@@ -2768,10 +2770,17 @@ equivalent.
 (let* ((v (!! V (PH PH) (PH PH )))
        (f (!! f (PH PH)))
        (h (.+ v f))
+
+       ;; t1 amplitudes
        (t1 (!! T1 (P H)))
        (t1- (!! T1 (P H)))
+
+       ;; t2 amplitudes
        (t2 (!! T2 (P H) (P H)))
        (t2- (!! T2 (P H) (P H)))
+
+       ;; the whole expression to contract
+       ;; i.e. Hamiltonian times T amplitudes
        (expression
          (.* h
              (.+ 1 t1 t2 (.* t1 t1-) (.* t1 t2) (.* t2 t2-))))

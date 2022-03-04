@@ -73,16 +73,17 @@
                        collect `(,i ,j))))))
 
 (defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below (1+ n) collect (gensym))))
-    `(let ((,(car vars) 0))
-       ,(reduce (lambda (x other-loop)
-                  `(loop for ,(cdr x) from ,(car x) below ,space-size
-                         ,@(if (null other-loop)
-                               `(collect `(,,@(cdr vars)))
-                               (list 'nconcing other-loop))))
-                (mapcar #'cons vars (cdr vars))
-                :initial-value nil
-                :from-end t))))
+  (when (> n 0)
+    (let* ((vars (loop for i below (1+ n) collect (gensym))))
+      `(let ((,(car vars) 0))
+         ,(reduce (lambda (x other-loop)
+                    `(loop for ,(cdr x) from ,(car x) below ,space-size
+                           ,@(if (null other-loop)
+                                 `(collect `(,,@(cdr vars)))
+                                 (list 'nconcing other-loop))))
+                  (mapcar #'cons vars (cdr vars))
+                  :initial-value nil
+                  :from-end t)))))
 
 ;; functions taken from uruk
 (defun flatten-list (ls)
@@ -777,22 +778,24 @@
          (gunu::*only-connected-diagrams* connected)
          (gunu::*allow-self-contractions* nil)
          (i 0))
-    (mapcar (lambda (tensor-product)
-              (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-              (let ((begin (get-internal-run-time))
-                    (contractions
-                      (gunu::find-contractions-in-product-by-target target
-                                                              tensor-product
-                                                              :orbital-spaces
-                                                              *orbital-spaces*
-                                                              :contraction-rules
-                                                              *contraction-rules*)))
-                (format t "~2t in (~,1f seconds)"
-                        (/ (- (get-internal-run-time) begin)
-                           internal-time-units-per-second))
-                (when contractions
-                  (list `(contractions ,contractions) tensor-product))))
-        expanded)))
+    (remove-if #'null
+               (mapcar (lambda (tensor-product)
+                         (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+                         (let ((begin (get-internal-run-time))
+                               (contractions
+                                 (gunu::find-contractions-in-product-by-target
+                                  target
+                                  tensor-product
+                                  :orbital-spaces
+                                  *orbital-spaces*
+                                  :contraction-rules
+                                  *contraction-rules*)))
+                           (format t "~2t in (~,1f seconds)"
+                                   (/ (- (get-internal-run-time) begin)
+                                      internal-time-units-per-second))
+                           (when contractions
+                             (list `(contractions ,contractions) tensor-product))))
+                       expanded))))
 
 (defun save-contractions (file-name contractions &key format)
   (with-open-file (s file-name :if-exists :supersede :direction :output)
