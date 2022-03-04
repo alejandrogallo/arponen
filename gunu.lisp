@@ -772,10 +772,10 @@
   `(gunu::tensor-sum ,@args))
 
 ;; TODO: node-symmetry ein und auschalten
-(defun contract (target expression &key (node-symmetry t) (connected nil))
+(defun contract (target expression &key (node-symmetry t) (only-connected nil))
   (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
          (n (length expanded))
-         (gunu::*only-connected-diagrams* connected)
+         (gunu::*only-connected-diagrams* only-connected)
          (gunu::*allow-self-contractions* nil)
          (i 0))
     (remove-if #'null
