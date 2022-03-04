@@ -156,6 +156,17 @@
   (traverse-legs (lambda (leg) (find-space-name-by-leg leg orbital-spaces))
                  tensor))
 
+(defun tensor-sum (&rest expressions)
+  `(+ ,@(reduce (lambda (tsr rest)
+                  (if (atom tsr)
+                      (cons tsr rest)
+                      (case (car tsr)
+                        (+ (append (cdr tsr) rest))
+                        (t (cons tsr rest)))))
+                expressions
+                :from-end t
+                :initial-value nil)))
+
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (assert (eq (length target) (length tensor)))
   (notany #'null
@@ -185,12 +196,16 @@
   (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
                                  (gensym)) symmetry-equivalence))
          (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
-                                     symmetry-equivalence temp-symbols))
+                                symmetry-equivalence temp-symbols))
          (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
-                                      symmetry-equivalence temp-symbols)))
+                                 symmetry-equivalence temp-symbols)))
     (sublis equiv-backward
             (sublis symmetry-equivalence
                     (sublis equiv-forward object)))))
+
+
+(defun apply-symmetries-to-nodes (symmetry-equivalences object)
+  (mapcar (lambda (x) (apply-symmetry-to-nodes x object)) symmetry-equivalences))
 
 (defun make-node-symmetry (nodes)
   (let* ((n (length nodes))
@@ -640,7 +655,6 @@
   "Orbital space for the default particle-hole picture")
 (defvar *orbital-spaces* (copy-tree +default-orbital-spaces+))
 
-
 (defconstant +default-orbital-spaces-counter+
   '((H . 0)
     (P . 0)
@@ -652,6 +666,10 @@
 (defconstant +default-space-partition+
   '((PH H P)))
 (defvar *space-partition* (copy-tree +default-space-partition+))
+
+(defvar *contraction-rules* '(((H H) 0 1)
+                              ((P P) 1 0))
+  "The conctractions that are not zero.")
 
 (defun reset-spaces ()
   (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
@@ -697,62 +715,86 @@
                        product))
           prod-list))
 
-
-(gunu::apply-symmetry-to-nodes
- '((P . H))
- '(T2 (P P) (H H)))
-(gunu::make-node-symmetry '((P P) (H H)))
-
 (defun filter-tensors-by-symmetries (symmetries-list tensor-list)
   (let (result)
     (mapc (lambda (sym tsr)
-            (let ((new-tsrs (gunu::apply-symmetry-to-nodes sym tsr)))
+            (let ((new-tsrs (gunu::apply-symmetries-to-nodes sym tsr)))
               (unless (intersection (cons tsr new-tsrs) result :test #'equal)
                 (push tsr result))))
           symmetries-list tensor-list)
     (reverse result)))
 
-(defun filter-tensors-by-description (tensor-list &key orbital-spaces)
-  (remove-duplicates
-   tensor-list :test (lambda (x y) (equal (gunu::tensor-to-description
-                                           x :orbital-spaces orbital-spaces)
-                                          (gunu::tensor-to-description
-                                           y :orbital-spaces orbital-spaces)))))
+(defun filter-tensors-by-symmetries-and-description
+    (symmetries tensor-list &key orbital-spaces)
+  (mapcar #'cadr (remove-duplicates
+   (mapcar #'list symmetries tensor-list)
+   :test
+   (lambda (x y)
+     (let* ((all-x (cons (cadr x)
+                         (gunu::apply-symmetries-to-nodes (car x) (cadr x))))
+            (all-y (cons (cadr y)
+                         (gunu::apply-symmetries-to-nodes (car y) (cadr y))))
+            (x-descr (mapcar (lambda (-x)
+                               (gunu::tensor-to-description -x
+                                                            :orbital-spaces
+                                                            orbital-spaces))
+                             all-x))
+            (y-descr (mapcar (lambda (-y)
+                               (gunu::tensor-to-description -y
+                                                            :orbital-spaces
+                                                            orbital-spaces))
+                             all-y)))
+       (intersection x-descr y-descr :test #'equal))))))
 
+(defun partition-symmetrize-and-filter (tensor-description)
+  (let* ((tensors (mapcar #'name-legs-by-space-name-1
+                          (partition-tensor-description tensor-description
+                                                        :partition
+                                                        *space-partition*)))
+         (symmetries (mapcar (lambda (x) (gunu::make-node-symmetry (cdr x)))
+                             tensors)))
+    (filter-tensors-by-symmetries-and-description symmetries
+                                                  tensors
+                                                  :orbital-spaces
+                                                  *orbital-spaces*)))
+(defmacro ! (name &rest nodes)
+  `'(,name ,@nodes))
 
+(defmacro !! (name &rest nodes)
+  (let ((tensor-description `(,name ,@nodes)))
+    `'(+ ,@(partition-symmetrize-and-filter tensor-description))))
 
-#+nil
-(defun partition (tensor-description)
-  (let ((td-list
-          (partition-tensor-description tensor-description)))
-    (when gunu::*filter-node-symmetry*
-      (setq partition-tensor-description
-            (gunu::filter-contractions-by-symmetries)))
+(defmacro .* (&rest args)
+  `(list '* ,@args))
 
-    ))
+(defmacro .+ (&rest args)
+  `(gunu::tensor-sum ,@args))
 
-#|
-(defun contract-expression (target expr &key orbital-spaces contraction-rules)
-  (let* ((expanded (remove-1 (expr-to-lists expr)))
+;; TODO: node-symmetry ein und auschalten
+(defun contract (target expression &key (node-symmetry t) (connected nil))
+  (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
          (n (length expanded))
+         (gunu::*only-connected-diagrams* connected)
+         (gunu::*allow-self-contractions* nil)
          (i 0))
-    (remove-if
-     #'null
-     (mapcar
-      (lambda (tensor-product)
-        (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
-        (let ((begin (get-internal-run-time))
-              (contractions
-                (find-contractions-in-product-by-target target
-                                                        tensor-product
-                                                        :orbital-spaces
-                                                        orbital-spaces
-                                                        :contraction-rules
-                                                        contraction-rules)))
-          (format t "~2t in (~,1f seconds)"
-                  (/ (- (get-internal-run-time) begin)
-                     internal-time-units-per-second))
-          (when contractions
-            (list `(contractions ,contractions) tensor-product))))
-      expanded))))
-|#
+    (mapcar (lambda (tensor-product)
+              (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
+              (let ((begin (get-internal-run-time))
+                    (contractions
+                      (gunu::find-contractions-in-product-by-target target
+                                                              tensor-product
+                                                              :orbital-spaces
+                                                              *orbital-spaces*
+                                                              :contraction-rules
+                                                              *contraction-rules*)))
+                (format t "~2t in (~,1f seconds)"
+                        (/ (- (get-internal-run-time) begin)
+                           internal-time-units-per-second))
+                (when contractions
+                  (list `(contractions ,contractions) tensor-product))))
+        expanded)))
+
+(defun save-contractions (file-name contractions &key format)
+  (with-open-file (s file-name :if-exists :supersede :direction :output)
+    (case format
+      (t (format s "~s" contractions)))))

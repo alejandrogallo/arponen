@@ -256,6 +256,23 @@
    ((V...) (T2) (T2) (R1))
    ((V...) (T2) (T2) (R2))))
 
+(assert-equal (expr-to-lists '(* (+ (T1 (P6 H6))) (+ (T1 (P5 H5)))))
+              '(((T1 (P6 H6)) (T1 (P5 H5)))))
+
+(assert-equal
+ (expr-to-lists '(+ 1 (T1 (P6 H6))
+                        (T2 (P3 H3) (P4 H4))
+                        (* (+ (T1 (P6 H6))) (+ (T1 (P5 H5))))
+                        (* (+ (T1 (P6 H6))) (+ (T2 (P3 H3) (P4 H4))))
+                        (* (+ (T2 (P3 H3) (P4 H4))) (+ (T2 (P1 H1) (P2 H2))))))
+
+ '((1)
+   ((T1 (P6 H6)))
+   ((T2 (P3 H3) (P4 H4)))
+   ((T1 (P6 H6)) (T1 (P5 H5)))
+   ((T1 (P6 H6)) (T2 (P3 H3) (P4 H4)))
+   ((T2 (P3 H3) (P4 H4)) (T2 (P1 H1) (P2 H2)))))
+
 (progn (assert (match-index-to-space 'k '(H i j k l)))
        (assert (not (match-index-to-space 'H '(H i j k l)))))
 
@@ -279,6 +296,20 @@
                                      :orbital-spaces
                                      '((H i j k l) (P a b c d)))
               '(V (H H) (H P)))
+
+(assert-equal (tensor-sum '(T (A b) (c d)))
+              '(+ (T (a b) (c d))))
+(assert-equal (tensor-sum '(T (A b) (c d)) '(V (e i)))
+              '(+ (T (a b) (c d))
+                  (V (e i))))
+(assert-equal (tensor-sum '(* (t (a b) (c d)) (f (k l))) '(v (e i)))
+              '(+ (* (T (A B) (C D)) (F (K L)))
+                  (V (E I))))
+(assert-equal (tensor-sum '(+ a b c d (* e d)) '(h1 h2))
+              '(+ A B C D (* E D) (H1 H2)))
+;; this one is very useful
+(assert-equal (tensor-sum '(+ a b c d) '(+ e d) '(+ h1 h2))
+              '(+ A B C D E D H1 H2))
 
 (progn
   (assert (match-target-with-tensor-1 '(V (H P) (P))
@@ -744,6 +775,7 @@
                     :partition partition)))
 
 (in-package :hp)
+(import 'gunu::assert-equal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (progn
   (reset-spaces)
@@ -762,56 +794,86 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(assert (equal (do-partition-node-description '(H P) :partition '((PH H P)))
-              '((H P))))
-(assert (equal (do-partition-node-description '(H P) :partition '((P |a| A)))
-              '((H |a|) (H A))))
-(assert (equal (do-partition-node-description '(PH P) :partition '((PH H P)))
-              '((H P) (P P))))
-(assert (equal (do-partition-node-description '(PH PH) :partition '((PH H P)))
-              '((H H) (H P) (P H) (P P))))
+(assert-equal (do-partition-node-description '(H P)
+                :partition '((PH H P)))
+              '((H P)))
+(assert-equal (do-partition-node-description '(H P)
+                :partition '((P |a| A)))
+              '((H |a|) (H A)))
+(assert-equal (do-partition-node-description '(PH P)
+                :partition '((PH H P)))
+              '((H P) (P P)))
+(assert-equal (do-partition-node-description '(PH PH)
+                :partition '((PH H P)))
+              '((H H) (H P) (P H) (P P)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(name-legs-by-space-name-1 '(t2 (P H) (P H)))
+(reset-spaces)
+(assert-equal (name-legs-by-space-name-1 '(t2 (P H) (P H)))
+              '(t2 (p1 h1) (p2 h2)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(gunu::assert-equal (partition-tensor-description '(T2 (HP HP))
-                                                  :partition '((HP P H)))
-                    '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
-(gunu::assert-equal (partition-tensor-description '(T2 (HP H))
-                                                  :partition '((HP P H)))
-                    '((T2 (P H)) (T2 (H H))))
-(gunu::assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
-                                                  :partition '((HP H P)))
-                    '((T2 (H H) (H H))
-                      (T2 (H H) (H P))
-                      (T2 (H H) (P H))
-                      (T2 (H H) (P P))
-                      (T2 (H P) (H H))
-                      (T2 (H P) (H P))
-                      (T2 (H P) (P H))
-                      (T2 (H P) (P P))
-                      (T2 (P H) (H H))
-                      (T2 (P H) (H P))
-                      (T2 (P H) (P H))
-                      (T2 (P H) (P P))
-                      (T2 (P P) (H H))
-                      (T2 (P P) (H P))
-                      (T2 (P P) (P H))
-                      (T2 (P P) (P P))))
+(assert-equal (partition-tensor-description '(T2 (HP HP))
+                                            :partition '((HP P H)))
+              '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
+(assert-equal (partition-tensor-description '(T2 (HP H))
+                                            :partition '((HP P H)))
+              '((T2 (P H)) (T2 (H H))))
+(assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
+                                            :partition '((HP H P)))
+              '((T2 (H H) (H H))
+                (T2 (H H) (H P))
+                (T2 (H H) (P H))
+                (T2 (H H) (P P))
+                (T2 (H P) (H H))
+                (T2 (H P) (H P))
+                (T2 (H P) (P H))
+                (T2 (H P) (P P))
+                (T2 (P H) (H H))
+                (T2 (P H) (H P))
+                (T2 (P H) (P H))
+                (T2 (P H) (P P))
+                (T2 (P P) (H H))
+                (T2 (P P) (H P))
+                (T2 (P P) (P H))
+                (T2 (P P) (P P))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(filter-tensors-by-description '((T2 (i a)) (T2 (j b)))
-                               :orbital-spaces '((H i j) (P a b)))
 
-(let* ((tsrs
-         (mapcar #'name-legs-by-space-name-1
-                 (partition-tensor-description
-                  '(V (PH PH) (PH PH))
-                  :partition *space-partition*)))
-       (syms (mapcar (lambda (tsr) (gunu::make-node-symmetry (cdr tsr))) tsrs)))
-  syms
-  (filter-tensors-by-description
-   (filter-tensors-by-symmetries syms tsrs)
-   :orbital-spaces *orbital-spaces*)
-  *orbital-spaces*)
+
+(filter-tensors-by-symmetries '((((P . H) (H . P)))
+                                (((H . P) (P . H))))
+                              '((V (P H) (H P))
+                                (V (H P) (P H))))
+
+(assert-equal (gunu::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
+                                   ((H1 . H2))
+                                   ((H3 . H4)))
+                                               '(V (H1 H2) (H3 H4)))
+              '((V (H3 H4) (H1 H2)) (V (H2 H1) (H3 H4)) (V (H1 H2) (H4 H3))))
+
+(gunu::make-node-symmetry '((P H) (H P)))
+(gunu::make-node-symmetry '((P H) (P P) (A B)))
+(gunu::apply-symmetry-to-nodes '((P . P) (H . P))
+                               '(V (P H) (P P)))
+
+
+(gunu::apply-symmetry-to-nodes '((P . H) (H . P))
+                               '(V (P H) (H P)))
+'((V (H1 H2) (H3 H4))      ;; Vijkl
+  (V (H13 P5) (H14 H15))   ;; Vijak
+  (V (H16 P6) (H17 P7))    ;; Vijab
+  (V (P13 H21) (H22 H23))  ;; Vaijk
+  (V (P14 H24) (H25 P15))  ;; Vaijb
+  (V (P16 H26) (P17 H27))  ;; Vabij
+  (V (P21 P22) (H29 H30))  ;; Vaibj
+  (V (P23 P24) (H31 P25))  ;; Vaibc
+  (V (P26 P27) (P28 H32))  ;; Vabci
+  (V (P29 P30) (P31 P32))) ;; Vabcd
+
+(progn (reset-spaces)
+       (partition-symmetrize-and-filter '(V (PH PH) (PH PH)))
+       (partition-symmetrize-and-filter '(t3 (PH PH) (PH PH) (PH PH))))
+
+(assert-equal (! V (a b) (c d))
+              '(V (a b) (c d)))
