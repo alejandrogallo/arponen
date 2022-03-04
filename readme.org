@@ -383,16 +383,17 @@ if a given diagram is linked or not.
 
 #+begin_src lisp :tangle gunu.lisp
 (defmacro ordered-subsets-with-repetition (n space-size)
-  (let* ((vars (loop for i below (1+ n) collect (gensym))))
-    `(let ((,(car vars) 0))
-       ,(reduce (lambda (x other-loop)
-                  `(loop for ,(cdr x) from ,(car x) below ,space-size
-                         ,@(if (null other-loop)
-                               `(collect `(,,@(cdr vars)))
-                               (list 'nconcing other-loop))))
-                (mapcar #'cons vars (cdr vars))
-                :initial-value nil
-                :from-end t))))
+  (when (> n 0)
+    (let* ((vars (loop for i below (1+ n) collect (gensym))))
+      `(let ((,(car vars) 0))
+         ,(reduce (lambda (x other-loop)
+                    `(loop for ,(cdr x) from ,(car x) below ,space-size
+                           ,@(if (null other-loop)
+                                 `(collect `(,,@(cdr vars)))
+                                 (list 'nconcing other-loop))))
+                  (mapcar #'cons vars (cdr vars))
+                  :initial-value nil
+                  :from-end t)))))
 #+end_src
 
 #+RESULTS:
