@@ -1103,6 +1103,11 @@ there is a further symmetry to be considered.
 (assert-equal (make-antisymmetry-symmetry '((a i) (b j) (c k)))
               '(((A . B)) ((A . C)) ((B . C))
                 ((I . J)) ((I . K)) ((J . K))))
+
+(gunu::assert-equal
+ (gunu::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
+                                     #'gunu::make-antisymmetry-symmetry)
+ '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
 #+end_src
 
 
@@ -2763,6 +2768,32 @@ equivalent.
 
 (assert-equal (! V (a b) (c d))
               '(V (a b) (c d)))
+
+(progn
+  (reset-spaces)
+  (let* ((gunu::*print-log* nil)
+         (V (.+ (!! V (P H) (H P))
+                (!! V (P P) (H H))))
+         (H (.+ v))
+         ;; t1 amplitudes
+         (t1 (!! T1 (P H)))
+         ;; the whole expression to contract
+         ;; i.e. Hamiltonian times T amplitudes
+         (expression (.* H t1))
+
+         ;; targets for the diagrams search space
+         (singles (! _ (P H))))
+
+    (format nil "Processing singles~%")
+    expression
+    (assert-equal (gunu::expr-to-lists expression)
+                  '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
+                    ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
+    (contract singles expression
+              :unrestricted t
+              :only-connected t)
+
+    ))
 #+end_src
 
 * Examples
