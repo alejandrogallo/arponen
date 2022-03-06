@@ -363,6 +363,11 @@
               ;;
               '(V (Q S) (P R)))
 
+;; utility function
+(assert-equal (triangle-pairs 1) nil)
+(assert-equal (triangle-pairs 2) '((0 1)))
+(assert-equal (triangle-pairs 3) '((0 1) (0 2) (1 2)))
+
 ;; fail gracefully for one dimensional diagrams
 (assert! (make-node-symmetry '((p q))))
 
@@ -408,10 +413,24 @@
 (let* ((tensors '((V (h1 p1) (h2 p2))
                   (T2 (p3 h3) (p4 h4))
                   (T1 (p5 h5))))
-       (symmetries (make-symmetries-in-list tensors)))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry)))
   (assert-equal symmetries
                 '(((H1 . H2) (P1 . P2))
                   ((P3 . P4) (H3 . H4)))))
+
+;; utility function
+(assert-equal (unzip '((a b) (c d)))
+              '((a c) (b d)))
+(assert-equal (unzip '((a b) (c d) (e f)))
+              '((a c e) (b d f)))
+
+
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j)))
+              '(((A . B)) ((I . J))))
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j) (c k)))
+              '(((A . B)) ((A . C)) ((B . C))
+                ((I . J)) ((I . K)) ((J . K))))
 
 (assert-equal (find-duplicate-set '((a . b) (c . d))
                                   '(((c . e) (a . b))
@@ -629,7 +648,8 @@
          '((V (h1 p1) (h2 p2))
            (T2 (p3 h3) (p4 h4))
            (T1 (p5 h5))))
-       (symmetries (make-symmetries-in-list tensors))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
            ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))

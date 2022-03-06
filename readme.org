@@ -1,3 +1,4 @@
+# -*- imenu-literate-current-mode: lisp-mode; -*-
 #+TODO: TODO EXPLAIN CLEAN | DONE
 * Todo [50%]
 
@@ -193,6 +194,16 @@ by node symmetry set this variable to =nil=.
 
 #+RESULTS:
 : *FILTER-NODE-SYMMETRY*
+
+** Parity symmetry
+
+#+begin_src lisp :tangle gunu.lisp
+(defvar *filter-parity-symmetry* nil
+  "Wether to filter contractions according to parity symmetry.")
+#+end_src
+
+#+RESULTS:
+: *FILTER-PARITY-SYMMETRY*
 
 * Combinatorics
 
@@ -932,12 +943,13 @@ by hand so we can use the =make-node-symmetry= function to
 create a well-named symmetry equivalence.
 
 #+begin_src lisp :tangle gunu.lisp
+(defun triangle-pairs (n)
+  (loop for fst below n
+        append (loop for snd from (1+ fst) below n
+                     collect (list fst snd))))
+
 (defun make-node-symmetry (nodes)
-  (let* ((n (length nodes))
-         (node-combinations
-           (loop for fst below n
-                 append (loop for snd from (1+ fst) below n
-                              collect (list fst snd)))))
+  (let ((node-combinations (triangle-pairs (length nodes))))
     (mapcar (lambda (combi)
               (remove-duplicates
                (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
@@ -952,6 +964,11 @@ create a well-named symmetry equivalence.
 And it should of course work for higher dimensional tensors.
 
 #+begin_src lisp :tangle t.lisp
+;; utility function
+(assert-equal (triangle-pairs 1) nil)
+(assert-equal (triangle-pairs 2) '((0 1)))
+(assert-equal (triangle-pairs 3) '((0 1) (0 2) (1 2)))
+
 ;; fail gracefully for one dimensional diagrams
 (assert! (make-node-symmetry '((p q))))
 
@@ -993,16 +1010,19 @@ we can define the following function
           list-of-tensors)
     (mapcar #'cdr result-alist)))
 
-(defun make-symmetries-in-list (list-of-tensors)
+(defun make-symmetries-in-node-list (list-of-tensors sym-maker)
   (labels ((reducer (x) (reduce #'union x :from-end t)))
     (thread-last list-of-tensors
-               (find-effective-nodes-list)
-               (mapcar #'make-node-symmetry)
-               (reducer))))
+                 (mapcar sym-maker)
+                 (reducer))))
+
+(defun make-symmetries-in-effective-node-list (list-of-tensors sym-maker)
+  (make-symmetries-in-node-list (find-effective-nodes-list list-of-tensors)
+                                sym-maker))
 #+end_src
 
 #+RESULTS:
-: MAKE-SYMMETRIES-IN-LIST
+: MAKE-SYMMETRIES-IN-EFFECTIVE-NODE-LIST
 
 #+begin_src lisp :tangle t.lisp
 (assert-equal (find-effective-nodes-list
@@ -1026,7 +1046,8 @@ we can define the following function
 (let* ((tensors '((V (h1 p1) (h2 p2))
                   (T2 (p3 h3) (p4 h4))
                   (T1 (p5 h5))))
-       (symmetries (make-symmetries-in-list tensors)))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry)))
   (assert-equal symmetries
                 '(((H1 . H2) (P1 . P2))
                   ((P3 . P4) (H3 . H4)))))
@@ -1042,8 +1063,46 @@ are represented by real antisymmetric objects,
 there is a further symmetry to be considered.
 
 #+begin_src lisp :tangle gunu.lisp
+(defun unzip (ls)
+  (loop for i below (apply #'min (mapcar #'length ls))
+        collect (mapcar (lambda (l) (nth i l)) ls)))
+
 (defun make-antisymmetry-symmetry (nodes)
-  (error "TODO"))
+  (assert (every (lambda (n) (eq (length n) (length (car nodes)))) nodes)
+          nil
+          "Antisymmetry is not expected to work for tensors with~%~4t~a~%~a"
+          nodes "an unequal number of legs per node")
+  (let* ((legs-list (unzip nodes))
+         (nlegs (length (car legs-list)))
+         (tpairs (triangle-pairs nlegs))
+         (single-symmetries
+           (mapcar (lambda (legs)
+                     (mapcar (lambda (pair) (cons (nth (car pair) legs)
+                                                  (nth (cadr pair) legs)))
+                             tpairs))
+                   legs-list)))
+    ;;
+    ;; TODO: think about including also the products or not
+    ;;
+    ;; (append (mapcar #'list (apply #'append single-symmetries))
+    ;;         (eval `(cartesian-product ,@single-symmetries)))
+    (mapcar #'list (apply #'append single-symmetries))))
+#+end_src
+
+
+#+begin_src lisp :tangle t.lisp
+;; utility function
+(assert-equal (unzip '((a b) (c d)))
+              '((a c) (b d)))
+(assert-equal (unzip '((a b) (c d) (e f)))
+              '((a c e) (b d f)))
+
+
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j)))
+              '(((A . B)) ((I . J))))
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j) (c k)))
+              '(((A . B)) ((A . C)) ((B . C))
+                ((I . J)) ((I . K)) ((J . K))))
 #+end_src
 
 
@@ -1721,11 +1780,20 @@ result.
                          --result))
                      ))))))
     (let ((cleaned-results (remove-if #'null results)))
-      (if *filter-node-symmetry*
-          (let ((node-symmetries (make-symmetries-in-list tensor-list)))
-            (filter-contractions-by-symmetries node-symmetries cleaned-results))
-          cleaned-results))
-    ))
+      (when *filter-node-symmetry*
+        (let ((node-symmetries (make-symmetries-in-effective-node-list
+                                tensor-list #'make-node-symmetry)))
+          (setq cleaned-results
+                (filter-contractions-by-symmetries node-symmetries
+                                                   cleaned-results))))
+      (when *filter-parity-symmetry*
+        (let ((symmetries (make-symmetries-in-node-list
+                           (mapcar #'cdr tensor-list)
+                           #'make-antisymmetry-symmetry)))
+          (setq cleaned-results
+                (filter-contractions-by-symmetries symmetries
+                                                   cleaned-results))))
+      cleaned-results)))
 #+end_src
 
 #+RESULTS:
@@ -1803,7 +1871,8 @@ Let us illustrage this function with some tests
          '((V (h1 p1) (h2 p2))
            (T2 (p3 h3) (p4 h4))
            (T1 (p5 h5))))
-       (symmetries (make-symmetries-in-list tensors))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry))
        (contractions
          '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
            ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
@@ -2387,7 +2456,7 @@ From the discussion up to know, some points should be noted:
   =(T1 (a i))=.
 - All the legs in an expression should be named differently.
 
-** TODO Particle hole picture
+** Particle hole picture
 
 In order to design a good user interface, we should make it as clear
 and as modular as possible for the user, and reading these lines
@@ -2556,11 +2625,13 @@ equivalent.
   `(gunu::tensor-sum ,@args))
 
 ;; TODO: node-symmetry ein und auschalten
-(defun contract (target expression &key (node-symmetry t) (connected nil))
+(defun contract (target expression &key (node-symmetry t) (only-connected nil)
+                                     (unrestricted nil))
   (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
          (n (length expanded))
-         (gunu::*only-connected-diagrams* connected)
+         (gunu::*only-connected-diagrams* only-connected)
          (gunu::*allow-self-contractions* nil)
+         (gunu::*filter-parity-symmetry* unrestricted)
          (i 0))
     (remove-if #'null
                (mapcar (lambda (tensor-product)
@@ -2734,11 +2805,13 @@ equivalent.
   (format nil "Processing singles~%")
   (save-contractions "singles.lisp"
                      (contract singles expression
+                               :unrestricted t
                                :only-connected t))
 
   (format nil "Processing doubles~%")
   (save-contractions "doubles.lisp"
                      (contract doubles expression
+                               :unrestricted t
                                :only-connected t)))
 #+end_src
 

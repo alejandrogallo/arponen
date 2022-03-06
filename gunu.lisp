@@ -30,6 +30,9 @@
 
 (defvar *filter-node-symmetry* t)
 
+(defvar *filter-parity-symmetry* nil
+  "Wether to filter contractions according to parity symmetry.")
+
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
                         collect (gensym (format nil "~a-i-" i))))
@@ -208,12 +211,13 @@
 (defun apply-symmetries-to-nodes (symmetry-equivalences object)
   (mapcar (lambda (x) (apply-symmetry-to-nodes x object)) symmetry-equivalences))
 
+(defun triangle-pairs (n)
+  (loop for fst below n
+        append (loop for snd from (1+ fst) below n
+                     collect (list fst snd))))
+
 (defun make-node-symmetry (nodes)
-  (let* ((n (length nodes))
-         (node-combinations
-           (loop for fst below n
-                 append (loop for snd from (1+ fst) below n
-                              collect (list fst snd)))))
+  (let ((node-combinations (triangle-pairs (length nodes))))
     (mapcar (lambda (combi)
               (remove-duplicates
                (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
@@ -231,15 +235,40 @@
           list-of-tensors)
     (mapcar #'cdr result-alist)))
 
-(defun make-symmetries-in-list (list-of-tensors)
+(defun make-symmetries-in-node-list (list-of-tensors sym-maker)
   (labels ((reducer (x) (reduce #'union x :from-end t)))
     (thread-last list-of-tensors
-               (find-effective-nodes-list)
-               (mapcar #'make-node-symmetry)
-               (reducer))))
+                 (mapcar sym-maker)
+                 (reducer))))
+
+(defun make-symmetries-in-effective-node-list (list-of-tensors sym-maker)
+  (make-symmetries-in-node-list (find-effective-nodes-list list-of-tensors)
+                                sym-maker))
+
+(defun unzip (ls)
+  (loop for i below (apply #'min (mapcar #'length ls))
+        collect (mapcar (lambda (l) (nth i l)) ls)))
 
 (defun make-antisymmetry-symmetry (nodes)
-  (error "TODO"))
+  (assert (every (lambda (n) (eq (length n) (length (car nodes)))) nodes)
+          nil
+          "Antisymmetry is not expected to work for tensors with~%~4t~a~%~a"
+          nodes "an unequal number of legs per node")
+  (let* ((legs-list (unzip nodes))
+         (nlegs (length (car legs-list)))
+         (tpairs (triangle-pairs nlegs))
+         (single-symmetries
+           (mapcar (lambda (legs)
+                     (mapcar (lambda (pair) (cons (nth (car pair) legs)
+                                                  (nth (cadr pair) legs)))
+                             tpairs))
+                   legs-list)))
+    ;;
+    ;; TODO: think about including also the products or not
+    ;;
+    ;; (append (mapcar #'list (apply #'append single-symmetries))
+    ;;         (eval `(cartesian-product ,@single-symmetries)))
+    (mapcar #'list (apply #'append single-symmetries))))
 
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
@@ -508,11 +537,20 @@
                          --result))
                      ))))))
     (let ((cleaned-results (remove-if #'null results)))
-      (if *filter-node-symmetry*
-          (let ((node-symmetries (make-symmetries-in-list tensor-list)))
-            (filter-contractions-by-symmetries node-symmetries cleaned-results))
-          cleaned-results))
-    ))
+      (when *filter-node-symmetry*
+        (let ((node-symmetries (make-symmetries-in-effective-node-list
+                                tensor-list #'make-node-symmetry)))
+          (setq cleaned-results
+                (filter-contractions-by-symmetries node-symmetries
+                                                   cleaned-results))))
+      (when *filter-parity-symmetry*
+        (let ((symmetries (make-symmetries-in-node-list
+                           (mapcar #'cdr tensor-list)
+                           #'make-antisymmetry-symmetry)))
+          (setq cleaned-results
+                (filter-contractions-by-symmetries symmetries
+                                                   cleaned-results))))
+      cleaned-results)))
 
 (defun find-contractions-in-product-by-target
     (target tensor-list &key
@@ -772,11 +810,13 @@
   `(gunu::tensor-sum ,@args))
 
 ;; TODO: node-symmetry ein und auschalten
-(defun contract (target expression &key (node-symmetry t) (only-connected nil))
+(defun contract (target expression &key (node-symmetry t) (only-connected nil)
+                                     (unrestricted nil))
   (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
          (n (length expanded))
          (gunu::*only-connected-diagrams* only-connected)
          (gunu::*allow-self-contractions* nil)
+         (gunu::*filter-parity-symmetry* unrestricted)
          (i 0))
     (remove-if #'null
                (mapcar (lambda (tensor-product)
