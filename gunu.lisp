@@ -217,13 +217,25 @@
                      collect (list fst snd))))
 
 (defun make-node-symmetry (nodes)
-  (let ((node-combinations (triangle-pairs (length nodes))))
-    (mapcar (lambda (combi)
-              (remove-duplicates
-               (apply #'mapcar `(cons ,@(mapcar (lambda (i) (nth i nodes))
-                                                combi)))
-               :test #'equal))
-            node-combinations)))
+  (flet ((idxs-to-syms (idxs)
+           (loop for idx in idxs
+                 append (let ((node-a (nth (car idx) nodes))
+                              (node-b (nth (cdr idx) nodes)))
+                          (loop for a in node-a
+                                for b in node-b
+                                collect (cons a b))))))
+    (let* ((iota (loop for i below (length nodes) collect i))
+           (combinations
+             (loop for perm in (all-permutations iota)
+                   collect (remove-duplicates (loop for i in perm
+                                                    for j in iota
+                                                    if (not (eq i j))
+                                                      collect (cons i j))
+                                              :test
+                                              (lambda (x y)
+                                                (and (eq (car x) (cdr y))
+                                                     (eq (cdr x) (car y))))))))
+      (remove-if #'null (mapcar #'idxs-to-syms combinations)))))
 
 (defun find-effective-nodes-list (list-of-tensors)
   (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))

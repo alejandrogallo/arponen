@@ -374,23 +374,63 @@
 (assert-equal (make-node-symmetry '((p s) (q r)))
               '(((P . Q) (S . R))))
 
-;; and it also works for n-dimensional nodal tensors
-(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3)))
-              '(((P1 . P2) (S1 . S2)) ;; node 1 <> node 2
-                ((P1 . P3) (S1 . S3)) ;; node 1 <> node 3
-                ((P2 . P3) (S2 . S3)))) ;; node 2 <> node 3
+  
+(assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2)))
+              '(;; node 1 <> node 2
+                ((P1 . P2) (H1 . H2))
+                ;; node 1 <> 0 && 2 <> 1 && 0 <> 2
+                ((P1 . P0) (H1 . H0) (P2 . P1) (H2 . H1) (P0 . P2) (H0 . H2))
+                ;; node 0 <> node 1
+                ((P0 . P1) (H0 . H1))
+                ;; node 2 <> 0 && 0 <> 1 && 1 <> 2
+                ((P2 . P0) (H2 . H0) (P0 . P1) (H0 . H1) (P1 . P2) (H1 . H2))
+                ;; node 0 <> node 2
+                ((P0 . P2) (H0 . H2))))
 
-(assert-equal (make-node-symmetry '((p1 s1) (p2 s2) (p3 s3) (p4 s4)))
-              '(((P1 . P2) (S1 . S2))
-                ((P1 . P3) (S1 . S3))
-                ((P1 . P4) (S1 . S4))
-                ((P2 . P3) (S2 . S3))
-                ((P2 . P4) (S2 . S4))
-                ((P3 . P4) (S3 . S4))))
-
-;; remove duplicates
-(assert-equal (make-node-symmetry '((P P) (H H)))
-              '(((P . H))))
+(let ((result '(((P2 . P3) (H2 . H3)) ;; 2 <> 3
+                ((P2 . P1) (H2 . H1) (P3 . P2) (H3 . H2) (P1 . P3) (H1 . H3))
+                ((P1 . P2) (H1 . H2)) ;; 1 <> 2
+                ((P3 . P1) (H3 . H1) (P1 . P2) (H1 . H2) (P2 . P3) (H2 . H3))
+                ((P1 . P3) (H1 . H3)) ;; 1 <> 3
+                ((P1 . P0) (H1 . H0) (P2 . P1)
+                 (H2 . H1) (P3 . P2) (H3 . H2)
+                 (P0 . P3) (H0 . H3))
+                ((P1 . P0) (H1 . H0) (P2 . P1)
+                 (H2 . H1) (P0 . P2) (H0 . H2))
+                ((P1 . P0) (H1 . H0) (P3 . P1)
+                 (H3 . H1) (P0 . P2) (H0 . H2)
+                 (P2 . P3) (H2 . H3))
+                ((P1 . P0) (H1 . H0) (P3 . P1)
+                 (H3 . H1) (P0 . P3) (H0 . H3))
+                ((P0 . P1) (H0 . H1)) ;; 0 <> 1
+                ((P0 . P1) (H0 . H1) (P2 . P3) (H2 . H3))
+                ((P0 . P2) (H0 . H2) (P1 . P3) (H1 . H3))
+                ((P2 . P0) (H2 . H0) (P3 . P1)
+                 (H3 . H1) (P1 . P2) (H1 . H2)
+                 (P0 . P3) (H0 . H3))
+                ((P2 . P0) (H2 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P2) (H1 . H2))
+                ((P2 . P0) (H2 . H0) (P0 . P1)
+                 (H0 . H1) (P3 . P2) (H3 . H2)
+                 (P1 . P3) (H1 . H3))
+                ((P2 . P0) (H2 . H0) (P3 . P2)
+                 (H3 . H2) (P0 . P3) (H0 . H3))
+                ((P0 . P2) (H0 . H2)) ;; 0 <> 2
+                ((P3 . P0) (H3 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P2) (H1 . H2)
+                 (P2 . P3) (H2 . H3))
+                ((P3 . P0) (H3 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P3) (H1 . H3))
+                ((P0 . P3) (H0 . H3)) ;; 0 <> 3
+                ((P3 . P0) (H3 . H0) (P0 . P2)
+                 (H0 . H2) (P2 . P3) (H2 . H3))
+                ((P3 . P0) (H3 . H0) (P2 . P1)
+                 (H2 . H1) (P0 . P2) (H0 . H2)
+                 (P1 . P3) (H1 . H3))
+                ((P1 . P2) (H1 . H2) (P0 . P3) (H0 . H3)))))
+  (assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2) (p3 h3)))
+                result)
+  (assert-equal (length result) (- (* 4 3 2) 1)))
 
 (assert-equal (find-effective-nodes-list
                '((V (p q) (r s)) (T2 (a b) (c d))))
@@ -431,6 +471,11 @@
 (assert-equal (make-antisymmetry-symmetry '((a i) (b j) (c k)))
               '(((A . B)) ((A . C)) ((B . C))
                 ((I . J)) ((I . K)) ((J . K))))
+
+(gunu::assert-equal
+ (gunu::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
+                                     #'gunu::make-antisymmetry-symmetry)
+ '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
 
 (assert-equal (find-duplicate-set '((a . b) (c . d))
                                   '(((c . e) (a . b))
@@ -897,3 +942,29 @@
 
 (assert-equal (! V (a b) (c d))
               '(V (a b) (c d)))
+
+(progn
+  (reset-spaces)
+  (let* ((gunu::*print-log* nil)
+         (V (.+ (!! V (P H) (H P))
+                (!! V (P P) (H H))))
+         (H (.+ v))
+         ;; t1 amplitudes
+         (t1 (!! T1 (P H)))
+         ;; the whole expression to contract
+         ;; i.e. Hamiltonian times T amplitudes
+         (expression (.* H t1))
+
+         ;; targets for the diagrams search space
+         (singles (! _ (P H))))
+
+    (format nil "Processing singles~%")
+    expression
+    (assert-equal (gunu::expr-to-lists expression)
+                  '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
+                    ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
+    (contract singles expression
+              :unrestricted t
+              :only-connected t)
+
+    ))
