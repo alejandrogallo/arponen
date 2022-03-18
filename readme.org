@@ -2393,13 +2393,100 @@ format so that one can have some rough estimates for the diagrammatic
 form of the terms.
 
 #+begin_src lisp
+(in-package :gunu)
+
+(defun tensor-name-to-sdot-name (tensor)
+  (format nil "~(~a~)" (car tensor)))
+
+(declaim (optimize (debug 3)))
+(defun contraction-to-sdot (contraction)
+  (destructuring-bind ((contraction cts) . tensors) contraction
+    (declare (ignore contraction))
+    (flet ((tensor-of-leg (leg)
+             (find leg tensors :key #'cdr
+                               :test (lambda (l nodes)
+                                       (member l (flatten-list nodes))))))
+      (loop for ct in cts
+            collect
+            (let* ((tsr-a (tensor-of-leg (car ct)))
+                   (name-a (tensor-name-to-sdot-name tsr-a))
+                   (tsr-b (tensor-of-leg (cadr ct)))
+                   (name-b (tensor-name-to-sdot-name tsr-b)))
+              `(edge ))))))
+
+(contraction-to-sdot '((contraction ((a b)))
+                       (V (a e)) (t2 (b e) (i j))))
+
+(defun render-sdot (stream graph)
+  (eval `(render-sdot-macro ,stream ,graph)))
+
+(defmacro render-sdot-macro (stream graph)
+  `(labels ((-- (from to &rest opts)
+              (format ,stream "~a -- ~a ~a" from to (-[options] opts)))
+            (-> (from to &rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "forward") opts))))
+            (<- (from to &rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "back") opts))))
+            (-[options] (opts) (format ,stream "[~{~a~^,~}]" (-options opts)))
+            (-options (opts) (mapcar (lambda (o)
+                                       (etypecase o
+                                         (atom (format ,stream "~a" o))
+                                         (list (:= (car o) (cadr o)))))
+                                     opts))
+            (scope (&rest els) (format ,stream "{~{~&~t~a~%~}}" els))
+            (:= (key var)
+              (format ,stream "~a = ~a" (if (symbolp key)
+                                            (string-downcase (symbol-name key))
+                                            key) var))
+            (-element (name &rest opts)
+              (format ,stream "~(~a~) ~a" name (-[options] opts)))
+            (node (&rest opts) (apply #'-element (cons "node" opts)))
+            (edge (&rest opts) (apply #'-element (cons "edge" opts)))
+            (:graph (&rest opts) (apply #'-element (cons "graph" opts)))
+            (cluster (name &rest els) (format ,stream
+                                              "cluster cluster_~a ~a"
+                                              name
+                                              (apply #'scope els)))
+            (-named-scope (scope-name name els)
+              (format ,stream "~a ~a {~%~{~2t~a~%~}}" scope-name name els))
+            (graph (name &rest els) (-named-scope "graph" name els))
+            (digraph (name &rest els) (-named-scope "digraph" name els)))
+     ,graph))
+
+
+(render-sdot-macro nil
+             (graph "This"
+                    (:= 'rankdir 'BT)
+                    (:graph '(rankdir 654))
+                    (scope (-> 'i 'k)
+                           (-> 'e 'k)
+                           (<- 'e 'k))
+                    (node '(dir backward))
+                    (edge '(dir backward))
+                    (cluster 'v (-> 'e 'k))
+                    (-element 'node 'simple)
+                    (-> 'a 'b)
+                    (<- 'a 'b)
+                    (-> 'c 'd)))
+
+(let ((a '(-> 'a 'b)))
+  (render-sdot nil a))
+
+(render-sdot nil
+             '(graph nil
+               (scope (-> 'i 'k)
+                (-> 'a 'b))
+               (-> 'a 'b)
+               (<- 'a 'b)
+               (-> 'c 'd)))
+#+end_src
+
+
+#+begin_src lisp
 (defpackage :gunu/dot
   (:use :cl))
 (in-package :gunu/dot)
 
-(unless (probe-file "penis")
-  (sb-posix:mkdir "penis" #x777)
-  )
 (defun symb (&rest args)
   (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
 
@@ -2932,15 +3019,24 @@ equivalent.
          (expression-2 (.* (.+ fai #+nil H) (.+ 1 t1)))
 
          ;; targets for the diagrams search space
-         (singles (! _ (P H))))
+         (singles (! _ (P H)))
+         (doubles (! _ (P H) (P H)))
 
+         (contractions (contract singles expression
+                                 :unrestricted t
+                                 :only-connected t))
+         ,#+nil
+         (contractions-2 (contract singles expression-2
+                                   :unrestricted t
+                                   :only-connected t)))
     (format nil "Processing singles~%")
     expression
+    doubles
+    ;contractions
     ,#+nil
     (assert-equal (gunu::expr-to-lists expression)
                   '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
                     ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
-    ,#+nil
     (contract singles expression
               :unrestricted t
               :only-connected t)
