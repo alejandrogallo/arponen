@@ -1,6 +1,6 @@
-(defpackage :gunu
+(defpackage :arponen
   (:use :cl))
-(in-package :gunu)
+(in-package :arponen)
 
 (defun contraction? (expr)
   (and (listp expr)
@@ -20,6 +20,10 @@
 (defmacro logger (fmt &rest args)
   `(when *print-log*
     (eval (format t ,fmt ,@args))))
+
+(defmacro logger! (&rest args)
+  `(let ((*print-log* t))
+    (logger ,@args)))
 
 (defvar *allow-self-contractions* nil
   "Wether or not to allow a tensor to search for contractions with its
@@ -172,7 +176,8 @@
                 :initial-value nil)))
 
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
-  (assert (eq (length target) (length tensor)))
+  (unless (eq (length target) (length tensor))
+    (return-from match-target-with-tensor-1 nil))
   (notany #'null
           (loop for target-tensor in (mapcar #'list (cdr target) (cdr tensor))
                 collect
@@ -216,6 +221,21 @@
         append (loop for snd from (1+ fst) below n
                      collect (list fst snd))))
 
+(defun iota (n &key (start 0))
+  (declare (optimize (safety 0) (speed 3) (debug 0)) (fixnum n) (fixnum start))
+  (loop for i below n collect (+ i start)))
+
+(defun all-transpositions (ls &key (test #'eq) )
+  (loop for perm in (all-permutations ls)
+        collect (remove-duplicates (loop for i in perm
+                                         for j in ls
+                                         if (not (funcall test i j))
+                                           collect (cons i j))
+                                   :test
+                                   (lambda (x y)
+                                     (and (eq (car x) (cdr y))
+                                          (eq (cdr x) (car y)))))))
+
 (defun make-node-symmetry (nodes)
   (flet ((idxs-to-syms (idxs)
            (loop for idx in idxs
@@ -224,17 +244,7 @@
                           (loop for a in node-a
                                 for b in node-b
                                 collect (cons a b))))))
-    (let* ((iota (loop for i below (length nodes) collect i))
-           (combinations
-             (loop for perm in (all-permutations iota)
-                   collect (remove-duplicates (loop for i in perm
-                                                    for j in iota
-                                                    if (not (eq i j))
-                                                      collect (cons i j))
-                                              :test
-                                              (lambda (x y)
-                                                (and (eq (car x) (cdr y))
-                                                     (eq (cdr x) (car y))))))))
+    (let* ((combinations (all-transpositions (iota (length nodes)))))
       (remove-if #'null (mapcar #'idxs-to-syms combinations)))))
 
 (defun find-effective-nodes-list (list-of-tensors)
@@ -281,6 +291,65 @@
     ;; (append (mapcar #'list (apply #'append single-symmetries))
     ;;         (eval `(cartesian-product ,@single-symmetries)))
     (mapcar #'list (apply #'append single-symmetries))))
+
+(defun make-parity-symmetry--1 (nodes)
+  (let* ((legs-list (unzip nodes))
+         (iota (iota (length (car legs-list))))
+         (legs-transpositions (mapcar #'all-transpositions legs-list)))
+    (assert (eq (length legs-list) 2))
+    (mapcar (lambda (x) (reduce #'append x))
+            (eval `(cartesian-product ,@legs-transpositions)))))
+
+
+(defun make-nodes-difference (nodes-a nodes-b)
+  (let (result)
+    (loop for node-a in nodes-a
+          for node-b in nodes-b
+          do (loop for a in node-a
+                       for b in node-b
+                       unless (eq a b)
+                         unless (or (assoc b result)
+                                    (assoc a result))
+                           do (push (cons a b) result)))
+    (reverse result)))
+
+#+nil
+(assert-equal (make-nodes-difference '((a b) (e f)) '((a c) (e h)))
+              '((b . c) (f . h)))
+
+(progn
+  ;; todo: improve this, it is too expensive
+  (defun make-parity-symmetry (nodes)
+    (let* ((node-symmetries (make-node-symmetry nodes))
+           ;; apply node symmetries to the nodes
+           (new-nodes (cons nodes
+                            (mapcar (lambda (sym)
+                                      (apply-symmetry-to-nodes sym nodes))
+                                    node-symmetries)))
+           ;; for every node let us take all the parity symmetries
+           (parity-symmetries (mapcar #'make-parity-symmetry--1 new-nodes))
+           (nodes-with-parity
+             (mapcar (lambda (syms -nnodes)
+                       (mapcar (lambda (sym)
+                                 (apply-symmetry-to-nodes sym -nnodes))
+                               syms))
+                     parity-symmetries new-nodes))
+           (node-differences (mapcar (lambda (-nodes)
+                                       (make-nodes-difference nodes -nodes))
+                                     (apply #'concatenate
+                                            (cons 'list nodes-with-parity)))))
+      (remove-if #'null node-differences)))
+
+  (make-parity-symmetry '((a i) (b j) (c k)))
+  (make-parity-symmetry '((a i) (b j))))
+
+(apply 'concatenate '(list (a b c) (d e f)))
+
+;(apply-symmetry-to-nodes '((a . b)) '(T2 a))
+(apply-symmetry-to-nodes nil '(T2 a))
+(make-parity-symmetry--1 '((a i) (b j)))
+(make-parity-symmetry--1 '((a i)))
+(make-parity-symmetry--1 '((a i) (b j) (c k)))
 
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
@@ -488,7 +557,7 @@
     (logger "~&all node-pairs: ~s" node-pairs)
     (logger "~&all combinations (of pairs) : ~s" node-pair-combinations)
     (setq results
-          (labels
+          (flet
               ((indexing (indices lst) (mapcar (lambda (i) (nth i lst))
                                                indices)))
             (loop
@@ -506,7 +575,8 @@
                              pairs nodes)
                      (incf II)
                      (when *only-connected-diagrams*
-                       (unless (is-connected-contraction node-pair-combination node-pairs
+                       (unless (is-connected-contraction node-pair-combination
+                                                         node-pairs
                                                          :group-lengths
                                                          group-lengths)
                          (return-from :pairs-discovery)))
@@ -548,20 +618,25 @@
                                        ,@top-contractions)))
                          --result))
                      ))))))
-    (let ((cleaned-results (remove-if #'null results)))
+    (let ((cleaned-results (remove-if #'null results))
+          symmetries)
+      (format t "~&~5tCompute symmetries")
       (when *filter-node-symmetry*
-        (let ((node-symmetries (make-symmetries-in-effective-node-list
-                                tensor-list #'make-node-symmetry)))
-          (setq cleaned-results
-                (filter-contractions-by-symmetries node-symmetries
-                                                   cleaned-results))))
+        (format t "~&~10tnode symms")
+        (setq symmetries
+              (append symmetries (make-symmetries-in-effective-node-list
+                                  tensor-list #'make-node-symmetry))))
       (when *filter-parity-symmetry*
-        (let ((symmetries (make-symmetries-in-node-list
-                           (mapcar #'cdr tensor-list)
-                           #'make-antisymmetry-symmetry)))
-          (setq cleaned-results
-                (filter-contractions-by-symmetries symmetries
-                                                   cleaned-results))))
+        (format t "~&~10tparity symms")
+        (setq symmetries
+              (append symmetries (make-symmetries-in-node-list
+                                  (mapcar #'cdr tensor-list)
+                                  #'make-parity-symmetry))))
+      (format t "~&~5tResults BEFORE cleaning ~a" (length cleaned-results))
+      (setq cleaned-results
+            (filter-contractions-by-symmetries symmetries
+                                               cleaned-results))
+      (format t "~&~5tResults AFTER Cleaning ~a" (length cleaned-results))
       cleaned-results)))
 
 (defun find-contractions-in-product-by-target
@@ -572,21 +647,21 @@
                  target tensor-list :orbital-spaces orbital-spaces
                                     :contraction-rules contraction-rules)))
     (logger "~&CONTRACTIONS TO CHECK: ~a" result)
-    (remove-if #'null
-     (loop for contraction in result
+    (remove-if (lambda (x) (eq x :no-match))
+     (loop for contraction in (cons nil result)
           collect
           (let* ((contraction-tensor `((contraction ,contraction)
                                        ,@(copy-list tensor-list)))
                  (contracted-tensor (get-contracted-temp-tensor
                                      contraction-tensor)))
 
-            (logger "~&getting-temp-tensor... ~a ~a" contraction tensor-list)
+            (logger "~&temp-tensor... ~a" contracted-tensor)
 
             (if (match-target-with-tensor target
                                           contracted-tensor
                                           :orbital-spaces orbital-spaces)
                 contraction
-                nil))))))
+                :no-match))))))
 
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
@@ -693,10 +768,10 @@
     (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))
 
-(defpackage :gunu/hole-particle-picture
-  (:use :cl :gunu)
+(defpackage :arponen/hole-particle-picture
+  (:use :cl :arponen)
   (:nicknames :hp))
-(in-package :gunu/hole-particle-picture)
+(in-package :arponen/hole-particle-picture)
 
 (defconstant +default-orbital-spaces+
   '((H)   ;; holes
@@ -740,11 +815,11 @@
       new-index)))
 
 (defun name-legs-by-space-name-1 (tensor-description)
-  (gunu::traverse-legs #'genindex tensor-description))
+  (arponen::traverse-legs #'genindex tensor-description))
 
 
 (defun do-partition-node-description (node &key partition)
-  (eval `(gunu::cartesian-product
+  (eval `(arponen::cartesian-product
           ,@(mapcar (lambda (leg)
                       (let ((p (find leg partition :key #'car)))
                         (if p (cdr p) (list leg))))
@@ -756,7 +831,7 @@
     (let* ((p-node-lists (mapcar (lambda (n)
                                    (do-partition-node-description n
                                      :partition partition)) nodes))
-           (new-node-lists (eval `(gunu::cartesian-product ,@p-node-lists))))
+           (new-node-lists (eval `(arponen::cartesian-product ,@p-node-lists))))
       (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
 
 
@@ -769,7 +844,7 @@
 (defun filter-tensors-by-symmetries (symmetries-list tensor-list)
   (let (result)
     (mapc (lambda (sym tsr)
-            (let ((new-tsrs (gunu::apply-symmetries-to-nodes sym tsr)))
+            (let ((new-tsrs (arponen::apply-symmetries-to-nodes sym tsr)))
               (unless (intersection (cons tsr new-tsrs) result :test #'equal)
                 (push tsr result))))
           symmetries-list tensor-list)
@@ -782,16 +857,16 @@
    :test
    (lambda (x y)
      (let* ((all-x (cons (cadr x)
-                         (gunu::apply-symmetries-to-nodes (car x) (cadr x))))
+                         (arponen::apply-symmetries-to-nodes (car x) (cadr x))))
             (all-y (cons (cadr y)
-                         (gunu::apply-symmetries-to-nodes (car y) (cadr y))))
+                         (arponen::apply-symmetries-to-nodes (car y) (cadr y))))
             (x-descr (mapcar (lambda (-x)
-                               (gunu::tensor-to-description -x
+                               (arponen::tensor-to-description -x
                                                             :orbital-spaces
                                                             orbital-spaces))
                              all-x))
             (y-descr (mapcar (lambda (-y)
-                               (gunu::tensor-to-description -y
+                               (arponen::tensor-to-description -y
                                                             :orbital-spaces
                                                             orbital-spaces))
                              all-y)))
@@ -802,7 +877,7 @@
                           (partition-tensor-description tensor-description
                                                         :partition
                                                         *space-partition*)))
-         (symmetries (mapcar (lambda (x) (gunu::make-node-symmetry (cdr x)))
+         (symmetries (mapcar (lambda (x) (arponen::make-node-symmetry (cdr x)))
                              tensors)))
     (filter-tensors-by-symmetries-and-description symmetries
                                                   tensors
@@ -819,23 +894,23 @@
   `(list '* ,@args))
 
 (defmacro .+ (&rest args)
-  `(gunu::tensor-sum ,@args))
+  `(arponen::tensor-sum ,@args))
 
 ;; TODO: node-symmetry ein und auschalten
 (defun contract (target expression &key (node-symmetry t) (only-connected nil)
                                      (unrestricted nil))
-  (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
+  (let* ((expanded (remove-1-in-product-list (arponen::expr-to-lists expression)))
          (n (length expanded))
-         (gunu::*only-connected-diagrams* only-connected)
-         (gunu::*allow-self-contractions* nil)
-         (gunu::*filter-parity-symmetry* unrestricted)
+         (arponen::*only-connected-diagrams* only-connected)
+         (arponen::*allow-self-contractions* nil)
+         (arponen::*filter-parity-symmetry* unrestricted)
          (i 0))
     (remove-if #'null
                (mapcar (lambda (tensor-product)
                          (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
                          (let ((begin (get-internal-run-time))
                                (contractions
-                                 (gunu::find-contractions-in-product-by-target
+                                 (arponen::find-contractions-in-product-by-target
                                   target
                                   tensor-product
                                   :orbital-spaces

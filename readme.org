@@ -15,20 +15,20 @@
 
 * Prolog
 
-#+begin_src lisp :tangle gunu.lisp
-(defpackage :gunu
+#+begin_src lisp :tangle arponen.lisp
+(defpackage :arponen
   (:use :cl))
-(in-package :gunu)
+(in-package :arponen)
 #+end_src
 
 #+RESULTS:
-: #<PACKAGE "GUNU">
+: #<PACKAGE "arponen">
 
 
 #+begin_src lisp :tangle t.lisp
 ;; todo define packages and all that
-(load "gunu.lisp")
-(in-package :gunu)
+(load "arponen.lisp")
+(in-package :arponen)
 
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
@@ -97,7 +97,7 @@ manner:
 
 These conceps are simply represented as simple lisp predicates
 as follows
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun contraction? (expr)
   (and (listp expr)
        (listp (car expr))
@@ -132,7 +132,7 @@ or set them globally with `setq`.
 To control the verbosity of the program, set the =*print-log*=
 variable.
 
-#+begin_src lisp  :tangle gunu.lisp
+#+begin_src lisp  :tangle arponen.lisp
 (defvar *print-log* t
   "Wether to print the log messages for the contractions and so on")
 
@@ -158,7 +158,7 @@ according to the contraction rules between all nodes.
 However, for most many-body diagrammatics, one is mostly interested in
 contractions between different tensors.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defvar *allow-self-contractions* nil
   "Wether or not to allow a tensor to search for contractions with its
   nodes.")
@@ -181,7 +181,7 @@ see the examples for coupled-cluster theories.
 
 ;; TODO: maybe this should be called linked,
 ;;       check with lindgren paper.
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defvar *only-connected-diagrams* nil
   "Wether to look for contractions that create connected diagrams.")
 #+end_src
@@ -196,7 +196,7 @@ see the examples for coupled-cluster theories.
 If you do not want the contractions to be filtered automatically
 by node symmetry set this variable to =nil=.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defvar *filter-node-symmetry* t)
 #+end_src
 
@@ -205,7 +205,7 @@ by node symmetry set this variable to =nil=.
 
 ** Parity symmetry
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defvar *filter-parity-symmetry* nil
   "Wether to filter contractions according to parity symmetry.")
 #+end_src
@@ -225,7 +225,7 @@ We implement a cartesian product in the form of a macro
 that avoids recursion but however writes it with depending
 on the loop macro.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
                         collect (gensym (format nil "~a-i-" i))))
@@ -259,7 +259,7 @@ With tests:
 
 ** Permutations
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun all-permutations (lst &optional (remain lst))
   (cond ((null remain) nil)
         ((null (rest lst)) (list lst))
@@ -310,7 +310,7 @@ We have to restrict the possible pairs according to:
   allow for pairs of different groups.
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun get-node-pairs (n &key (group-lengths nil))
   ;; check that group-lengths is well built
   (when group-lengths (assert (eq n (apply #'+ group-lengths))))
@@ -400,7 +400,7 @@ are encoded in these lists and we use them to decide
 if a given diagram is linked or not.
 ;; TODO: check link or connected exactly
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defmacro ordered-subsets-with-repetition (n space-size)
   (when (> n 0)
     (let* ((vars (loop for i below (1+ n) collect (gensym))))
@@ -452,7 +452,7 @@ if a given diagram is linked or not.
 
 ** Utils
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 ;; functions taken from uruk
 (defun flatten-list (ls)
   (cond
@@ -501,7 +501,7 @@ if a given diagram is linked or not.
 : NIL
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun symbols-repeated-p (lst)
   (let ((symbols (flatten-list lst))
         s)
@@ -521,7 +521,7 @@ if a given diagram is linked or not.
 * Arithmetic expressions
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun expr-to-lists (exp)
     (case (if (atom exp) t (car exp))
       (* (reduce (lambda (x y)
@@ -694,7 +694,7 @@ Some extensive tests..
 #+end_src
 
 * Index spaces
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun match-index-to-space (index orbital-space)
   (find index (cdr orbital-space)))
 #+end_src
@@ -704,7 +704,7 @@ Some extensive tests..
        (assert (not (match-index-to-space 'H '(H i j k l)))))
 #+end_src
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-space-by-leg (index orbital-spaces)
   (find index orbital-spaces :test #'match-index-to-space))
 #+end_src
@@ -715,7 +715,7 @@ Some extensive tests..
        (assert (not (find-space-by-leg 'a '((H i j k l))))))
 #+end_src
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
 
@@ -741,7 +741,7 @@ Some extensive tests..
 
 
 TODO: Tests
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun traverse-nodes (fn tensor)
   (destructuring-bind (name . nodes) tensor
     `(,name ,@(mapcar fn nodes))))
@@ -766,7 +766,7 @@ TODO: Tests
 
 ** Tensor sum
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun tensor-sum (&rest expressions)
   `(+ ,@(reduce (lambda (tsr rest)
                   (if (atom tsr)
@@ -802,7 +802,7 @@ TODO: Tests
 
 * Tensor matching
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (unless (eq (length target) (length tensor))
     (return-from match-target-with-tensor-1 nil))
@@ -843,7 +843,7 @@ TODO: Tests
 : NIL
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun match-target-with-tensor (target tensor &key orbital-spaces)
   "Here we check that Vaibj is equivalent to Viajb and so on always.
   This is general to all tensors.
@@ -902,7 +902,7 @@ we would write as symmetries
 #+end_src
 
 and we can write a simple function to apply this symmetry to tensor nodes
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun apply-symmetry-to-nodes (symmetry-equivalence object)
   (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
                                  (gensym)) symmetry-equivalence))
@@ -962,7 +962,7 @@ Mostly however it is quite tedious to write these equivalences
 by hand so we can use the =make-node-symmetry= function to
 create a well-named symmetry equivalence.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun triangle-pairs (n)
   (loop for fst below n
         append (loop for snd from (1+ fst) below n
@@ -1076,7 +1076,7 @@ And it should of course work for higher dimensional tensors.
 
 In the case of a list of tensors
 we can define the following function
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-effective-nodes-list (list-of-tensors)
   (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))
          (result-alist (mapcar (lambda (k) (cons k '())) keys)))
@@ -1139,7 +1139,7 @@ For fermionic diagrams where the tensors
 are represented by real antisymmetric objects,
 there is a further symmetry to be considered.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun unzip (ls)
   (loop for i below (apply #'min (mapcar #'length ls))
         collect (mapcar (lambda (l) (nth i l)) ls)))
@@ -1241,9 +1241,9 @@ there is a further symmetry to be considered.
               '(((A . B)) ((A . C)) ((B . C))
                 ((I . J)) ((I . K)) ((J . K))))
 
-(gunu::assert-equal
- (gunu::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
-                                     #'gunu::make-antisymmetry-symmetry)
+(arponen::assert-equal
+ (arponen::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
+                                     #'arponen::make-antisymmetry-symmetry)
  '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
 #+end_src
 
@@ -1314,7 +1314,7 @@ and check wether or not they are the same in terms of contractions
 and in the sense of sets through such a function like
 =find-duplicate-set=.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
                                 (set-difference -x -y :test #'equal))))
@@ -1346,7 +1346,7 @@ In conclusion, the suitable function for filtering
 a set of contractions through a set of symmetries (which might
 be a group or not) is:
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun filter-contractions-by-symmetries (symmetries contractions)
   (let ((-contractions (copy-tree contractions)))
     (do (result seen-contractions)
@@ -1413,7 +1413,7 @@ two legs less, i.e., one node less.
 TODO:: Think about why is not possible to contract
        '(a c) '(a b) '(c d)...
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun stich-together (contraction node-a node-b)
   ;; contraction-assoc: ((c0 . x) (c1 . x))
   (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
@@ -1459,7 +1459,7 @@ TODO:: Think about why is not possible to contract
 
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-and-replace-matching-nodes (contraction tensor-nodes-list
                                         &key killed-pair)
   "tensor-nodes-list is a list of list of nodes"
@@ -1550,7 +1550,7 @@ TODO:: Think about why is not possible to contract
 This functions is a handy function to get
 from a contraction object
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun get-contracted-nodes (contraction-tensor &key killed-pair)
   ;; todo replace with contraction-p
   (assert (eq (caar contraction-tensor) 'contraction))
@@ -1589,7 +1589,7 @@ Given a contraction, we will want to know what
 kind of tensor it will result when the contraction
 gets applied.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun get-contracted-temp-tensor (contraction-tensor &key (name 'contracted))
   (let* ((killed-pair '(x x))
          (x-nodes (get-contracted-nodes contraction-tensor
@@ -1638,7 +1638,7 @@ over the contraction rules and match every time against the two nodes
 since the position of the legs are encoded in the description of the
 contraction rules.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun compatible-contractions (node-a node-b &key
                                                 orbital-spaces
                                                 contraction-rules)
@@ -1714,7 +1714,7 @@ through a contraction path.
 
 Therefore, we can simply
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun is-connected-contraction (pair-combination node-pairs &key group-lengths)
   (let* ((psums (mapcar (lambda (ls) (apply #'+ ls))
                         (maplist #'identity (reverse group-lengths))))
@@ -1816,7 +1816,7 @@ be very expensive and where it is clear that
 the combinatorial search will have a negative
 result.
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 #+nil
 (defun is-a-contraction-possible-by-number-of-legs
     (target tensor-list &key
@@ -1841,7 +1841,7 @@ result.
 #+end_src
 
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
@@ -2068,7 +2068,7 @@ Let us illustrage this function with some tests
 
 *** Finding contractions by target properties
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun find-contractions-in-product-by-target
     (target tensor-list &key
                           orbital-spaces
@@ -2152,7 +2152,7 @@ Let us illustrage this function with some tests
 #+RESULTS:
 : NIL
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
   (let ((products (expr-to-lists expression))
@@ -2197,7 +2197,7 @@ Let us illustrage this function with some tests
 
 TOOD: Explain that all indices must be different and so on
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun space-subseq (&key orbital-spaces from-index)
   (mapcar (lambda (space)
             (handler-case `(,(car space)
@@ -2230,7 +2230,7 @@ TOOD: Explain that all indices must be different and so on
 : NIL
 
 TODO:: Explain how one to do the naming of tensors so that everything works well
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun name-legs-by-space-name (tensor-description &key orbital-spaces (from-index 0))
   (let ((orbital-spaces-copy (copy-tree
                               (space-subseq :orbital-spaces orbital-spaces
@@ -2271,7 +2271,7 @@ TODO:: Explain how one to do the naming of tensors so that everything works well
 ** Partitions
 TODO: Explain the concept of partitioning and the format
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun partition-tensor (tensor &key orbital-spaces partition (from-index 0))
   (let ((name (car tensor))
         (indices (cdr tensor))
@@ -2353,7 +2353,7 @@ TODO: Explain the concept of partitioning and the format
 * Output formats
 ** TeX
 
-#+begin_src lisp :tangle gunu.lisp
+#+begin_src lisp :tangle arponen.lisp
 (defun latex-tensor (tensor)
   (format nil "~a^{~a}_{~a}"
           (car tensor)
@@ -2393,7 +2393,7 @@ format so that one can have some rough estimates for the diagrammatic
 form of the terms.
 
 #+begin_src lisp
-(in-package :gunu)
+(in-package :arponen)
 
 (defun tensor-name-to-sdot-name (tensor)
   (format nil "~(~a~)" (car tensor)))
@@ -2483,9 +2483,9 @@ form of the terms.
 
 
 #+begin_src lisp
-(defpackage :gunu/dot
+(defpackage :arponen/dot
   (:use :cl))
-(in-package :gunu/dot)
+(in-package :arponen/dot)
 
 (defun symb (&rest args)
   (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
@@ -2735,11 +2735,11 @@ by virtue of node symmetry we should consider
 equivalent.
 
 
-#+begin_src lisp :tangle gunu.lisp
-(defpackage :gunu/hole-particle-picture
-  (:use :cl :gunu)
+#+begin_src lisp :tangle arponen.lisp
+(defpackage :arponen/hole-particle-picture
+  (:use :cl :arponen)
   (:nicknames :hp))
-(in-package :gunu/hole-particle-picture)
+(in-package :arponen/hole-particle-picture)
 
 (defconstant +default-orbital-spaces+
   '((H)   ;; holes
@@ -2783,11 +2783,11 @@ equivalent.
       new-index)))
 
 (defun name-legs-by-space-name-1 (tensor-description)
-  (gunu::traverse-legs #'genindex tensor-description))
+  (arponen::traverse-legs #'genindex tensor-description))
 
 
 (defun do-partition-node-description (node &key partition)
-  (eval `(gunu::cartesian-product
+  (eval `(arponen::cartesian-product
           ,@(mapcar (lambda (leg)
                       (let ((p (find leg partition :key #'car)))
                         (if p (cdr p) (list leg))))
@@ -2799,7 +2799,7 @@ equivalent.
     (let* ((p-node-lists (mapcar (lambda (n)
                                    (do-partition-node-description n
                                      :partition partition)) nodes))
-           (new-node-lists (eval `(gunu::cartesian-product ,@p-node-lists))))
+           (new-node-lists (eval `(arponen::cartesian-product ,@p-node-lists))))
       (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
 
 
@@ -2812,7 +2812,7 @@ equivalent.
 (defun filter-tensors-by-symmetries (symmetries-list tensor-list)
   (let (result)
     (mapc (lambda (sym tsr)
-            (let ((new-tsrs (gunu::apply-symmetries-to-nodes sym tsr)))
+            (let ((new-tsrs (arponen::apply-symmetries-to-nodes sym tsr)))
               (unless (intersection (cons tsr new-tsrs) result :test #'equal)
                 (push tsr result))))
           symmetries-list tensor-list)
@@ -2825,16 +2825,16 @@ equivalent.
    :test
    (lambda (x y)
      (let* ((all-x (cons (cadr x)
-                         (gunu::apply-symmetries-to-nodes (car x) (cadr x))))
+                         (arponen::apply-symmetries-to-nodes (car x) (cadr x))))
             (all-y (cons (cadr y)
-                         (gunu::apply-symmetries-to-nodes (car y) (cadr y))))
+                         (arponen::apply-symmetries-to-nodes (car y) (cadr y))))
             (x-descr (mapcar (lambda (-x)
-                               (gunu::tensor-to-description -x
+                               (arponen::tensor-to-description -x
                                                             :orbital-spaces
                                                             orbital-spaces))
                              all-x))
             (y-descr (mapcar (lambda (-y)
-                               (gunu::tensor-to-description -y
+                               (arponen::tensor-to-description -y
                                                             :orbital-spaces
                                                             orbital-spaces))
                              all-y)))
@@ -2845,7 +2845,7 @@ equivalent.
                           (partition-tensor-description tensor-description
                                                         :partition
                                                         ,*space-partition*)))
-         (symmetries (mapcar (lambda (x) (gunu::make-node-symmetry (cdr x)))
+         (symmetries (mapcar (lambda (x) (arponen::make-node-symmetry (cdr x)))
                              tensors)))
     (filter-tensors-by-symmetries-and-description symmetries
                                                   tensors
@@ -2862,23 +2862,23 @@ equivalent.
   `(list '* ,@args))
 
 (defmacro .+ (&rest args)
-  `(gunu::tensor-sum ,@args))
+  `(arponen::tensor-sum ,@args))
 
 ;; TODO: node-symmetry ein und auschalten
 (defun contract (target expression &key (node-symmetry t) (only-connected nil)
                                      (unrestricted nil))
-  (let* ((expanded (remove-1-in-product-list (gunu::expr-to-lists expression)))
+  (let* ((expanded (remove-1-in-product-list (arponen::expr-to-lists expression)))
          (n (length expanded))
-         (gunu::*only-connected-diagrams* only-connected)
-         (gunu::*allow-self-contractions* nil)
-         (gunu::*filter-parity-symmetry* unrestricted)
+         (arponen::*only-connected-diagrams* only-connected)
+         (arponen::*allow-self-contractions* nil)
+         (arponen::*filter-parity-symmetry* unrestricted)
          (i 0))
     (remove-if #'null
                (mapcar (lambda (tensor-product)
                          (format t "~&[~a/~a] ~a" (incf i) n tensor-product)
                          (let ((begin (get-internal-run-time))
                                (contractions
-                                 (gunu::find-contractions-in-product-by-target
+                                 (arponen::find-contractions-in-product-by-target
                                   target
                                   tensor-product
                                   :orbital-spaces
@@ -2901,7 +2901,7 @@ equivalent.
 
 #+begin_src lisp :tangle t.lisp
 (in-package :hp)
-(import 'gunu::assert-equal)
+(import 'arponen::assert-equal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (progn
   (reset-spaces)
@@ -2972,19 +2972,19 @@ equivalent.
                               '((V (P H) (H P))
                                 (V (H P) (P H))))
 
-(assert-equal (gunu::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
+(assert-equal (arponen::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
                                    ((H1 . H2))
                                    ((H3 . H4)))
                                                '(V (H1 H2) (H3 H4)))
               '((V (H3 H4) (H1 H2)) (V (H2 H1) (H3 H4)) (V (H1 H2) (H4 H3))))
 
-(gunu::make-node-symmetry '((P H) (H P)))
-(gunu::make-node-symmetry '((P H) (P P) (A B)))
-(gunu::apply-symmetry-to-nodes '((P . P) (H . P))
+(arponen::make-node-symmetry '((P H) (H P)))
+(arponen::make-node-symmetry '((P H) (P P) (A B)))
+(arponen::apply-symmetry-to-nodes '((P . P) (H . P))
                                '(V (P H) (P P)))
 
 
-(gunu::apply-symmetry-to-nodes '((P . H) (H . P))
+(arponen::apply-symmetry-to-nodes '((P . H) (H . P))
                                '(V (P H) (H P)))
 '((V (H1 H2) (H3 H4))      ;; Vijkl
   (V (H13 P5) (H14 H15))   ;; Vijak
@@ -3006,7 +3006,7 @@ equivalent.
 
 (progn
   (reset-spaces)
-  (let* ((gunu::*print-log* nil)
+  (let* ((arponen::*print-log* nil)
          (V (.+ (!! V (P H) (H P))
                 (!! V (P P) (H H))))
          (H (.+ v))
@@ -3034,14 +3034,14 @@ equivalent.
     doubles
     ;contractions
     ,#+nil
-    (assert-equal (gunu::expr-to-lists expression)
+    (assert-equal (arponen::expr-to-lists expression)
                   '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
                     ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
     (contract singles expression
               :unrestricted t
               :only-connected t)
-    (gunu/hole-particle-picture::remove-1-in-product-list
-     (gunu::expr-to-lists expression-2))
+    (arponen/hole-particle-picture::remove-1-in-product-list
+     (arponen::expr-to-lists expression-2))
     (contract singles expression-2
               :unrestricted t
               :only-connected t)
@@ -3054,9 +3054,9 @@ equivalent.
 ** Ccsd equations 
 
 #+begin_src lisp :tangle ccsd/input.lisp :mkdirp t
-(load "gunu.lisp")
+(load "arponen.lisp")
 (in-package :hp)
-(let* ((gunu::*print-log* nil)
+(let* ((arponen::*print-log* nil)
 
        ;; define the hamiltonian through
        ;; a particle-hole partition PH
@@ -3144,7 +3144,7 @@ equivalent.
          (substituted-products (mapcar (lambda (-subs) (sublis -subs product))
                                        substitutions))
          (text-contractions (mapcar #'latex-sum-contractions conts))
-         (text-products (mapcar #'gunu::latex substituted-products)))
+         (text-products (mapcar #'arponen::latex substituted-products)))
     (format nil "~{~a~}" (mapcar (lambda (c p) (format nil "~a ~a~%" c p))
             text-contractions text-products))))
 
@@ -3288,8 +3288,8 @@ $$
 $$
 ** IP Equation of motion CCSD
 #+begin_src lisp :tangle eom-ip/input.lisp :mkdirp t
-(load "gunu.lisp")
-(in-package :gunu)
+(load "arponen.lisp")
+(in-package :arponen)
 
 (defun make-space (name prefix n)
   `(,name ,@(mapcar (lambda (i)

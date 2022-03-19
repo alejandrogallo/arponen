@@ -1,6 +1,6 @@
 ;; todo define packages and all that
-(load "gunu.lisp")
-(in-package :gunu)
+(load "arponen.lisp")
+(in-package :arponen)
 
 (defmacro assert-equal (left right)
   `(assert (equal ,left ,right)))
@@ -311,17 +311,22 @@
 (assert-equal (tensor-sum '(+ a b c d) '(+ e d) '(+ h1 h2))
               '(+ A B C D E D H1 H2))
 
-(progn
-  (assert (match-target-with-tensor-1 '(V (H P) (P))
-                                      '(t (i b) (a))
-                                      :orbital-spaces
-                                      '((H i)
-                                        (P b a))))
-  (assert (not (match-target-with-tensor-1 '(V (H P) (P))
-                                           '(t (i b) (c)) ;; here
-                                           :orbital-spaces
-                                           '((H i)
-                                             (P b a))))))
+(assert (match-target-with-tensor-1 '(V (H P) (P))
+                                    '(t (i b) (a))
+                                    :orbital-spaces
+                                    '((H i)
+                                      (P b a))))
+(assert (not (match-target-with-tensor-1 '(V (H P) (P))
+                                         '(t (i b) (c)) ;; here
+                                         :orbital-spaces
+                                         '((H i)
+                                           (P b a)))))
+
+(assert (not (match-target-with-tensor-1 '(V (H P))
+                                         '(t (i b) (c)) ;; here
+                                         :orbital-spaces
+                                         '((H i)
+                                           (P b a)))))
 
 (progn
   (assert (match-target-with-tensor '(V (H P) (P H))
@@ -374,7 +379,7 @@
 (assert-equal (make-node-symmetry '((p s) (q r)))
               '(((P . Q) (S . R))))
 
-  
+
 (assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2)))
               '(;; node 1 <> node 2
                 ((P1 . P2) (H1 . H2))
@@ -472,9 +477,9 @@
               '(((A . B)) ((A . C)) ((B . C))
                 ((I . J)) ((I . K)) ((J . K))))
 
-(gunu::assert-equal
- (gunu::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
-                                     #'gunu::make-antisymmetry-symmetry)
+(arponen::assert-equal
+ (arponen::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
+                                     #'arponen::make-antisymmetry-symmetry)
  '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
 
 (assert-equal (find-duplicate-set '((a . b) (c . d))
@@ -559,6 +564,11 @@
                  (T (C K))
                  (R (G L))) :name '|v*t*r|)
               '(|v*t*r| (C I) (G L)))
+
+(assert-equal (get-contracted-temp-tensor
+               '((contraction nil)
+                 (F (a i))) :name '|Fai|)
+              '(|Fai| (A I)))
 
 ;; test
 (let ((spaces '((H I J K L)
@@ -840,7 +850,7 @@
                     :partition partition)))
 
 (in-package :hp)
-(import 'gunu::assert-equal)
+(import 'arponen::assert-equal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (progn
   (reset-spaces)
@@ -911,19 +921,19 @@
                               '((V (P H) (H P))
                                 (V (H P) (P H))))
 
-(assert-equal (gunu::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
+(assert-equal (arponen::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
                                    ((H1 . H2))
                                    ((H3 . H4)))
                                                '(V (H1 H2) (H3 H4)))
               '((V (H3 H4) (H1 H2)) (V (H2 H1) (H3 H4)) (V (H1 H2) (H4 H3))))
 
-(gunu::make-node-symmetry '((P H) (H P)))
-(gunu::make-node-symmetry '((P H) (P P) (A B)))
-(gunu::apply-symmetry-to-nodes '((P . P) (H . P))
+(arponen::make-node-symmetry '((P H) (H P)))
+(arponen::make-node-symmetry '((P H) (P P) (A B)))
+(arponen::apply-symmetry-to-nodes '((P . P) (H . P))
                                '(V (P H) (P P)))
 
 
-(gunu::apply-symmetry-to-nodes '((P . H) (H . P))
+(arponen::apply-symmetry-to-nodes '((P . H) (H . P))
                                '(V (P H) (H P)))
 '((V (H1 H2) (H3 H4))      ;; Vijkl
   (V (H13 P5) (H14 H15))   ;; Vijak
@@ -945,25 +955,43 @@
 
 (progn
   (reset-spaces)
-  (let* ((gunu::*print-log* nil)
+  (let* ((arponen::*print-log* nil)
          (V (.+ (!! V (P H) (H P))
                 (!! V (P P) (H H))))
          (H (.+ v))
          ;; t1 amplitudes
          (t1 (!! T1 (P H)))
+         (fai (!! f (P H)))
          ;; the whole expression to contract
          ;; i.e. Hamiltonian times T amplitudes
          (expression (.* H t1))
+         (expression-2 (.* (.+ fai #+nil H) (.+ 1 t1)))
 
          ;; targets for the diagrams search space
-         (singles (! _ (P H))))
+         (singles (! _ (P H)))
+         (doubles (! _ (P H) (P H)))
 
+         (contractions (contract singles expression
+                                 :unrestricted t
+                                 :only-connected t))
+         #+nil
+         (contractions-2 (contract singles expression-2
+                                   :unrestricted t
+                                   :only-connected t)))
     (format nil "Processing singles~%")
     expression
-    (assert-equal (gunu::expr-to-lists expression)
+    doubles
+    ;contractions
+    #+nil
+    (assert-equal (arponen::expr-to-lists expression)
                   '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
                     ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
     (contract singles expression
+              :unrestricted t
+              :only-connected t)
+    (arponen/hole-particle-picture::remove-1-in-product-list
+     (arponen::expr-to-lists expression-2))
+    (contract singles expression-2
               :unrestricted t
               :only-connected t)
 
