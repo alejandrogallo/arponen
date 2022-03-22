@@ -1318,14 +1318,38 @@ and in the sense of sets through such a function like
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
                                 (set-difference -x -y :test #'equal))))
+
+(defun pair-set-difference (pa pb)
+  (check-type pa cons)
+  (check-type pb cons)
+  (flet ((c-to-list (c) (list (car c) (cdr c))))
+    (set-difference (c-to-list pa) (c-to-list pb))))
+
+(defun find-duplicate-pair-set (element lst)
+  (find element lst :test-not
+        (lambda (x y)
+          (set-difference x y
+                          :test-not #'pair-set-difference))))
 #+end_src
 
 #+begin_src lisp :tangle t.lisp
-(assert-equal (find-duplicate-set '((a . b) (c . d))
+(assert-equal (find-duplicate-set '#1=((a . b) (c . d))
                                   '(((c . e) (a . b))
                                     ((c . d) (a . b))
-                                    ((a . b) (c . d))))
+                                    #1#))
               '((c . d) (a . b)))
+
+;; it should also accept transposed variations of the
+;; elements
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (a . b))))
+              '((c . d) (a . b)))
+
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (b . a))))
+              '((c . d) (b . a)))
 #+end_src
 
 However, this begs the question of given a set of symmetries
@@ -1356,7 +1380,7 @@ be a group or not) is:
           ;; go through all symmetries
           (loop for sym in (cons nil symmetries)
                 do (let ((new-c (apply-symmetry-to-nodes sym c)))
-                     (when (find-duplicate-set new-c seen-contractions)
+                     (when (find-duplicate-pair-set new-c seen-contractions)
                        (push new-c seen-contractions)
                        (logger "~&~a is the same as ~a by virtue of ~a"
                                c new-c sym)
@@ -3007,8 +3031,12 @@ equivalent.
 (progn
   (reset-spaces)
   (let* ((arponen::*print-log* nil)
-         (V (.+ (!! V (P H) (H P))
-                (!! V (P P) (H H))))
+
+         (t2 (!! t2 (P H) (P H)))
+
+         (vaibj (!! V (P P) (H H)))
+         (vaijb (!! V (P H) (H P)))
+         (V (.+ vaijb vaibj))
          (H (.+ v))
          ;; t1 amplitudes
          (t1 (!! T1 (P H)))
@@ -3016,36 +3044,39 @@ equivalent.
          ;; the whole expression to contract
          ;; i.e. Hamiltonian times T amplitudes
          (expression (.* H t1))
-         (expression-2 (.* (.+ fai #+nil H) (.+ 1 t1)))
+         (expression-2 (.* (.+ fai)
+                           (.+ 1 t1)))
 
          ;; targets for the diagrams search space
-         (singles (! _ (P H)))
-         (doubles (! _ (P H) (P H)))
+         (%singles (! _ (P H)))
+         (%doubles (! _ (P H) (P H)))
 
-         (contractions (contract singles expression
+         (contractions (contract %singles expression
                                  :unrestricted t
-                                 :only-connected t))
-         ,#+nil
-         (contractions-2 (contract singles expression-2
-                                   :unrestricted t
-                                   :only-connected t)))
-    (format nil "Processing singles~%")
-    expression
-    doubles
-    ;contractions
-    ,#+nil
-    (assert-equal (arponen::expr-to-lists expression)
-                  '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
-                    ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
-    (contract singles expression
-              :unrestricted t
-              :only-connected t)
-    (arponen/hole-particle-picture::remove-1-in-product-list
-     (arponen::expr-to-lists expression-2))
-    (contract singles expression-2
-              :unrestricted t
-              :only-connected t)
+                                 :only-connected t)))
 
+    (format nil "Processing singles~%")
+
+    (assert-equal (arponen::expr-to-lists expression)
+                  '(((V (P3 H3) (H4 P4)) (T1 (P2 H2)))
+                    ((V (P5 P6) (H5 H6)) (T1 (P2 H2)))))
+
+
+    ;; it should be possible to just find an uncontracted diagram
+    (assert-equal (contract %singles expression-2
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (NIL)) ((F (P1 H1))))))
+
+    (assert-equal (arponen/hole-particle-picture::remove-1-in-product-list
+                   (arponen::expr-to-lists expression-2))
+                  '(((F (P1 H1))) ((F (P1 H1)) (T1 (P2 H2)))))
+
+    (assert-equal (contract %doubles (.* vaibj t2)
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (((H5 H7) (P6 P7))))
+                     ((V (P5 P6) (H5 H6)) (T2 (P7 H7) (P8 H8))))))
     ))
 #+end_src
 
