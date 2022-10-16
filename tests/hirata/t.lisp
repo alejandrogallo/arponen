@@ -9,7 +9,7 @@
 
 (in-package :hirata)
 
-(5am:def-suite hirata-parsing)
+(fiveam:def-suite hirata-parsing)
 (defmacro test-parsing (name &rest files)
   `(5am:test (,name :suite hirata-parsing)
      ,(format nil "Test parsing the ~s equations" name)
@@ -72,5 +72,5 @@
               #P"cisdtq/cisdtq_c4.out"
               #P"cisdtq/cisdtq_e.out")
 
-(fiveam:run! 'hirata-parsing)
+;; (fiveam:run! 'hirata-parsing)
 ;; Parsing test suite:1 ends here
