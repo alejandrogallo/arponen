@@ -17,17 +17,28 @@
   (:text t))
 (parse 'number #1="654981981")
 
-(defmacro %make-index-rule (name prefix)
+(defmacro %make-index-rule (name prefix &optional suffix)
   `(defrule ,name
-       (and ,prefix number)
+       ,(if suffix
+            `(and ,prefix number ,suffix)
+            `(and ,prefix number))
      (:function (lambda (m)
                   (intern (format nil "~{~@(~a~)~}" m))))))
 
 (%make-index-rule hole-index "h")
+(%make-index-rule ghost-hole-index "h" "*")
 (%make-index-rule particle-index "p")
-(defrule index (or hole-index particle-index))
+(%make-index-rule ghost-particle-index "p" "*")
+(defrule index
+    (or ghost-hole-index
+        ghost-particle-index
+        particle-index
+        hole-index))
 
 (parse 'hole-index "h65")
+(parse 'ghost-hole-index "h65*")
+(parse 'index "h65*")
+(parse 'ghost-particle-index "p65*")
 (parse 'particle-index "p65")
 
 (defrule op* " * ")
