@@ -89,7 +89,7 @@
          ")")
   (:destructure (_ from __ to ___)
     (declare (ignore _ __ ___))
-    `(permute ,from ,to)))
+    `(:permute ,from ,to)))
 
 (parse 'permutation "P( p5 p6 p4 h1 h2 h3 => p4 p6 p5 h1 h2 h3 )")
 
