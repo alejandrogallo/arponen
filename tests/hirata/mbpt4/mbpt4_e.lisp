@@ -1,0 +1,1 @@
+((:PERMUTATIONS ("+ 0.25") :TENSORS (("Sum" H3 H4 P1 P2) ("t3" P1 P2 H3 H4) ("v" H3 H4 P1 P2))))

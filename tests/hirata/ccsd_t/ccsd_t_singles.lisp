@@ -1,0 +1,10 @@
+((:PERMUTATIONS
+  ("+ 1.0" ("- 1.0" (:PERMUTE (P4 P5 P6 H3 H1 H2) (P5 P4 P6 H3 H1 H2)))
+   ("- 1.0" (:PERMUTE (P4 P6 P5 H3 H1 H2) (P6 P4 P5 H3 H1 H2)))
+   ("- 1.0" (:PERMUTE (P4 P5 P6 H3 H1 H2) (P4 P5 P6 H2 H1 H3)))
+   ("+ 1.0" (:PERMUTE (P4 P5 P6 H3 H1 H2) (P5 P4 P6 H2 H1 H3)))
+   ("+ 1.0" (:PERMUTE (P4 P6 P5 H3 H1 H2) (P6 P4 P5 H2 H1 H3)))
+   ("- 1.0" (:PERMUTE (P4 P5 P6 H3 H2 H1) (P4 P5 P6 H1 H2 H3)))
+   ("+ 1.0" (:PERMUTE (P4 P5 P6 H3 H2 H1) (P5 P4 P6 H1 H2 H3)))
+   ("+ 1.0" (:PERMUTE (P4 P6 P5 H3 H2 H1) (P6 P4 P5 H1 H2 H3))))
+  :TENSORS (("t" P4 H3) ("v" P5 P6 H1 H2))))
