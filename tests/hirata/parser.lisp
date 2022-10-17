@@ -186,3 +186,13 @@
   (with-open-file (s out :direction :output :if-exists :supersede)
     (format s "~S" (parse-outfile in))))
 ;; Parser:1 ends here
+
+;; Hirata to Arponen
+
+;; Here we create a function to try to represent hirata notation into the
+;; internal form of arponen in order to compare for benchmarking:
+
+
+;; [[file:README.org::*Hirata to Arponen][Hirata to Arponen:1]]
+
+;; Hirata to Arponen:1 ends here
