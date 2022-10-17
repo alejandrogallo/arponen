@@ -1,4 +1,4 @@
-(((CONTRACTION ((H1 H202) (P2 P201))) "+ 1.0" ("f" (H1 P201)) ("t" (P2 H202)))
- ((CONTRACTION ((P2 P202) (H4 H201))) "+ 0.25" ("t" (P1 H3) (P2 H201)) ("v" (H3 P1) (H4 P202)))
- ((CONTRACTION ((P3 P203) (H4 H202) (H2 H201))) "+ 0.5" ("t" (P1 H201)) ("t" (P3 H202))
+(((CONTRACTIONS ((H1 H202) (P2 P201))) "+ 1.0" ("f" (H1 P201)) ("t" (P2 H202)))
+ ((CONTRACTIONS ((P2 P202) (H4 H201))) "+ 0.25" ("t" (P1 H3) (P2 H201)) ("v" (H3 P1) (H4 P202)))
+ ((CONTRACTIONS ((P3 P203) (H4 H202) (H2 H201))) "+ 0.5" ("t" (P1 H201)) ("t" (P3 H202))
   ("v" (H2 P1) (H4 P203))))

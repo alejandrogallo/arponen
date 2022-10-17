@@ -291,7 +291,7 @@
               (let ((permuted (maybe-permute perm tsrs))
                     (sign (perm-sign perm)))
                 (multiple-value-bind (tsrs contractions) (handle-sum permuted)
-                  `((contraction ,contractions)
+                  `((contractions ,contractions)
                     ,sign ,@(mapcar #'transform-tensor tsrs)))))
             perms
             (loop :for p :in perms :collect tensors))))

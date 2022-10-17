@@ -1,4 +1,4 @@
-(((CONTRACTION ((H5 H201))) "- 1.0" ("v" (H201 H1) (P4 H2)) ("x" (P3 H5)))
- ((CONTRACTION ((H5 H201))) "+ 1.0" ("v" (H201 H1) (P3 H2)) ("x" (P4 H5)))
- ((CONTRACTION ((P5 P201))) "+ 1.0" ("v" (P3 H1) (P4 P201)) ("x" (P5 H2)))
- ((CONTRACTION ((P5 P201))) "- 1.0" ("v" (P3 H2) (P4 P201)) ("x" (P5 H1))))
+(((CONTRACTIONS ((H5 H201))) "- 1.0" ("v" (H201 H1) (P4 H2)) ("x" (P3 H5)))
+ ((CONTRACTIONS ((H5 H201))) "+ 1.0" ("v" (H201 H1) (P3 H2)) ("x" (P4 H5)))
+ ((CONTRACTIONS ((P5 P201))) "+ 1.0" ("v" (P3 H1) (P4 P201)) ("x" (P5 H2)))
+ ((CONTRACTIONS ((P5 P201))) "- 1.0" ("v" (P3 H2) (P4 P201)) ("x" (P5 H1))))

@@ -1,2 +1,2 @@
-(((CONTRACTION ((P1 P202) (H2 H201))) "+ 1.0" ("x" (P1 H201)) ("y" (H2 P202)))
- ((CONTRACTION ((P1 P202) (H4 H201))) "+ 0.25" ("x" (P1 H3) (P2 H201)) ("y" (H4 P2) (H3 P202))))
+(((CONTRACTIONS ((P1 P202) (H2 H201))) "+ 1.0" ("x" (P1 H201)) ("y" (H2 P202)))
+ ((CONTRACTIONS ((P1 P202) (H4 H201))) "+ 0.25" ("x" (P1 H3) (P2 H201)) ("y" (H4 P2) (H3 P202))))

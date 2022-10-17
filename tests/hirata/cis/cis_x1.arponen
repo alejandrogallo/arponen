@@ -1,3 +1,3 @@
-(((CONTRACTION ((H3 H201))) "- 1.0" ("f" (H201 H1)) ("x" (P2 H3)))
- ((CONTRACTION ((P3 P201))) "+ 1.0" ("f" (P2 P201)) ("x" (P3 H1)))
- ((CONTRACTION ((H3 H202) (P4 P201))) "- 1.0" ("v" (H3 H1) (P2 P201)) ("x" (P4 H202))))
+(((CONTRACTIONS ((H3 H201))) "- 1.0" ("f" (H201 H1)) ("x" (P2 H3)))
+ ((CONTRACTIONS ((P3 P201))) "+ 1.0" ("f" (P2 P201)) ("x" (P3 H1)))
+ ((CONTRACTIONS ((H3 H202) (P4 P201))) "- 1.0" ("v" (H3 H1) (P2 P201)) ("x" (P4 H202))))
