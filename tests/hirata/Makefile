@@ -8,13 +8,22 @@ test-parse:
 
 OUTFILES = $(shell find . -name \*.out)
 LISP_HIRATA_FILES = $(patsubst %.out,%.lisp,$(OUTFILES))
+LISP_ARPONEN_FILES = $(patsubst %.out,%.arponen,$(OUTFILES))
+SBCL = sbcl --disable-debugger
 
 parse: $(LISP_HIRATA_FILES)
+arponen: $(LISP_ARPONEN_FILES)
 
 %.lisp: %.out
-	sbcl \
+	$(SBCL) \
 	--load parser.lisp \
-	--eval "(format t \"~S\" (hirata::save-parse-outfile \"$<\" \"$@\"))" \
+	--eval "(hirata::save-parse-outfile \"$<\" \"$@\")" \
 	--quit
 
-.PHONY: parse
+%.arponen: %.lisp
+	$(SBCL) \
+	--load parser.lisp \
+	--eval "(hirata::hirata->arponen \"$<\" \"$@\")" \
+	--quit
+
+.PHONY: parse arponen

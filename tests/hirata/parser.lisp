@@ -187,13 +187,13 @@
     (format s "~S" (parse-outfile in))))
 ;; Parser:1 ends here
 
-;; Hirata to Arponen
+;; Hirata to Arponen conversion
 
 ;; Here we create a function to try to represent hirata notation into the
 ;; internal form of arponen in order to compare for benchmarking:
 
 
-;; [[file:README.org::*Hirata to Arponen][Hirata to Arponen:1]]
+;; [[file:README.org::*Hirata to Arponen conversion][Hirata to Arponen conversion:1]]
 (in-package :hirata)
 (declaim (optimize (speed 3) (safety 0) (debug 0)))
 
@@ -282,7 +282,7 @@
 
 (apply #'mapcar (lambda (x y) (cons x y)) '((a b) (1 5)))
 
-(defun hirata->arponen (statement)
+(defun hirata-statement->arponen-contraction (statement)
   (declare (type list statement))
   (let ((perms (getf statement :permutations))
         (tensors (getf statement :tensors)))
@@ -305,5 +305,15 @@
                ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P1 P2) (H5 H6 H4 P2 P1 P3)))
                ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P2 P1) (H5 H6 H4 P1 P2 P3))))
               :TENSORS (("Sum" H7) ("v" H4 H5 H7 P3) ("y" H7 H6 P1 P2)))))
-  (hirata->arponen stmt))
-;; Hirata to Arponen:1 ends here
+  (hirata-statement->arponen-contraction stmt))
+
+(defun hirata->arponen (infile outfile)
+  (let ((statements (uiop:read-file-form infile)))
+    (with-open-file (s outfile :direction :output :if-exists :supersede)
+      (format s "~s" (apply #'concatenate
+                            'list
+                            (mapcar #'hirata-statement->arponen-contraction
+                                    statements))))))
+
+(hirata->arponen "./ccsd/ccsd_density1.lisp" "lala.lisp")
+;; Hirata to Arponen conversion:1 ends here

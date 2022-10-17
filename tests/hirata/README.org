@@ -191,7 +191,7 @@
 #+RESULTS:
 : SAVE-PARSE-OUTFILE
 
-** Hirata to Arponen
+** Hirata to Arponen conversion
 
 Here we create a function to try to represent hirata notation into the
 internal form of arponen in order to compare for benchmarking:
@@ -285,7 +285,7 @@ internal form of arponen in order to compare for benchmarking:
 
 (apply #'mapcar (lambda (x y) (cons x y)) '((a b) (1 5)))
 
-(defun hirata->arponen (statement)
+(defun hirata-statement->arponen-contraction (statement)
   (declare (type list statement))
   (let ((perms (getf statement :permutations))
         (tensors (getf statement :tensors)))
@@ -308,7 +308,17 @@ internal form of arponen in order to compare for benchmarking:
                ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P1 P2) (H5 H6 H4 P2 P1 P3)))
                ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P2 P1) (H5 H6 H4 P1 P2 P3))))
               :TENSORS (("Sum" H7) ("v" H4 H5 H7 P3) ("y" H7 H6 P1 P2)))))
-  (hirata->arponen stmt))
+  (hirata-statement->arponen-contraction stmt))
+
+(defun hirata->arponen (infile outfile)
+  (let ((statements (uiop:read-file-form infile)))
+    (with-open-file (s outfile :direction :output :if-exists :supersede)
+      (format s "~s" (apply #'concatenate
+                            'list
+                            (mapcar #'hirata-statement->arponen-contraction
+                                    statements))))))
+
+(hirata->arponen "./ccsd/ccsd_density1.lisp" "lala.lisp")
 #+end_src
 
 
@@ -319,6 +329,7 @@ internal form of arponen in order to compare for benchmarking:
 
 #+begin_src lisp
 (ql:quickload :fiveam)
+,#+slynk
 (setq fiveam:*run-test-when-defined* t)
 
 (in-package :hirata)
@@ -418,16 +429,22 @@ test-parse:
 #+begin_src makefile
 OUTFILES = $(shell find . -name \*.out)
 LISP_HIRATA_FILES = $(patsubst %.out,%.lisp,$(OUTFILES))
+LISP_ARPONEN_FILES = $(patsubst %.out,%.arponen,$(OUTFILES))
+SBCL = sbcl --disable-debugger
 
 parse: $(LISP_HIRATA_FILES)
+arponen: $(LISP_ARPONEN_FILES)
 
 %.lisp: %.out
-	sbcl \
+	$(SBCL) \
 	--load parser.lisp \
-	--eval "(format t \"~S\" (hirata::save-parse-outfile \"$<\" \"$@\"))" \
+	--eval "(hirata::save-parse-outfile \"$<\" \"$@\")" \
 	--quit
 
-.PHONY: parse
+%.arponen: %.lisp
+	make-arponen.sh $< $@
+
+.PHONY: parse arponen
 #+end_src
 
 
