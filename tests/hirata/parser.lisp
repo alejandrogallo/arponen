@@ -1,6 +1,7 @@
 ;; Parser
 ;; :PROPERTIES:
 ;; :header-args:lisp: :tangle parser.lisp :comments both
+;; :header-args:makefile+: :comments both
 ;; :END:
 
 

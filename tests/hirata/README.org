@@ -3,6 +3,7 @@
 * Parser
 :PROPERTIES:
 :header-args:lisp: :tangle parser.lisp :comments both
+:header-args:makefile+: :comments both
 :END:
 
 #+begin_src lisp
@@ -423,7 +424,7 @@ test-parse:
 
 ** Makefile
 :PROPERTIES:
-:header-args:makefile: :tangle Makefile
+:header-args:makefile+: :tangle Makefile
 :END:
 
 #+begin_src makefile
@@ -442,7 +443,10 @@ arponen: $(LISP_ARPONEN_FILES)
 	--quit
 
 %.arponen: %.lisp
-	make-arponen.sh $< $@
+	./make-arponen.sh $< $@
+
+arponen-clean:
+	@rm -v $(LISP_ARPONEN_FILES)
 
 .PHONY: parse arponen
 #+end_src

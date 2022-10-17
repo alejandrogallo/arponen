@@ -8,7 +8,6 @@ set -eux
 tmp=`mktemp`
 
 cat <<LISP > $tmp
-
 (in-package :hirata)
 
 (hirata->arponen "$1" "$2")

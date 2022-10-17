@@ -6,6 +6,7 @@
 
 ;; [[file:README.org::*Parsing test suite][Parsing test suite:1]]
 (ql:quickload :fiveam)
+#+slynk
 (setq fiveam:*run-test-when-defined* t)
 
 (in-package :hirata)
