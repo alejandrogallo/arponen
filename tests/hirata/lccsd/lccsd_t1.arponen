@@ -1,0 +1,7 @@
+(((CONTRACTION NIL) "+ 1.0" ("f" (P2 H1)))
+ ((CONTRACTION ((H3 H201))) "- 1.0" ("f" (H201 H1)) ("t" (P2 H3)))
+ ((CONTRACTION ((P3 P201))) "+ 1.0" ("f" (P2 P201)) ("t" (P3 H1)))
+ ((CONTRACTION ((P3 P202) (H4 H201))) "- 1.0" ("t" (P3 H201)) ("v" (H4 H1) (P2 P202)))
+ ((CONTRACTION ((H3 H202) (P4 P201))) "+ 1.0" ("f" (H3 P201)) ("t" (P4 H202) (P2 H1)))
+ ((CONTRACTION ((P3 P202) (H5 H201))) "+ 0.5" ("t" (P3 H4) (P2 H201)) ("v" (H4 H1) (H5 P202)))
+ ((CONTRACTION ((P4 P202) (H5 H201))) "+ 0.5" ("t" (P3 H201) (P4 H1)) ("v" (H5 P3) (P2 P202))))
