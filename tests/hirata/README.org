@@ -197,7 +197,118 @@ Here we create a function to try to represent hirata notation into the
 internal form of arponen in order to compare for benchmarking:
 
 #+begin_src lisp
+(in-package :hirata)
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
+(defrule ghost-index-number
+    (and character number "*")
+  (:lambda (m) (cadr m)))
+
+(parse 'ghost-index-number "H254*")
+
+(defun transform-ghost-index (g)
+  (let ((n (parse 'ghost-index-number (symbol-name g) :junk-allowed t)))
+    (if n
+        (intern (format nil "G~a" n))
+        g)))
+
+(defun transform-tensor (tsr)
+  (let* ((legs (cdr tsr))
+         (n (length legs)))
+    `(,(car tsr)
+      ,@(mapcar (lambda (c)
+                  (list (transform-ghost-index (nth c legs))
+                        (transform-ghost-index (nth (+ c (floor n 2)) legs))))
+                  (loop for c below (floor n 2) collect c)))))
+
+(transform-tensor '("y" H5 H6 P1 P2))
+(transform-tensor '("y" H5 H6* P1 P2))
+(transform-tensor '("y" H5 H6 P1 P2*))
+(transform-tensor '("y" H5* P1))
+(transform-tensor '("y"))
+
+(defun handle-sum (tsrs &key (base 200))
+  (declare (optimize (speed 0) (safety 3) (debug 3)))
+  (let ((sum (find "Sum" tsrs :key #'car :test #'string=))
+        contractions)
+    (if sum
+        (let ((indices (mapcar (lambda (i)
+                                 (cons i
+                                       (lambda (new)
+                                         (destructuring-bind (q n ghost)
+                                             (parse '(and
+                                                      character number
+                                                      (? "*"))
+                                                    (symbol-name i))
+                                           (intern (format nil "~a~a"
+                                                           (if ghost
+                                                               "G"
+                                                               q)
+                                                           new))))))
+                               (cdr sum))))
+          (let ((tsrs (remove "Sum" tsrs :key #'car :test #'string=)))
+            (values
+             (loop :for tsr :in tsrs
+                   :collect
+                   (let ((it (intersection (alexandria:flatten tsr)
+                                           (alexandria:flatten
+                                            (mapcar #'car indices)))))
+                     (if it
+                         (let* ((it (car it))
+                                (idx (assoc it indices)))
+                           (setf indices (remove it indices
+                                                 :key #'car))
+                           (let ((newidx (funcall (cdr idx) (incf base))))
+                             (push `(,it ,newidx) contractions)
+                             (sublis `((,it . ,newidx)) tsr)))
+                         tsr)))
+             contractions)))
+        (values tsrs contractions))))
+
+#|
+(handle-sum '(("Sum" H7) ("v" H4 H5 H7 P3) ("y" H7 H6 P1 P2)))
+(handle-sum '(("Sum" H7 P3) ("v" H4 H5 H7 P3) ("y" H7 H6 P1 P 3)))
+|#
+
+
+(defun maybe-permute (permutation tensors)
+  (typecase permutation
+    (atom tensors)
+    (list (let* ((indices (cdadr permutation))
+                 (alist (apply #'mapcar #'cons indices)))
+            (sublis alist tensors)))))
+
+(defun perm-sign (p)
+  (typecase p
+    (atom p)
+    (list (car p))))
+
+(apply #'mapcar (lambda (x y) (cons x y)) '((a b) (1 5)))
+
+(defun hirata->arponen (statement)
+  (declare (type list statement))
+  (let ((perms (getf statement :permutations))
+        (tensors (getf statement :tensors)))
+    (mapcar (lambda (perm tsrs)
+              (let ((permuted (maybe-permute perm tsrs))
+                    (sign (perm-sign perm)))
+                (multiple-value-bind (tsrs contractions) (handle-sum permuted)
+                  `((contraction ,contractions)
+                    ,sign ,@(mapcar #'transform-tensor tsrs)))))
+            perms
+            (loop :for p :in perms :collect tensors))))
+
+(let ((stmt '(:PERMUTATIONS
+              ("+ 1.0" ("- 1.0" (:PERMUTE (H4 H5 H6 P3 P1 P2) (H4 H5 H6 P2 P1 P3)))
+               ("- 1.0" (:PERMUTE (H4 H5 H6 P3 P2 P1) (H4 H5 H6 P1 P2 P3)))
+               ("- 1.0" (:PERMUTE (H4 H5 H6 P3 P1 P2) (H4 H6 H5 P3 P1 P2)))
+               ("+ 1.0" (:PERMUTE (H4 H5 H6 P3 P1 P2) (H4 H6 H5 P2 P1 P3)))
+               ("+ 1.0" (:PERMUTE (H4 H5 H6 P3 P2 P1) (H4 H6 H5 P1 P2 P3)))
+               ("- 1.0" (:PERMUTE (H5 H4 H6 P3 P1 P2) (H5 H6 H4 P3 P1 P2)))
+               ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P1 P2) (H5 H6 H4 P2 P1 P3)))
+               ("+ 1.0" (:PERMUTE (H5 H4 H6 P3 P2 P1) (H5 H6 H4 P1 P2 P3))))
+              :TENSORS (("Sum" H7) ("v" H4 H5 H7 P3) ("y" H7 H6 P1 P2)))))
+  (hirata->arponen stmt))
 #+end_src
 
 
