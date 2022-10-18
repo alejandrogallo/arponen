@@ -2395,336 +2395,6 @@ TODO: Explain the concept of partitioning and the format
    (V (A B) (C D)))
 :end:
 
-* Output formats
-** TeX
-
-#+begin_src lisp :tangle arponen.lisp
-(defun latex-tensor (tensor)
-  (format nil "~a^{~a}_{~a}"
-          (car tensor)
-          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
-          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
-
-(defun latex (tensor-expression &optional (stream nil))
-  (case (car tensor-expression)
-    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
-                                                     (cdr tensor-expression))))
-    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
-    (t (latex-tensor tensor-expression))))
-
-#+end_src
-
-#+RESULTS:
-: LATEX
-
-TODO actually to the tests
-#+begin_src lisp :tangle t.lisp
-(let ((orbital-spaces '((PQ p q r s)
-                        (H i j k l)
-                        (P a b c d)))
-      (partition '((PQ H P))))
-  (latex (partition-tensor '(f (p q))
-                           :orbital-spaces orbital-spaces
-                           :partition partition))
-  (latex (partition-tensor '(V (p q) (r s))
-                    :orbital-spaces orbital-spaces
-                    :partition partition)))
-#+end_src
-
-** TODO Dot diagrams
-
-This section defines some utilities to export the diagrams to dot
-format so that one can have some rough estimates for the diagrammatic
-form of the terms.
-
-#+begin_src lisp
-(in-package :arponen)
-
-(defun tensor-name-to-sdot-name (tensor)
-  (format nil "~(~a~)" (car tensor)))
-
-(declaim (optimize (debug 3)))
-(defun contraction-to-sdot (contraction)
-  (destructuring-bind ((contraction cts) . tensors) contraction
-    (declare (ignore contraction))
-    (flet ((tensor-of-leg (leg)
-             (find leg tensors :key #'cdr
-                               :test (lambda (l nodes)
-                                       (member l (flatten-list nodes))))))
-      (loop for ct in cts
-            collect
-            (let* ((tsr-a (tensor-of-leg (car ct)))
-                   (name-a (tensor-name-to-sdot-name tsr-a))
-                   (tsr-b (tensor-of-leg (cadr ct)))
-                   (name-b (tensor-name-to-sdot-name tsr-b)))
-              `(edge ))))))
-
-(contraction-to-sdot '((contraction ((a b)))
-                       (V (a e)) (t2 (b e) (i j))))
-
-(defun render-sdot (stream graph)
-  (eval `(render-sdot-macro ,stream ,graph)))
-
-(defmacro render-sdot-macro (stream graph)
-  `(labels ((-- (from to &rest opts)
-              (format ,stream "~a -- ~a ~a" from to (-[options] opts)))
-            (-> (from to &rest opts)
-              (apply #'-- (append (list from to) (cons '(dir "forward") opts))))
-            (<- (from to &rest opts)
-              (apply #'-- (append (list from to) (cons '(dir "back") opts))))
-            (-[options] (opts) (format ,stream "[~{~a~^,~}]" (-options opts)))
-            (-options (opts) (mapcar (lambda (o)
-                                       (etypecase o
-                                         (atom (format ,stream "~a" o))
-                                         (list (:= (car o) (cadr o)))))
-                                     opts))
-            (scope (&rest els) (format ,stream "{~{~&~t~a~%~}}" els))
-            (:= (key var)
-              (format ,stream "~a = ~a" (if (symbolp key)
-                                            (string-downcase (symbol-name key))
-                                            key) var))
-            (-element (name &rest opts)
-              (format ,stream "~(~a~) ~a" name (-[options] opts)))
-            (node (&rest opts) (apply #'-element (cons "node" opts)))
-            (edge (&rest opts) (apply #'-element (cons "edge" opts)))
-            (:graph (&rest opts) (apply #'-element (cons "graph" opts)))
-            (cluster (name &rest els) (format ,stream
-                                              "cluster cluster_~a ~a"
-                                              name
-                                              (apply #'scope els)))
-            (-named-scope (scope-name name els)
-              (format ,stream "~a ~a {~%~{~2t~a~%~}}" scope-name name els))
-            (graph (name &rest els) (-named-scope "graph" name els))
-            (digraph (name &rest els) (-named-scope "digraph" name els)))
-     ,graph))
-
-
-(render-sdot-macro nil
-             (graph "This"
-                    (:= 'rankdir 'BT)
-                    (:graph '(rankdir 654))
-                    (scope (-> 'i 'k)
-                           (-> 'e 'k)
-                           (<- 'e 'k))
-                    (node '(dir backward))
-                    (edge '(dir backward))
-                    (cluster 'v (-> 'e 'k))
-                    (-element 'node 'simple)
-                    (-> 'a 'b)
-                    (<- 'a 'b)
-                    (-> 'c 'd)))
-
-(let ((a '(-> 'a 'b)))
-  (render-sdot nil a))
-
-(render-sdot nil
-             '(graph nil
-               (scope (-> 'i 'k)
-                (-> 'a 'b))
-               (-> 'a 'b)
-               (<- 'a 'b)
-               (-> 'c 'd)))
-#+end_src
-
-
-#+begin_src lisp
-(defpackage :arponen/dot
-  (:use :cl))
-(in-package :arponen/dot)
-
-(defun symb (&rest args)
-  (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
-
-(defun subgraph (name &rest contents)
-  (format nil "~&subgraph cluster_~a {~%~{~t~a~^~%~}~%}" name contents))
-
-(defun declare-legs (tensor)
-  (format nil "~{~a~^, ~} [shape = point]"
-          (mapcar (lambda (x) (symb (car tensor) x))
-                  (cdr tensor))))
-
-(defun contraction-to-graphviz (contraction)
-  ;;(assert (cl-user::contraction? contraction))
-  (destructuring-bind ((contraction-symbol conts . nil) prods . nil) contraction
-    (loop
-      for tensor in prods
-      collect
-      (let ((tname (car tensor)))
-        (case tname
-          ((v t2) (subgraph tname
-                       (declare-legs tensor)))
-          (t1 (format nil "~&~tt1 [shape = box, height = 0.02, label=\"\""))))))
-  )
-(contraction-to-graphviz
- '((contraction ((h1 h5) (p1 p5) (h2 h3)))
-   ((V (h1 h2 ) (p1 p2))
-    (t1 (p3 h3))
-    (t2 (p4 h4) (p5 h5)))))
-#+end_src
-
-An example output should be
-
-#+begin_src dot
-graph {
-  rankdir = TB
-  {
-    node [width = .3]
-    rank = same
-    heaven1, heaven2, heaven3, heaven4 [shape = none, label="", height=.01]
-  }
-
-  subgraph cluster_v {
-    rank = same
-    vleft, vright [shape = "point", label=""];
-    {
-      vleft -- vright [style = dashed]
-    }
-  }
-
-  subgraph cluster_t2 {
-    rank = same
-    style = filled
-    t2left, t2right [shape = "point", label=""];
-  }
-
-  t1 [shape = "box", height=.02, label=""]
-
-  //
-  // contractions
-  //
-  vleft -- t2left [dir = forward]
-  vleft -- t2left [dir = back]
-
-  vright -- t1 [dir=back]
-
-  heaven3 -- t2right [dir = forward, label="i"]
-  heaven2 -- t2right [dir = back, label="a"]
-  heaven4 -- t1 [dir = forward, label="j"]
-  heaven1 -- vright [dir = back, label="b"]
-
-}
-#+end_src
-
-** TODO SVG
-#+begin_src lisp
-,#+quicklisp (ql:quickload 'cl-svg)
-,#+asdf (asdf:load-system 'cl-svg)
-
-(in-package :cl-svg)
-
-
-(defvar test-contraction nil)
-(setq test-contraction
-  '((contraction ((h1 h3) (h2 h4) (p1 p2) (p2 p5)))
-    (V (h1 p1) (h2 p2))
-    (T1 (p3 h3))
-    (T2 (p4 h4) (p5 h3))))
-
-(defun svg-diagram (contraction &key (node-length 100) (diagram-height 100)
-                                  (diagram-box-height 20)
-                                  (out-file nil))
-  (labels ((box-pos (i) (cons (+ (* i node-length) (* (mod i 2) 10))
-                              (* i diagram-height)))
-           (node-position (node) (let* ((-i (position node contraction
-                                                     :key #'cdr :test #'find))
-                                        (i (- -i 1))
-                                        (tsr (nth -i contraction ))
-                                        (-j (position node tsr :test #'equal))
-                                        (j (- -j 1)))
-                                   (cons (+ (car (box-pos i))
-                                            (* j node-length))
-                                         (+ (cdr (box-pos i))
-                                            (/ diagram-box-height 2)))
-                                   ))
-           (nodes-of-contraction (leg-a leg-b)
-             (let* ((tsr-a (find leg-a (cdr contraction)
-                                 :key #'cdr
-                                 :test (lambda (x where) (find x where :test #'member))))
-                    (tsr-b (find leg-b (cdr contraction)
-                                 :key #'cdr
-                                 :test (lambda (x where) (find x where :test #'member))))
-                    (a (find leg-a (cdr tsr-a) :test #'member))
-                    (b (find leg-b (cdr tsr-b) :test #'member)))
-               (assert (and a b))
-               (list a b))))
-    (let* ((n-nodes (reduce (lambda (x n)
-                              (+ n (length (cdr x))))
-                            (cdr contraction)
-                            :initial-value 0
-                            :from-end t))
-           (n-diagrams (length (cdr contraction)))
-           (width (* n-nodes node-length))
-           (height (* n-diagrams diagram-height))
-           (scene (make-svg-toplevel 'svg-1.1-toplevel
-                                     :height height :width width))
-           (iotas (loop for i below n-nodes collect i)))
-      ;; draw blocks
-
-      ;; DRAW BODIES
-      (mapc (lambda (i tsr)
-              (let* ((nodes (cdr tsr))
-                     (n (length nodes))
-                     (box-width (if (> n 1)
-                                    (* node-length (- n 1))
-                                    (/ node-length 2)))
-                     (box-pos (box-pos i)))
-                ;;; DRAW BOX
-                (draw scene
-                    (:rect :x (car box-pos)
-                           :y (cdr box-pos)
-                           :width box-width
-                           :height diagram-box-height)
-                    :fill "#000000")
-                ;; TEXT
-                (text scene (:x (- (+ (car box-pos)
-                                      (/ box-width 2))
-                                   (/ diagram-box-height 2))
-                             :y (+ (cdr box-pos)
-                                   diagram-box-height))
-                  (tspan (:fill "red"
-                          :font-weight "bold"
-                          :font-size diagram-box-height)
-                         (symbol-name (car tsr))))
-
-                ;;; NODE POINTS
-                (mapc (lambda (node)
-                        (let ((node-pos (node-position node)))
-                          (draw scene (:circle :cx (car node-pos)
-                                               :cy (cdr node-pos)
-                                               :r (/ diagram-box-height 5))
-                                :fill "#ff0000")))
-                      nodes)))
-            iotas (cdr contraction))
-
-      ;; DRAW CONTRACTIONS
-      (mapc (lambda (c)
-              (destructuring-bind (node-a node-b) (nodes-of-contraction (car c) (cadr c))
-                (let ((pos-a (node-position node-a))
-                      (pos-b (node-position node-b)))
-                  (draw scene (:line :x1 (car pos-a)
-                                     :y1 (cdr pos-a)
-                                     :x2 (car pos-b)
-                                     :y2 (cdr pos-b))
-                        :stroke "green"))))
-            (cadar contraction))
-
-      (if out-file
-          (with-open-file (s out-file :direction :output :if-exists :supersede)
-            (stream-out s scene))
-          (with-output-to-string (s nil)
-            (stream-out s scene)
-            s)))))
-
-(svg-diagram '((contraction ((h1 i) (h2 i2) (p1 a2)))
-               (V (h1 h2) (p1 p2))
-               (t2 (a i) (b j))
-               (t1 (a2 i2)))
-             :out-file "test.svg")
-
-(svg-diagram test-contraction
-             :out-file "test.svg")
-#+end_src
-
 * API
 In this section we will present most functions that will be useful
 using the library from a user perspective in order to contract
@@ -2814,6 +2484,10 @@ equivalent.
   (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
   (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
   (values *orbital-spaces* *orbital-spaces-counter*))
+
+;; simple useful functions for knowing which kind of index we have
+(defun hole-p (idx) (char= (char (symbol-name idx) 0) #\H))
+(defun particle-p (idx) (char= (char (symbol-name idx) 0) #\P))
 
 (defun genindex (space-name)
   (let ((counter (find space-name *orbital-spaces-counter* :key #'car))
@@ -3488,4 +3162,869 @@ $$
                                  :contraction-rules contraction-rules))))
 
   (format t "~&~&Done"))
+#+end_src
+
+* Integration tests
+** Hirata
+The tensor contraction engine of Hirata
+is a python based tensor contraction system
+that is able to produce many kinds of equations
+in an unrestricted formalism.
+It has been thoroughly tested and veted
+by many codes and researchers and it is a great
+candidate for testing against.
+
+
+For this we wrote a parser to convert the hirata
+equations into arponen expressions,
+you can read the details [[file:tests/hirata/README.org][here]].
+
+*** CCD
+:PROPERTIES:
+:header-args:lisp+: :tangle tests/hirata/ccd/in.lisp :comments noweb
+:END:
+
+The CCD equations are represented in arponen using
+the following input
+
+#+begin_src lisp
+(in-package :hp)
+
+
+(hp::reset-spaces)
+
+(let* ((arponen::*print-log* nil)
+       (f (!! f (PH PH)))
+       (v (!! V (PH PH) (PH PH)))
+       (h (.+ v f))
+
+       ;; \(t^{ab}_{ij}\) amplitudes
+       (t2 (!! T2 (P H) (P H)))
+       (t2- (!! T2 (P H) (P H)))
+
+       (expression
+         (.* h
+             (.+ t2 (.* t2 t2-))))
+
+       (singles (! _ (P H)))
+       (doubles (! _ (P H) (P H))))
+
+  (format nil "Processing singles~%")
+  (save-contractions "singles.lisp"
+                     (contract singles expression
+                               :unrestricted t
+                               :only-connected t))
+
+  (format nil "Processing doubles~%")
+  (save-contractions "doubles.lisp"
+                     (contract doubles expression
+                               :unrestricted t
+                               :only-connected t))
+  )
+#+end_src
+
+
+* Output formats
+** TeX
+
+#+begin_src lisp :tangle arponen.lisp
+(defun latex-tensor (tensor)
+  (format nil "~a^{~a}_{~a}"
+          (car tensor)
+          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
+          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
+
+(defun latex (tensor-expression &optional (stream nil))
+  (case (car tensor-expression)
+    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+                                                     (cdr tensor-expression))))
+    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (t (latex-tensor tensor-expression))))
+
+#+end_src
+
+#+RESULTS:
+: LATEX
+
+TODO actually to the tests
+#+begin_src lisp :tangle t.lisp
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+  (latex (partition-tensor '(f (p q))
+                           :orbital-spaces orbital-spaces
+                           :partition partition))
+  (latex (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)))
+#+end_src
+
+** TODO Dot diagrams
+*** herodot
+:PROPERTIES:
+:header-args:lisp+: :tangle herodot/herodot.lisp
+:END:
+
+#+begin_src lisp :tangle herodot.asd
+(asdf:defsystem "herodot"
+  :description "Another s-expression language for dot"
+  :version "0.0.1"
+  :author "Alejandro Gallo <aamsgallo@gmail.com>"
+  :licence "GPLv3"
+  :depends-on (#:uiop)
+  :serial t
+  :components ((:file "herodot/herodot")
+               (:file "herodot/goldstone")))
+#+end_src
+
+**** Main routines
+#+begin_src lisp
+(defpackage :herodot
+  (:use :cl)
+  (:export #:render-sdot
+           #:render-sdot!
+           #:save))
+(in-package :herodot)
+
+(declaim (optimize (debug 3) (safety 3)))
+
+(defun render-sdot (graph &optional stream)
+  (eval `(render-sdot! ,graph ,stream)))
+
+(defparameter *default-indentation* "  ")
+(defun indent (text &key (indentation *default-indentation*))
+  (declare (string text) (string indentation))
+  (with-output-to-string (s)
+    #1=(princ indentation s)
+    (mapc (lambda (c) (princ c s) (when (char= c #\newline) #1#))
+          (coerce text 'list))))
+
+(defun indent-list (textlist &key (indentation *default-indentation*))
+  (indent (format nil "~{~a~^~%~}" textlist) :indentation indentation))
+
+(defmacro render-sdot! (graph &optional stream)
+  `(labels ((:-- (from to &rest opts)
+              (format ,stream "~a -- ~a ~a" from to (:-[options] opts)))
+            (:-> (from to &rest opts)
+              (apply #':-- (append (list from to) (cons '(dir "forward") opts))))
+            (:<- (from to &rest opts)
+              (apply #':-- (append (list from to) (cons '(dir "back") opts))))
+            (:-render-atom (p) (if (symbolp p)
+                                  (substitute #\_ #\- (string-downcase
+                                                       (symbol-name p)))
+                                  p))
+            (:-[options] (opts) (format ,stream "[~{~a~^, ~}]" (:-options opts)))
+            (:-options (opts) (mapcar (lambda (o)
+                                       (etypecase o
+                                         (atom (format ,stream "~a" o))
+                                         (list (:= (car o) (cadr o)))))
+                                     opts))
+            (:scope (name &rest els)
+              (format ,stream "~&{ /* begin: ~a */~%~a~%} /* end: ~a */"
+                      name (indent-list els) name))
+            (:= (key var)
+              (format ,stream "~a = ~s" (:-render-atom key) (:-render-atom var)))
+            (:el (name &rest opts)
+              (format ,stream "~(~a~) ~a" name (:-[options] opts)))
+            (:node (&rest opts) (apply #':el (cons "node" opts)))
+            (:edge (&rest opts) (apply #':el (cons "edge" opts)))
+            (:graph-env (&rest opts) (apply #':el (cons "graph" opts)))
+            (:cluster (name &rest els) (format ,stream
+                                              "subgraph cluster_~a ~a"
+                                              name
+                                              (apply #':scope (cons "" els))))
+            (:list (&rest els) (format nil "~&~{~a~%~}"
+                                       (remove-if-not
+                                        (lambda (x) (and (atom x)
+                                                         (not (functionp x))
+                                                         (not (null x))))
+                                        els)))
+            (:-named-scope (scope-name name els)
+              (format ,stream "~a ~a {~%~a~%}"
+                      scope-name name
+                      (indent (apply #':list els))))
+            (:graph (name &rest els) (:-named-scope "graph" name els))
+            (:digraph (name &rest els) (:-named-scope "digraph" name els)))
+     ,graph))
+
+(defun save (file-basename graph &key (format :svg))
+  (let ((dot-string (render-sdot nil graph))
+        (out-file (format nil "~a.~(~a~)" file-basename format))
+        (dot-file (format nil "~a.dot" file-basename))
+        (dot-cmd (format nil "dot -T~(~a~)" format)))
+    ;; save dot file
+    (with-open-file (f dot-file :if-exists :supersede :direction :output)
+      (princ dot-string f))
+    ;; create export
+    (with-input-from-string (i dot-string)
+      (with-open-file (f out-file :if-exists :supersede :direction :output)
+      (princ (with-output-to-string (o)
+               (uiop:run-program dot-cmd :output o :input i))
+             f)))
+    out-file))
+#+end_src
+
+**** Goldstone diagrams
+:PROPERTIES:
+:header-args:lisp+: :tangle herodot/goldstone.lisp
+:END:
+
+#+begin_src lisp
+(in-package :herodot)
+
+(defun hole (from to &rest attrs)
+  (append `(:<- ,from ,to '(:color :black))
+          attrs))
+
+(defun particle (from to)
+  `(:-> ,from ,to '(:color :red)))
+
+(defun make-top (names &rest opts)
+  `(:scope "top level"
+           (:= :rank :sink)
+           (:node '(shape point) '(width .0))
+           ,@(mapcar (lambda (x) `',x) opts)
+           ,@names))
+
+(defun tensor (order name label &rest opts)
+  (let ((-label (case order
+                  (1 label)
+                  (t (format nil "~{~a~^|~}"
+                             (loop for i below order
+                                   collect
+                                   (format nil "<~a>~a" i
+                                           (if (= i (floor order 2))
+                                               label ""))))))))
+    `(:el ,name
+          '(label ,-label)
+          '(shape "record")
+          '(heigth 0.01)
+          ,@(mapcar (lambda (x) `',x) opts))))
+
+(defun style ()
+  `(:list (:graph-env '(:fontname "CMU Serif")
+                      '(:rankdir "BT")
+                      '(:splines "line")
+                      '(:nodesep "equally"))
+          (:node '(:fontname "CMU Serif"))))
+
+(defun plus ()
+  `(:el (gensym) '(:shape :none) '(label "+")))
+
+(defun t-amplitude (n)
+  "Create a stand-alone t-amplitude"
+  (let* ((*tops* (loop for i below (* 2 n) collect `',(gensym "HEAVEN")))
+         (*t* (tensor n (format nil "t~a" n) ""))
+         (*contractions* (let ((name (cadr *t*)))
+                           (loop for j below n
+                                 with c = -1
+                                 appending
+                                 (list (hole #1=(format nil "~a:~a" name j)
+                                             #2=(nth (incf c) *tops*))
+                                       (particle #1# #2#))))))
+    `(:list ,(make-top *tops*)
+            ,,*t*
+            ,@*contractions*)))
+#+end_src
+
+#+RESULTS:
+: T-AMPLITUDE
+
+***** Examples
+
+#+begin_src lisp :package herodot :results verbatim output :wrap (format "src dot :file %s" (make-temp-file "dot-" nil ".svg")) :package hirata :tangle no 
+(format t "~a"
+        (render-sdot
+         `(:graph "Diagram"
+                  ,(style)
+                  (:scope "top" ,(make-top '(:top1 :top2 :top3 :top4 :top5 :top6)))
+                  (:scope "t3 diagram" ,(tensor 3 :t3 "T"))
+                  ,(hole "t3:0" :top1)
+                  ,(particle "t3:0" :top2)
+                  ,(hole "t3:1" :top3)
+                  ,(particle "t3:1" :top4)
+                  ,(hole "t3:2" :top5)
+                  ,(particle "t3:2" :top6))))
+#+end_src
+
+#+RESULTS:
+#+begin_src dot :file /tmp/dot-1Ttd1Q.svg
+graph Diagram {
+  graph [fontname = "CMU Serif", rankdir = "BT", splines = "line", nodesep = "equally"]
+  node [fontname = "CMU Serif"]
+  
+  { /* begin: top */
+    { /* begin: top level */
+      rank = "sink"
+      node [shape = "point", width = 0.0]
+      TOP1
+      TOP2
+      TOP3
+      TOP4
+      TOP5
+      TOP6
+    } /* end: top level */
+  } /* end: top */
+  { /* begin: t3 diagram */
+    t3 [label = "<0>|<1>T|<2>", shape = "record", heigth = 0.01]
+  } /* end: t3 diagram */
+  t3:0 -- TOP1 [dir = "back", color = "black"]
+  t3:0 -- TOP2 [dir = "forward", color = "red"]
+  t3:1 -- TOP3 [dir = "back", color = "black"]
+  t3:1 -- TOP4 [dir = "forward", color = "red"]
+  t3:2 -- TOP5 [dir = "back", color = "black"]
+  t3:2 -- TOP6 [dir = "forward", color = "red"]
+  
+}
+#+end_src
+
+#+RESULTS:
+[[file:/tmp/dot-Nj5JeM.svg]]
+
+**** Render arponen contractions                                    :arponen:
+:PROPERTIES:
+:header-args:lisp: :tangle arponen.lisp
+:END:
+
+#+begin_src lisp
+
+#|
+(save "v@c-pp-hp-t1-t2"
+      `(graph "diagram"
+              ,(style)
+              ,(make-top '(:top1 :top2 :top3 :top4))
+              (scope "V"
+                    (node '(color blue))
+                    ,(tensor 2 "v" "V"))
+              ,(tensor 1 "t1" "T")
+              ,(tensor 2 "t2" "T")
+              (scope "t1 times v"
+                     ,(particle "t1:0" "v:0")
+                     ,(particle "v:0" :top1)
+                     ,(hole "t1:0" :top2))
+              (scope "t2 times V"
+                     ,(particle "t2:0" "v:1")
+                     ,(hole "t2:0" "v:1")
+                     ,(particle "t2:1" :top3)
+                     ,(hole "t2:1" :top4))))
+|#
+
+(defpackage arponen/dot
+  (:use :cl :herodot :arponen))
+(in-package arponen/dot)
+
+(defun top (i)
+  (intern (format nil "TOP~a" i) "KEYWORD"))
+
+(defun make-top (contraction)
+  (let ((n (length (arponen::flatten-list contraction))))
+    (loop for i from 1 to n collect (top i))))
+
+(make-top
+ '((CONTRACTIONS (((P116 P84) (P114 P83))))
+   ((V (P113 P114) (P115 P116))
+    (T2 (P83 H83) (P84 H84)))))
+
+(defun render-contraction-pair (cnt tensors)
+  (let (c-tensors)
+    ;; find tensors participating in the contraction
+    (loop :for tsr :in tensors
+          :if (intersection cnt (arponen::flatten-list (cdr tsr)))
+            :do (push tsr c-tensors))
+    (labels ((coords (leg)
+               (let* ((tsr-idx (position leg c-tensors
+                                         :test
+                                         (lambda (i r)
+                                           (member i (arponen::flatten-list r)))))
+                      (tsr (nth tsr-idx c-tensors))
+                      (inode (position leg (cdr tsr)
+                                       :test
+                                       (lambda (i r)
+                                         (member i
+                                                 (arponen::flatten-list r))))))
+                 (list :itensor tsr-idx
+                       :inode inode
+                       :label (let ((name (symbol-name (car tsr))))
+                                (format nil "~(~a~):~a" name inode))
+                       :hole-p (hp::hole-p leg)))))
+      (let (left right hole-or-particle (max-itensor -1))
+        (loop :for leg :in cnt
+              :do (destructuring-bind (&key itensor inode label hole-p) (coords leg)
+                    (setq hole-or-particle
+                          (if hole-p #'herodot::hole #'herodot::particle))
+                    (if (> itensor max-itensor)
+                        (setq right left
+                              left label
+                              max-itensor itensor)
+                        (setq right label))))
+        (funcall hole-or-particle right left)))))
+
+
+(render-contraction-pair
+ '(P116 P84)
+ '((V (P113 P114) (P115 P116))
+   (T2 (P83 H83) (P84 H84))))
+
+(defun render-heaven (contraction heaven)
+  (let ((contracted-indices (arponen::flatten-list (cdar contraction))))
+    (flet ((is-contracted (idx) (member idx contracted-indices)))
+      (let (coords)
+        (loop :for tsr :in (cadr contraction)
+              :for c :from 0
+              :collect
+              (let ((ileg 0))
+                (arponen::traverse-legs
+                 (lambda (leg)
+                   (unless (is-contracted leg)
+                     (push (list :itensor c
+                                 :ileg ileg
+                                 :name (format nil "~(~a~):~a"
+                                               (car tsr)
+                                               (position leg (cdr tsr)
+                                                  :test (lambda (i x)
+                                                          (member i x))))
+                                 :top (pop heaven)
+                                 :leg leg
+                                 :hole-p (hp::hole-p leg))
+                           coords))
+                   (incf ileg))
+                 tsr)))
+        (loop :for coord :in (reverse coords)
+              :collect
+              (destructuring-bind (&key itensor top name ileg inode leg hole-p)
+                  coord
+                (if hole-p
+                    (herodot::hole name top)
+                    (herodot::particle name top))))))))
+
+(render-heaven
+ #1='((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84))))
+ (make-top #1#))
+
+(defun render (contraction)
+  "Render only one diagram, this means,
+   do not pass a set of diagrams in the format of
+   many contractions like
+
+   ((contractions ((...) (...)))
+    (tensors...))"
+  (assert (eq (length (cdar contraction)) 1))
+  (herodot:render-sdot
+   (let ((top (make-top contraction)))
+     `(:graph "diagram"
+              ,(herodot::style)
+              ,(herodot::make-top top)
+              ,@(mapcar (lambda (tsr)
+                          (let ((lbl (symbol-name (car tsr))))
+                            (herodot::tensor (length (cdr tsr))
+                                             lbl lbl)))
+                        (cadr contraction))
+              (:scope "Contractions"
+                      ,@(let ((cts (cadar contraction))
+                              (tsrs (cadr contraction)))
+                          (loop :for ct :in (car cts)
+                                :collect (render-contraction-pair ct tsrs))))
+              (:scope "Heaven"
+                      ,@(render-heaven
+                                contraction
+                                top))
+              ))))
+
+(progn
+  #1=(render
+      '((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84)))))
+  (format t "~a" #1#))
+
+(defun render-all (contractions)
+  "Return a list of strings of dot graphics."
+  (destructuring-bind (conts tensors) contractions
+    (mapcar #+nil (lambda (cnt) (list :cnt cnt #'identity))
+            (lambda (cont)
+              (render `((contractions (,cont))
+                        ,tensors)))
+            (cadar contractions))))
+
+(render-all '((CONTRACTIONS
+               (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+                ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+                ((H101 H81) (P91 P83) (P90 P84) (H100 H83)) ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+                ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+              ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T2 (P81 H81) (P82 H82)))))
+
+#+end_src
+
+#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot
+(progn
+  (format t "~a"
+          (render
+           '((CONTRACTIONS (((P116 P84) (P114 P83))))
+             ((V (P113 P114) (P115 P116))
+              (T2 (P83 H83) (P84 H84)))))))
+#+end_src
+
+#+RESULTS:
+#+begin_src dot
+graph diagram {
+  graph [fontname = "CMU Serif", rankdir = "BT", splines = "line", nodesep = "equally"]
+  node [fontname = "CMU Serif"]
+  
+  { /* begin: top level */
+    rank = "sink"
+    node [shape = "point", width = 0.0]
+    TOP1
+    TOP2
+    TOP3
+    TOP4
+    TOP5
+    TOP6
+    TOP7
+    TOP8
+    TOP9
+    TOP10
+    TOP11
+    TOP12
+    TOP13
+    TOP14
+    TOP15
+  } /* end: top level */
+  v [label = "<0>|<1>V", shape = "record", heigth = 0.01]
+  t2 [label = "<0>|<1>T2", shape = "record", heigth = 0.01]
+  { /* begin: Contractions */
+    t2:1 -- v:1 [dir = "forward", color = "red"]
+    t2:0 -- v:0 [dir = "forward", color = "red"]
+  } /* end: Contractions */
+  { /* begin: Heaven */
+    v:0 -- TOP1 [dir = "forward", color = "red"]
+    v:1 -- TOP2 [dir = "forward", color = "red"]
+    t2:0 -- TOP3 [dir = "back", color = "black"]
+    t2:1 -- TOP4 [dir = "back", color = "black"]
+  } /* end: Heaven */
+  
+}
+#+end_src
+
+
+#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot
+(loop :for d :in (render-all '((CONTRACTIONS
+                                (((P91 P82) (H101 H83) (H100 H82) (P90 P83))
+                                 ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+                                 ((P91 P82) (H101 H81) (P90 P84) (H100 H83))
+                                 ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+                                 ((H101 H81) (P91 P83) (P90 P84) (H100 H83))
+                                 ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+                                 ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+                               ((V (H100 P90) (H101 P91))
+                                (T2 (P83 H83) (P84 H84))
+                                (T2_2 (P81 H81) (P82 H82)))))
+      :for c :from 0
+      :do
+         (with-open-file (s (format nil "ccd-diagram-~a.dot" c)
+                            :direction :output
+                            :if-exists :supersede)
+           (format s "~a" d)))
+#+end_src
+
+#+RESULTS:
+#+begin_src dot
+
+NIL
+#+end_src
+
+
+*** old
+This section defines some utilities to export the diagrams to dot
+format so that one can have some rough estimates for the diagrammatic
+form of the terms.
+
+#+begin_src lisp
+(in-package :arponen)
+
+(defun tensor-name-to-sdot-name (tensor)
+  (format nil "~(~a~)" (car tensor)))
+
+(declaim (optimize (debug 3)))
+(defun contraction-to-sdot (contraction)
+  (destructuring-bind ((contraction cts) . tensors) contraction
+    (declare (ignore contraction))
+    (flet ((tensor-of-leg (leg)
+             (find leg tensors :key #'cdr
+                               :test (lambda (l nodes)
+                                       (member l (flatten-list nodes))))))
+      (loop for ct in cts
+            collect
+            (let* ((tsr-a (tensor-of-leg (car ct)))
+                   (name-a (tensor-name-to-sdot-name tsr-a))
+                   (tsr-b (tensor-of-leg (cadr ct)))
+                   (name-b (tensor-name-to-sdot-name tsr-b)))
+              `(edge ))))))
+
+(contraction-to-sdot '((contraction ((a b)))
+                       (V (a e)) (t2 (b e) (i j))))
+
+(defun render-sdot (stream graph)
+  (eval `(render-sdot-macro ,stream ,graph)))
+
+(defmacro render-sdot-macro (stream graph)
+  `(labels ((-- (from to &rest opts)
+              (format ,stream "~a -- ~a ~a" from to (-[options] opts)))
+            (-> (from to &rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "forward") opts))))
+            (<- (from to &rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "back") opts))))
+            (-[options] (opts) (format ,stream "[~{~a~^,~}]" (-options opts)))
+            (-options (opts) (mapcar (lambda (o)
+                                       (etypecase o
+                                         (atom (format ,stream "~a" o))
+                                         (list (:= (car o) (cadr o)))))
+                                     opts))
+            (scope (&rest els) (format ,stream "{~{~&~t~a~%~}}" els))
+            (:= (key var)
+              (format ,stream "~a = ~a" (if (symbolp key)
+                                            (string-downcase (symbol-name key))
+                                            key) var))
+            (-element (name &rest opts)
+              (format ,stream "~(~a~) ~a" name (-[options] opts)))
+            (node (&rest opts) (apply #'-element (cons "node" opts)))
+            (edge (&rest opts) (apply #'-element (cons "edge" opts)))
+            (:graph (&rest opts) (apply #'-element (cons "graph" opts)))
+            (cluster (name &rest els) (format ,stream
+                                              "cluster cluster_~a ~a"
+                                              name
+                                              (apply #'scope els)))
+            (-named-scope (scope-name name els)
+              (format ,stream "~a ~a {~%~{~2t~a~%~}}" scope-name name els))
+            (graph (name &rest els) (-named-scope "graph" name els))
+            (digraph (name &rest els) (-named-scope "digraph" name els)))
+     ,graph))
+
+
+(render-sdot-macro nil
+             (graph "This"
+                    (:= 'rankdir 'BT)
+                    (:graph '(rankdir 654))
+                    (scope (-> 'i 'k)
+                           (-> 'e 'k)
+                           (<- 'e 'k))
+                    (node '(dir backward))
+                    (edge '(dir backward))
+                    (cluster 'v (-> 'e 'k))
+                    (-element 'node 'simple)
+                    (-> 'a 'b)
+                    (<- 'a 'b)
+                    (-> 'c 'd)))
+
+(let ((a '(-> 'a 'b)))
+  (render-sdot nil a))
+
+(render-sdot nil
+             '(graph nil
+               (scope (-> 'i 'k)
+                (-> 'a 'b))
+               (-> 'a 'b)
+               (<- 'a 'b)
+               (-> 'c 'd)))
+#+end_src
+
+
+#+begin_src lisp
+(defpackage :arponen/dot
+  (:use :cl))
+(in-package :arponen/dot)
+
+(defun symb (&rest args)
+  (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
+
+(defun subgraph (name &rest contents)
+  (format nil "~&subgraph cluster_~a {~%~{~t~a~^~%~}~%}" name contents))
+
+(defun declare-legs (tensor)
+  (format nil "~{~a~^, ~} [shape = point]"
+          (mapcar (lambda (x) (symb (car tensor) x))
+                  (cdr tensor))))
+
+(defun contraction-to-graphviz (contraction)
+  ;;(assert (cl-user::contraction? contraction))
+  (destructuring-bind ((contraction-symbol conts . nil) prods . nil) contraction
+    (loop
+      for tensor in prods
+      collect
+      (let ((tname (car tensor)))
+        (case tname
+          ((v t2) (subgraph tname
+                       (declare-legs tensor)))
+          (t1 (format nil "~&~tt1 [shape = box, height = 0.02, label=\"\""))))))
+  )
+(contraction-to-graphviz
+ '((contraction ((h1 h5) (p1 p5) (h2 h3)))
+   ((V (h1 h2 ) (p1 p2))
+    (t1 (p3 h3))
+    (t2 (p4 h4) (p5 h5)))))
+#+end_src
+
+An example output should be
+
+#+begin_src dot
+graph {
+  rankdir = TB
+  {
+    node [width = .3]
+    rank = same
+    heaven1, heaven2, heaven3, heaven4 [shape = none, label="", height=.01]
+  }
+
+  subgraph cluster_v {
+    rank = same
+    vleft, vright [shape = "point", label=""];
+    {
+      vleft -- vright [style = dashed]
+    }
+  }
+
+  subgraph cluster_t2 {
+    rank = same
+    style = filled
+    t2left, t2right [shape = "point", label=""];
+  }
+
+  t1 [shape = "box", height=.02, label=""]
+
+  //
+  // contractions
+  //
+  vleft -- t2left [dir = forward]
+  vleft -- t2left [dir = back]
+
+  vright -- t1 [dir=back]
+
+  heaven3 -- t2right [dir = forward, label="i"]
+  heaven2 -- t2right [dir = back, label="a"]
+  heaven4 -- t1 [dir = forward, label="j"]
+  heaven1 -- vright [dir = back, label="b"]
+
+}
+#+end_src
+
+** TODO SVG
+#+begin_src lisp
+,#+quicklisp (ql:quickload 'cl-svg)
+,#+asdf (asdf:load-system 'cl-svg)
+
+(in-package :cl-svg)
+
+
+(defvar test-contraction nil)
+(setq test-contraction
+  '((contraction ((h1 h3) (h2 h4) (p1 p2) (p2 p5)))
+    (V (h1 p1) (h2 p2))
+    (T1 (p3 h3))
+    (T2 (p4 h4) (p5 h3))))
+
+(defun svg-diagram (contraction &key (node-length 100) (diagram-height 100)
+                                  (diagram-box-height 20)
+                                  (out-file nil))
+  (labels ((box-pos (i) (cons (+ (* i node-length) (* (mod i 2) 10))
+                              (* i diagram-height)))
+           (node-position (node) (let* ((-i (position node contraction
+                                                     :key #'cdr :test #'find))
+                                        (i (- -i 1))
+                                        (tsr (nth -i contraction ))
+                                        (-j (position node tsr :test #'equal))
+                                        (j (- -j 1)))
+                                   (cons (+ (car (box-pos i))
+                                            (* j node-length))
+                                         (+ (cdr (box-pos i))
+                                            (/ diagram-box-height 2)))
+                                   ))
+           (nodes-of-contraction (leg-a leg-b)
+             (let* ((tsr-a (find leg-a (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (tsr-b (find leg-b (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (a (find leg-a (cdr tsr-a) :test #'member))
+                    (b (find leg-b (cdr tsr-b) :test #'member)))
+               (assert (and a b))
+               (list a b))))
+    (let* ((n-nodes (reduce (lambda (x n)
+                              (+ n (length (cdr x))))
+                            (cdr contraction)
+                            :initial-value 0
+                            :from-end t))
+           (n-diagrams (length (cdr contraction)))
+           (width (* n-nodes node-length))
+           (height (* n-diagrams diagram-height))
+           (scene (make-svg-toplevel 'svg-1.1-toplevel
+                                     :height height :width width))
+           (iotas (loop for i below n-nodes collect i)))
+      ;; draw blocks
+
+      ;; DRAW BODIES
+      (mapc (lambda (i tsr)
+              (let* ((nodes (cdr tsr))
+                     (n (length nodes))
+                     (box-width (if (> n 1)
+                                    (* node-length (- n 1))
+                                    (/ node-length 2)))
+                     (box-pos (box-pos i)))
+                ;;; DRAW BOX
+                (draw scene
+                    (:rect :x (car box-pos)
+                           :y (cdr box-pos)
+                           :width box-width
+                           :height diagram-box-height)
+                    :fill "#000000")
+                ;; TEXT
+                (text scene (:x (- (+ (car box-pos)
+                                      (/ box-width 2))
+                                   (/ diagram-box-height 2))
+                             :y (+ (cdr box-pos)
+                                   diagram-box-height))
+                  (tspan (:fill "red"
+                          :font-weight "bold"
+                          :font-size diagram-box-height)
+                         (symbol-name (car tsr))))
+
+                ;;; NODE POINTS
+                (mapc (lambda (node)
+                        (let ((node-pos (node-position node)))
+                          (draw scene (:circle :cx (car node-pos)
+                                               :cy (cdr node-pos)
+                                               :r (/ diagram-box-height 5))
+                                :fill "#ff0000")))
+                      nodes)))
+            iotas (cdr contraction))
+
+      ;; DRAW CONTRACTIONS
+      (mapc (lambda (c)
+              (destructuring-bind (node-a node-b) (nodes-of-contraction (car c) (cadr c))
+                (let ((pos-a (node-position node-a))
+                      (pos-b (node-position node-b)))
+                  (draw scene (:line :x1 (car pos-a)
+                                     :y1 (cdr pos-a)
+                                     :x2 (car pos-b)
+                                     :y2 (cdr pos-b))
+                        :stroke "green"))))
+            (cadar contraction))
+
+      (if out-file
+          (with-open-file (s out-file :direction :output :if-exists :supersede)
+            (stream-out s scene))
+          (with-output-to-string (s nil)
+            (stream-out s scene)
+            s)))))
+
+(svg-diagram '((contraction ((h1 i) (h2 i2) (p1 a2)))
+               (V (h1 h2) (p1 p2))
+               (t2 (a i) (b j))
+               (t1 (a2 i2)))
+             :out-file "test.svg")
+
+(svg-diagram test-contraction
+             :out-file "test.svg")
 #+end_src
