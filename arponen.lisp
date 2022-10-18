@@ -990,7 +990,8 @@
   (intern (format nil "TOP~a" i) "KEYWORD"))
 
 (defun make-top (contraction)
-  (let ((n (length (arponen::flatten-list contraction))))
+  (let ((n (- (length (arponen::flatten-list (mapcar #'cdr (cadr contraction))))
+              (length (arponen::flatten-list (cdar contraction))))))
     (loop for i from 1 to n collect (top i))))
 
 (make-top
@@ -1105,6 +1106,7 @@
                                 top))
               ))))
 
+#+(or)
 (progn
   #1=(render
       '((CONTRACTIONS (((P116 P84) (P114 P83))))
@@ -1112,24 +1114,19 @@
          (T2 (P83 H83) (P84 H84)))))
   (format t "~a" #1#))
 
-(pprint (progn
-  (format t "~a"
-          (render
-           '((CONTRACTIONS (((P116 P84) (P114 P83))))
-             ((V (P113 P114) (P115 P116))
-              (T2 (P83 H83) (P84 H84))))))))
+(defun render-all (contractions)
+  "Return a list of strings of dot graphics."
+  (destructuring-bind (conts tensors) contractions
+    (mapcar #+nil (lambda (cnt) (list :cnt cnt #'identity))
+            (lambda (cont)
+              (render `((contractions (,cont))
+                        ,tensors)))
+            (cadar contractions))))
 
-(pprint #+nil
-((CONTRACTIONS
-   (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
-    ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
-    ((H101 H81) (P91 P83) (P90 P84) (H100 H83)) ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
-    ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
-  ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T2 (P81 H81) (P82 H82))))
-
-(progn
-  (format t "~a"
-          (render
-           '((CONTRACTIONS
-              (((P91 P82) (H101 H83) (H100 H82) (P90 P83))))
-             ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T22 (P81 H81) (P82 H82))))))))
+#+(or)
+(render-all '((CONTRACTIONS
+               (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+                ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+                ((H101 H81) (P91 P83) (P90 P84) (H100 H83)) ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+                ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+              ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T2 (P81 H81) (P82 H82)))))

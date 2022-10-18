@@ -3200,27 +3200,19 @@ the following input
 
        ;; \(t^{ab}_{ij}\) amplitudes
        (t2 (!! T2 (P H) (P H)))
-       (t2- (!! T2 (P H) (P H)))
+       (t2- (!! T2_2 (P H) (P H)))
 
        (expression
          (.* h
              (.+ t2 (.* t2 t2-))))
 
-       (singles (! _ (P H)))
        (doubles (! _ (P H) (P H))))
-
-  (format nil "Processing singles~%")
-  (save-contractions "singles.lisp"
-                     (contract singles expression
-                               :unrestricted t
-                               :only-connected t))
 
   (format nil "Processing doubles~%")
   (save-contractions "doubles.lisp"
                      (contract doubles expression
                                :unrestricted t
-                               :only-connected t))
-  )
+                               :only-connected t)))
 #+end_src
 
 
@@ -3518,7 +3510,8 @@ graph Diagram {
   (intern (format nil "TOP~a" i) "KEYWORD"))
 
 (defun make-top (contraction)
-  (let ((n (length (arponen::flatten-list contraction))))
+  (let ((n (- (length (arponen::flatten-list (mapcar #'cdr (cadr contraction))))
+              (length (arponen::flatten-list (cdar contraction))))))
     (loop for i from 1 to n collect (top i))))
 
 (make-top
@@ -3633,6 +3626,7 @@ graph Diagram {
                                 top))
               ))))
 
+,#+(or)
 (progn
   #1=(render
       '((CONTRACTIONS (((P116 P84) (P114 P83))))
@@ -3649,6 +3643,7 @@ graph Diagram {
                         ,tensors)))
             (cadar contractions))))
 
+,#+(or)
 (render-all '((CONTRACTIONS
                (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
                 ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
@@ -3658,7 +3653,7 @@ graph Diagram {
 
 #+end_src
 
-#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot
+#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot :tangle no 
 (progn
   (format t "~a"
           (render
@@ -3709,7 +3704,7 @@ graph diagram {
 #+end_src
 
 
-#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot
+#+begin_src lisp :package arponen/dot :results verbatim code replace output :wrap src dot :tangle no 
 (loop :for d :in (render-all '((CONTRACTIONS
                                 (((P91 P82) (H101 H83) (H100 H82) (P90 P83))
                                  ((H101 H82) (P91 P82) (H100 H84) (P90 P83))

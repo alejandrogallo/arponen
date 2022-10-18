@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -eu
+
+input_file="${1:?Give an input file}"
+
+TMP=`mktemp -t new-test.XXXXXX`
+#trap "rm $TMP* 2>/tmp/EXIT" 0
+
+cat <<LISP > $TMP
+
+(require :asdf)
+(require :uiop)
+
+(asdf:load-system :arponen)
+(load "${input_file}")
+
+LISP
+
+
+set -x
+sbcl --dynamic-space 200 --script $TMP
