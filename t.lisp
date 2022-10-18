@@ -368,6 +368,14 @@
               ;;
               '(V (Q S) (P R)))
 
+
+
+(assert-equal (apply-symmetries-to-nodes '(((p . q) (s . r)) ((p . s)) ((r . q)))
+                                         '(V (P s) (q r)))
+              '((V (Q R) (P S))
+                (V (S P) (Q R))
+                (V (P S) (R Q))))
+
 ;; utility function
 (assert-equal (triangle-pairs 1) nil)
 (assert-equal (triangle-pairs 2) '((0 1)))
@@ -482,11 +490,23 @@
                                      #'arponen::make-antisymmetry-symmetry)
  '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
 
-(assert-equal (find-duplicate-set '((a . b) (c . d))
+(assert-equal (find-duplicate-set '#1=((a . b) (c . d))
                                   '(((c . e) (a . b))
                                     ((c . d) (a . b))
-                                    ((a . b) (c . d))))
+                                    #1#))
               '((c . d) (a . b)))
+
+;; it should also accept transposed variations of the
+;; elements
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (a . b))))
+              '((c . d) (a . b)))
+
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (b . a))))
+              '((c . d) (b . a)))
 
 (assert-equal (stich-together '(a d)
                               '(a b) '(c d))
@@ -838,17 +858,6 @@
                     :orbital-spaces orbital-spaces
                     :partition partition))
 
-(let ((orbital-spaces '((PQ p q r s)
-                        (H i j k l)
-                        (P a b c d)))
-      (partition '((PQ H P))))
-  (latex (partition-tensor '(f (p q))
-                           :orbital-spaces orbital-spaces
-                           :partition partition))
-  (latex (partition-tensor '(V (p q) (r s))
-                    :orbital-spaces orbital-spaces
-                    :partition partition)))
-
 (in-package :hp)
 (import 'arponen::assert-equal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -947,8 +956,7 @@
   (V (P29 P30) (P31 P32))) ;; Vabcd
 
 (progn (reset-spaces)
-       (partition-symmetrize-and-filter '(V (PH PH) (PH PH)))
-       (partition-symmetrize-and-filter '(t3 (PH PH) (PH PH) (PH PH))))
+       (partition-symmetrize-and-filter '(V (PH PH) (PH PH)) :unrestricted t))
 
 (assert-equal (! V (a b) (c d))
               '(V (a b) (c d)))
@@ -956,8 +964,12 @@
 (progn
   (reset-spaces)
   (let* ((arponen::*print-log* nil)
-         (V (.+ (!! V (P H) (H P))
-                (!! V (P P) (H H))))
+
+         (t2 (!! t2 (P H) (P H)))
+
+         (vaibj (!! V (P P) (H H)))
+         (vaijb (!! V (P H) (H P)))
+         (V (.+ vaijb vaibj))
          (H (.+ v))
          ;; t1 amplitudes
          (t1 (!! T1 (P H)))
@@ -965,34 +977,53 @@
          ;; the whole expression to contract
          ;; i.e. Hamiltonian times T amplitudes
          (expression (.* H t1))
-         (expression-2 (.* (.+ fai #+nil H) (.+ 1 t1)))
+         (expression-2 (.* (.+ fai)
+                           (.+ 1 t1)))
 
          ;; targets for the diagrams search space
-         (singles (! _ (P H)))
-         (doubles (! _ (P H) (P H)))
+         (%singles (! _ (P H)))
+         (%doubles (! _ (P H) (P H)))
 
-         (contractions (contract singles expression
+         (contractions (contract %singles expression
                                  :unrestricted t
-                                 :only-connected t))
-         #+nil
-         (contractions-2 (contract singles expression-2
-                                   :unrestricted t
-                                   :only-connected t)))
-    (format nil "Processing singles~%")
-    expression
-    doubles
-    ;contractions
-    #+nil
-    (assert-equal (arponen::expr-to-lists expression)
-                  '(((V (P2 H2) (H3 P3)) (T1 (P1 H1)))
-                    ((V (P4 P5) (H4 H5)) (T1 (P1 H1)))))
-    (contract singles expression
-              :unrestricted t
-              :only-connected t)
-    (arponen/hole-particle-picture::remove-1-in-product-list
-     (arponen::expr-to-lists expression-2))
-    (contract singles expression-2
-              :unrestricted t
-              :only-connected t)
+                                 :only-connected t)))
 
+    (format nil "Processing singles~%")
+
+    (assert-equal (arponen::expr-to-lists expression)
+                  '(((V (P3 H3) (H4 P4)) (T1 (P2 H2)))
+                    ((V (P5 P6) (H5 H6)) (T1 (P2 H2)))))
+
+
+    ;; it should be possible to just find an uncontracted diagram
+    (assert-equal (contract %singles expression-2
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (NIL)) ((F (P1 H1))))))
+
+    (assert-equal (arponen/hole-particle-picture::remove-1-in-product-list
+                   (arponen::expr-to-lists expression-2))
+                  '(((F (P1 H1))) ((F (P1 H1)) (T1 (P2 H2)))))
+
+    (assert-equal (contract %doubles (.* vaibj t2)
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (((H5 H7) (P6 P7))))
+                     ((V (P5 P6) (H5 H6)) (T2 (P7 H7) (P8 H8))))))
+
+    (let ((c (contract %doubles (.* H t2)
+                       :unrestricted t
+                       :only-connected t)))
+      (assert-equal (length c) 2))
     ))
+
+(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+  (latex (partition-tensor '(f (p q))
+                           :orbital-spaces orbital-spaces
+                           :partition partition))
+  (latex (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)))

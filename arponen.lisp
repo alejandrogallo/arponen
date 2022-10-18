@@ -355,6 +355,18 @@
   (find element lst :test-not (lambda (-x -y)
                                 (set-difference -x -y :test #'equal))))
 
+(defun pair-set-difference (pa pb)
+  (check-type pa cons)
+  (check-type pb cons)
+  (flet ((c-to-list (c) (list (car c) (cdr c))))
+    (set-difference (c-to-list pa) (c-to-list pb))))
+
+(defun find-duplicate-pair-set (element lst)
+  (find element lst :test-not
+        (lambda (x y)
+          (set-difference x y
+                          :test-not #'pair-set-difference))))
+
 (defun filter-contractions-by-symmetries (symmetries contractions)
   (let ((-contractions (copy-tree contractions)))
     (do (result seen-contractions)
@@ -364,7 +376,7 @@
           ;; go through all symmetries
           (loop for sym in (cons nil symmetries)
                 do (let ((new-c (apply-symmetry-to-nodes sym c)))
-                     (when (find-duplicate-set new-c seen-contractions)
+                     (when (find-duplicate-pair-set new-c seen-contractions)
                        (push new-c seen-contractions)
                        (logger "~&~a is the same as ~a by virtue of ~a"
                                c new-c sym)
@@ -755,19 +767,6 @@
       `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
                    new-indices)))))
 
-(defun latex-tensor (tensor)
-  (format nil "~a^{~a}_{~a}"
-          (car tensor)
-          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
-          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
-
-(defun latex (tensor-expression &optional (stream nil))
-  (case (car tensor-expression)
-    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
-                                                     (cdr tensor-expression))))
-    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
-    (t (latex-tensor tensor-expression))))
-
 (defpackage :arponen/hole-particle-picture
   (:use :cl :arponen)
   (:nicknames :hp))
@@ -801,6 +800,10 @@
   (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
   (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
   (values *orbital-spaces* *orbital-spaces-counter*))
+
+;; simple useful functions for knowing which kind of index we have
+(defun hole-p (idx) (char= (char (symbol-name idx) 0) #\H))
+(defun particle-p (idx) (char= (char (symbol-name idx) 0) #\P))
 
 (defun genindex (space-name)
   (let ((counter (find space-name *orbital-spaces-counter* :key #'car))
@@ -852,33 +855,49 @@
 
 (defun filter-tensors-by-symmetries-and-description
     (symmetries tensor-list &key orbital-spaces)
-  (mapcar #'cadr (remove-duplicates
-   (mapcar #'list symmetries tensor-list)
-   :test
-   (lambda (x y)
-     (let* ((all-x (cons (cadr x)
-                         (arponen::apply-symmetries-to-nodes (car x) (cadr x))))
-            (all-y (cons (cadr y)
-                         (arponen::apply-symmetries-to-nodes (car y) (cadr y))))
-            (x-descr (mapcar (lambda (-x)
-                               (arponen::tensor-to-description -x
-                                                            :orbital-spaces
-                                                            orbital-spaces))
-                             all-x))
-            (y-descr (mapcar (lambda (-y)
-                               (arponen::tensor-to-description -y
-                                                            :orbital-spaces
-                                                            orbital-spaces))
-                             all-y)))
-       (intersection x-descr y-descr :test #'equal))))))
+  (mapcar #'cadr
+          (remove-duplicates
+           (mapcar #'list symmetries tensor-list)
+           :test
+           (lambda (x y)
+             (let* ((all-x (cons (cadr x)
+                                 (arponen::apply-symmetries-to-nodes (car x) (cadr x))))
+                    (all-y (cons (cadr y)
+                                 (arponen::apply-symmetries-to-nodes (car y) (cadr y))))
+                    (x-descr (mapcar (lambda (-x)
+                                       (arponen::tensor-to-description -x
+                                                                       :orbital-spaces
+                                                                       orbital-spaces))
+                                     all-x))
+                    (y-descr (mapcar (lambda (-y)
+                                       (arponen::tensor-to-description -y
+                                                                       :orbital-spaces
+                                                                       orbital-spaces))
+                                     all-y)))
+               (intersection x-descr y-descr :test #'equal))))))
 
-(defun partition-symmetrize-and-filter (tensor-description)
+(defun partition-symmetrize-and-filter (tensor-description &key unrestricted)
   (let* ((tensors (mapcar #'name-legs-by-space-name-1
                           (partition-tensor-description tensor-description
                                                         :partition
                                                         *space-partition*)))
-         (symmetries (mapcar (lambda (x) (arponen::make-node-symmetry (cdr x)))
-                             tensors)))
+         (arponen::*filter-parity-symmetry* unrestricted)
+         symmetries)
+    (print tensors)
+    (when arponen::*filter-node-symmetry*
+      (setq symmetries
+            (mapcar (lambda (x) (arponen::make-node-symmetry (cdr x)))
+                    tensors)))
+    (when arponen::*filter-parity-symmetry*
+      (setq symmetries
+            (append symmetries
+                    (mapcar (lambda (x)
+                              (arponen::make-parity-symmetry (cdr x)))
+                            (remove-duplicates
+                             (reduce #'append
+                                     (arponen::apply-symmetries-to-nodes symmetries
+                                                                         tensors))
+                             :test #'equal)))))
     (filter-tensors-by-symmetries-and-description symmetries
                                                   tensors
                                                   :orbital-spaces
@@ -928,3 +947,189 @@
   (with-open-file (s file-name :if-exists :supersede :direction :output)
     (case format
       (t (format s "~s" contractions)))))
+
+(defun latex-tensor (tensor)
+  (format nil "~a^{~a}_{~a}"
+          (car tensor)
+          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
+          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
+
+(defun latex (tensor-expression &optional (stream nil))
+  (case (car tensor-expression)
+    (+ (format stream "~&( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+                                                     (cdr tensor-expression))))
+    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (t (latex-tensor tensor-expression))))
+
+#|
+(save "v@c-pp-hp-t1-t2"
+      `(graph "diagram"
+              ,(style)
+              ,(make-top '(:top1 :top2 :top3 :top4))
+              (scope "V"
+                    (node '(color blue))
+                    ,(tensor 2 "v" "V"))
+              ,(tensor 1 "t1" "T")
+              ,(tensor 2 "t2" "T")
+              (scope "t1 times v"
+                     ,(particle "t1:0" "v:0")
+                     ,(particle "v:0" :top1)
+                     ,(hole "t1:0" :top2))
+              (scope "t2 times V"
+                     ,(particle "t2:0" "v:1")
+                     ,(hole "t2:0" "v:1")
+                     ,(particle "t2:1" :top3)
+                     ,(hole "t2:1" :top4))))
+|#
+
+(defpackage arponen/dot
+  (:use :cl :herodot :arponen))
+(in-package arponen/dot)
+
+(defun top (i)
+  (intern (format nil "TOP~a" i) "KEYWORD"))
+
+(defun make-top (contraction)
+  (let ((n (length (arponen::flatten-list contraction))))
+    (loop for i from 1 to n collect (top i))))
+
+(make-top
+ '((CONTRACTIONS (((P116 P84) (P114 P83))))
+   ((V (P113 P114) (P115 P116))
+    (T2 (P83 H83) (P84 H84)))))
+
+(defun render-contraction-pair (cnt tensors)
+  (let (c-tensors)
+    ;; find tensors participating in the contraction
+    (loop :for tsr :in tensors
+          :if (intersection cnt (arponen::flatten-list (cdr tsr)))
+            :do (push tsr c-tensors))
+    (labels ((coords (leg)
+               (let* ((tsr-idx (position leg c-tensors
+                                         :test
+                                         (lambda (i r)
+                                           (member i (arponen::flatten-list r)))))
+                      (tsr (nth tsr-idx c-tensors))
+                      (inode (position leg (cdr tsr)
+                                       :test
+                                       (lambda (i r)
+                                         (member i
+                                                 (arponen::flatten-list r))))))
+                 (list :itensor tsr-idx
+                       :inode inode
+                       :label (let ((name (symbol-name (car tsr))))
+                                (format nil "~(~a~):~a" name inode))
+                       :hole-p (hp::hole-p leg)))))
+      (let (left right hole-or-particle (max-itensor -1))
+        (loop :for leg :in cnt
+              :do (destructuring-bind (&key itensor inode label hole-p) (coords leg)
+                    (setq hole-or-particle
+                          (if hole-p #'herodot::hole #'herodot::particle))
+                    (if (> itensor max-itensor)
+                        (setq right left
+                              left label
+                              max-itensor itensor)
+                        (setq right label))))
+        (funcall hole-or-particle right left)))))
+
+
+(render-contraction-pair
+ '(P116 P84)
+ '((V (P113 P114) (P115 P116))
+   (T2 (P83 H83) (P84 H84))))
+
+(defun render-heaven (contraction heaven)
+  (let ((contracted-indices (arponen::flatten-list (cdar contraction))))
+    (flet ((is-contracted (idx) (member idx contracted-indices)))
+      (let (coords)
+        (loop :for tsr :in (cadr contraction)
+              :for c :from 0
+              :collect
+              (let ((ileg 0))
+                (arponen::traverse-legs
+                 (lambda (leg)
+                   (unless (is-contracted leg)
+                     (push (list :itensor c
+                                 :ileg ileg
+                                 :name (format nil "~(~a~):~a"
+                                               (car tsr)
+                                               (position leg (cdr tsr)
+                                                  :test (lambda (i x)
+                                                          (member i x))))
+                                 :top (pop heaven)
+                                 :leg leg
+                                 :hole-p (hp::hole-p leg))
+                           coords))
+                   (incf ileg))
+                 tsr)))
+        (loop :for coord :in (reverse coords)
+              :collect
+              (destructuring-bind (&key itensor top name ileg inode leg hole-p)
+                  coord
+                (if hole-p
+                    (herodot::hole name top)
+                    (herodot::particle name top))))))))
+
+(render-heaven
+ #1='((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84))))
+ (make-top #1#))
+
+(defun render (contraction)
+  "Render only one diagram, this means,
+   do not pass a set of diagrams in the format of
+   many contractions like
+
+   ((contractions ((...) (...)))
+    (tensors...))"
+  (assert (eq (length (cdar contraction)) 1))
+  (herodot:render-sdot
+   (let ((top (make-top contraction)))
+     `(:graph "diagram"
+              ,(herodot::style)
+              ,(herodot::make-top top)
+              ,@(mapcar (lambda (tsr)
+                          (let ((lbl (symbol-name (car tsr))))
+                            (herodot::tensor (length (cdr tsr))
+                                             lbl lbl)))
+                        (cadr contraction))
+              (:scope "Contractions"
+                      ,@(let ((cts (cadar contraction))
+                              (tsrs (cadr contraction)))
+                          (loop :for ct :in (car cts)
+                                :collect (render-contraction-pair ct tsrs))))
+              (:scope "Heaven"
+                      ,@(render-heaven
+                                contraction
+                                top))
+              ))))
+
+(progn
+  #1=(render
+      '((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84)))))
+  (format t "~a" #1#))
+
+(pprint (progn
+  (format t "~a"
+          (render
+           '((CONTRACTIONS (((P116 P84) (P114 P83))))
+             ((V (P113 P114) (P115 P116))
+              (T2 (P83 H83) (P84 H84))))))))
+
+(pprint #+nil
+((CONTRACTIONS
+   (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+    ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+    ((H101 H81) (P91 P83) (P90 P84) (H100 H83)) ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+    ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+  ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T2 (P81 H81) (P82 H82))))
+
+(progn
+  (format t "~a"
+          (render
+           '((CONTRACTIONS
+              (((P91 P82) (H101 H83) (H100 H82) (P90 P83))))
+             ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T22 (P81 H81) (P82 H82))))))))
