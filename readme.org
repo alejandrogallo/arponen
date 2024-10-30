@@ -3230,6 +3230,37 @@ the following input
                                :only-connected t)))
 #+end_src
 
+*** MP2
+:PROPERTIES:
+:header-args:lisp+: :tangle tests/hirata/mbpt2/in.lisp :comments noweb
+:END:
+
+The MP2 energy equation should be like
+
+#+begin_src lisp
+(in-package :hp)
+
+(hp::reset-spaces)
+
+(let* ((arponen::*print-log* nil)
+       (v (!! V (H P) (H P)))
+       ;; \(t^{ab}_{ij}\) amplitudes
+       (t2 (!! T2 (P H) (P H)))
+
+       (expression (.* v t2))
+
+       (target (! _)))
+
+  (format nil "Processing doubles~%")
+  expression
+  (save-contractions "out.lisp"
+                     (contract target expression
+                               :unrestricted t
+                               :only-connected t))
+  (contract target expression
+            :unrestricted t
+            :only-connected t))
+#+end_src
 
 * Output formats
 ** TeX
