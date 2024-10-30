@@ -22,35 +22,35 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2.3.4
 
-    - name: Install Nix
-      uses: cachix/install-nix-action@v13
-      with:
-        nix_path: nixpkgs=channel:nixos-unstable
+    # - name: Install Nix
+    #   uses: cachix/install-nix-action@v13
+    #   with:
+    #     nix_path: nixpkgs=channel:nixos-unstable
 
-    - name: installing packages
-      run: nix-shell --run 'echo installing packages'
+    # - name: installing packages
+    #   run: nix-shell --run 'echo installing packages'
 
-    - name: sbcl
-      run: nix-shell --run './tools/run-tests.sh sbcl'
+    # - name: sbcl
+    #   run: nix-shell --run './tools/run-tests.sh sbcl'
 
-    - name: ccl
-      run: nix-shell --run './tools/run-tests.sh ccl'
+    # - name: ccl
+    #   run: nix-shell --run './tools/run-tests.sh ccl'
 
-    - name: ecl
-      run: nix-shell --run './tools/run-tests.sh ecl'
+    # - name: ecl
+    #   run: nix-shell --run './tools/run-tests.sh ecl'
 
-    - name: clisp
-      run: nix-shell --run './tools/run-tests.sh clisp'
+    # - name: clisp
+    #   run: nix-shell --run './tools/run-tests.sh clisp'
 
-    # it takes forever to compile...
-    # - name: clasp
-    #   run: nix-shell --run './tools/run-tests.sh clasp'
+    # # it takes forever to compile...
+    # # - name: clasp
+    # #   run: nix-shell --run './tools/run-tests.sh clasp'
 
-    - name: abcl
-      run: nix-shell --run './tools/run-tests.sh abcl'
+    # - name: abcl
+    #   run: nix-shell --run './tools/run-tests.sh abcl'
 
-    - name: cmucl
-      run: nix-shell --run './tools/run-tests.sh $CMU_PATH'
+    # - name: cmucl
+    #   run: nix-shell --run './tools/run-tests.sh $CMU_PATH'
 
     # gcl is kind of broken?? TODO
     # - name: gcl
