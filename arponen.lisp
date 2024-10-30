@@ -1,7 +1,10 @@
+;; [[file:readme.org::*Prolog][Prolog:2]]
 (defpackage :arponen
   (:use :cl))
 (in-package :arponen)
+;; Prolog:2 ends here
 
+;; [[file:readme.org::*Types][Types:3]]
 (defun contraction? (expr)
   (and (listp expr)
        (listp (car expr))
@@ -12,7 +15,9 @@
 (defun tensor? (expr)
   (and (listp expr)
        (listp (cadr expr))))
+;; Types:3 ends here
 
+;; [[file:readme.org::*Verbosity and logging][Verbosity and logging:1]]
 (defvar *print-log* t
   "Wether to print the log messages for the contractions and so on")
 
@@ -24,19 +29,29 @@
 (defmacro logger! (&rest args)
   `(let ((*print-log* t))
     (logger ,@args)))
+;; Verbosity and logging:1 ends here
 
+;; [[file:readme.org::*Contractions within the same tensor][Contractions within the same tensor:1]]
 (defvar *allow-self-contractions* nil
   "Wether or not to allow a tensor to search for contractions with its
   nodes.")
+;; Contractions within the same tensor:1 ends here
 
+;; [[file:readme.org::*Connected diagrams][Connected diagrams:1]]
 (defvar *only-connected-diagrams* nil
   "Wether to look for contractions that create connected diagrams.")
+;; Connected diagrams:1 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:1]]
 (defvar *filter-node-symmetry* t)
+;; Node symmetry:1 ends here
 
+;; [[file:readme.org::*Parity symmetry][Parity symmetry:1]]
 (defvar *filter-parity-symmetry* nil
   "Wether to filter contractions according to parity symmetry.")
+;; Parity symmetry:1 ends here
 
+;; [[file:readme.org::*Cartesian product][Cartesian product:1]]
 (defmacro cartesian-product (&rest lists)
   (let* ((indices (loop for i from 1 to (length lists)
                         collect (gensym (format nil "~a-i-" i))))
@@ -49,7 +64,9 @@
      (mapcar #'list (butlast indices) (butlast lists))
      :from-end t
      :initial-value initial-value)))
+;; Cartesian product:1 ends here
 
+;; [[file:readme.org::*Permutations][Permutations:1]]
 (defun all-permutations (lst &optional (remain lst))
   (cond ((null remain) nil)
         ((null (rest lst)) (list lst))
@@ -58,7 +75,9 @@
                     (all-permutations (rest lst)))
             (all-permutations (append (rest lst) (list (first lst)))
                               (rest remain))))))
+;; Permutations:1 ends here
 
+;; [[file:readme.org::*Node pairs building][Node pairs building:1]]
 (defun get-node-pairs (n &key (group-lengths nil))
   ;; check that group-lengths is well built
   (when group-lengths (assert (eq n (apply #'+ group-lengths))))
@@ -78,7 +97,9 @@
     (loop for i from 0 below n
         nconcing (loop for j from (from-i i) below n
                        collect `(,i ,j))))))
+;; Node pairs building:1 ends here
 
+;; [[file:readme.org::*Pair combinations][Pair combinations:2]]
 (defmacro ordered-subsets-with-repetition (n space-size)
   (when (> n 0)
     (let* ((vars (loop for i below (1+ n) collect (gensym))))
@@ -91,7 +112,9 @@
                   (mapcar #'cons vars (cdr vars))
                   :initial-value nil
                   :from-end t)))))
+;; Pair combinations:2 ends here
 
+;; [[file:readme.org::*Utils][Utils:1]]
 ;; functions taken from uruk
 (defun flatten-list (ls)
   (cond
@@ -117,14 +140,18 @@
                                       (reverse (cons init
                                                      (reverse (cdr f))))))))
     init))
+;; Utils:1 ends here
 
+;; [[file:readme.org::*Utils][Utils:3]]
 (defun symbols-repeated-p (lst)
   (let ((symbols (flatten-list lst))
         s)
     (loop while (setq s (pop symbols))
           if (> (count s symbols) 0)
             do (return t))))
+;; Utils:3 ends here
 
+;; [[file:readme.org::*Arithmetic expressions][Arithmetic expressions:1]]
 (defun expr-to-lists (exp)
     (case (if (atom exp) t (car exp))
       (* (reduce (lambda (x y)
@@ -140,19 +167,27 @@
 
 (defun expr-power (n expr)
   `(* ,@(mapcar (constantly expr) (loop for i below n collect nil))))
+;; Arithmetic expressions:1 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:1]]
 (defun match-index-to-space (index orbital-space)
   (find index (cdr orbital-space)))
+;; Index spaces:1 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:3]]
 (defun find-space-by-leg (index orbital-spaces)
   (find index orbital-spaces :test #'match-index-to-space))
+;; Index spaces:3 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:5]]
 (defun find-space-by-name (name orbital-spaces)
   (find name orbital-spaces :key #'car))
 
 (defun find-space-name-by-leg (leg orbital-spaces)
   (car (find leg orbital-spaces :test #'match-index-to-space)))
+;; Index spaces:5 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:8]]
 (defun traverse-nodes (fn tensor)
   (destructuring-bind (name . nodes) tensor
     `(,name ,@(mapcar fn nodes))))
@@ -163,7 +198,9 @@
 (defun tensor-to-description (tensor &key orbital-spaces)
   (traverse-legs (lambda (leg) (find-space-name-by-leg leg orbital-spaces))
                  tensor))
+;; Index spaces:8 ends here
 
+;; [[file:readme.org::*Tensor sum][Tensor sum:1]]
 (defun tensor-sum (&rest expressions)
   `(+ ,@(reduce (lambda (tsr rest)
                   (if (atom tsr)
@@ -174,7 +211,9 @@
                 expressions
                 :from-end t
                 :initial-value nil)))
+;; Tensor sum:1 ends here
 
+;; [[file:readme.org::*Tensor matching][Tensor matching:1]]
 (defun match-target-with-tensor-1 (target tensor &key orbital-spaces)
   (unless (eq (length target) (length tensor))
     (return-from match-target-with-tensor-1 nil))
@@ -187,7 +226,9 @@
                   (notany #'null (mapcar #'match-index-to-space
                                          (cadr target-tensor)
                                          spaces))))))
+;; Tensor matching:1 ends here
 
+;; [[file:readme.org::*Tensor matching][Tensor matching:3]]
 (defun match-target-with-tensor (target tensor &key orbital-spaces)
   "Here we check that Vaibj is equivalent to Viajb and so on always.
   This is general to all tensors.
@@ -200,7 +241,9 @@
           thereis (match-target-with-tensor-1
                   tt tensor
                   :orbital-spaces orbital-spaces))))
+;; Tensor matching:3 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:2]]
 (defun apply-symmetry-to-nodes (symmetry-equivalence object)
   (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
                                  (gensym)) symmetry-equivalence))
@@ -215,7 +258,9 @@
 
 (defun apply-symmetries-to-nodes (symmetry-equivalences object)
   (mapcar (lambda (x) (apply-symmetry-to-nodes x object)) symmetry-equivalences))
+;; Node symmetry:2 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:4]]
 (defun triangle-pairs (n)
   (loop for fst below n
         append (loop for snd from (1+ fst) below n
@@ -246,7 +291,9 @@
                                 collect (cons a b))))))
     (let* ((combinations (all-transpositions (iota (length nodes)))))
       (remove-if #'null (mapcar #'idxs-to-syms combinations)))))
+;; Node symmetry:4 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:6]]
 (defun find-effective-nodes-list (list-of-tensors)
   (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))
          (result-alist (mapcar (lambda (k) (cons k '())) keys)))
@@ -266,7 +313,9 @@
 (defun make-symmetries-in-effective-node-list (list-of-tensors sym-maker)
   (make-symmetries-in-node-list (find-effective-nodes-list list-of-tensors)
                                 sym-maker))
+;; Node symmetry:6 ends here
 
+;; [[file:readme.org::*Antisymmetry][Antisymmetry:1]]
 (defun unzip (ls)
   (loop for i below (apply #'min (mapcar #'length ls))
         collect (mapcar (lambda (l) (nth i l)) ls)))
@@ -350,7 +399,9 @@
 (make-parity-symmetry--1 '((a i) (b j)))
 (make-parity-symmetry--1 '((a i)))
 (make-parity-symmetry--1 '((a i) (b j) (c k)))
+;; Antisymmetry:1 ends here
 
+;; [[file:readme.org::*Filtering contractions through symmetries][Filtering contractions through symmetries:1]]
 (defun find-duplicate-set (element lst)
   (find element lst :test-not (lambda (-x -y)
                                 (set-difference -x -y :test #'equal))))
@@ -366,7 +417,9 @@
         (lambda (x y)
           (set-difference x y
                           :test-not #'pair-set-difference))))
+;; Filtering contractions through symmetries:1 ends here
 
+;; [[file:readme.org::*Filtering contractions through symmetries][Filtering contractions through symmetries:3]]
 (defun filter-contractions-by-symmetries (symmetries contractions)
   (let ((-contractions (copy-tree contractions)))
     (do (result seen-contractions)
@@ -385,7 +438,9 @@
           ;; never seen before
           (push c result)
           (push c seen-contractions))))))
+;; Filtering contractions through symmetries:3 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:1]]
 (defun stich-together (contraction node-a node-b)
   ;; contraction-assoc: ((c0 . x) (c1 . x))
   (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
@@ -404,7 +459,9 @@
           (progn
             (setf (nth pos-a node-a) (car (delete 'x killed-b)))
             node-a))))))
+;; Mergin nodes:1 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:3]]
 (defun find-and-replace-matching-nodes (contraction tensor-nodes-list
                                         &key killed-pair)
   "tensor-nodes-list is a list of list of nodes"
@@ -442,7 +499,9 @@
                        (error "Contraction arity(~a) error ~a contracts with ~a"
                               (length matching-nodes) node matching-nodes)))
                     ))))))
+;; Mergin nodes:3 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:5]]
 (defun get-contracted-nodes (contraction-tensor &key killed-pair)
   ;; todo replace with contraction-p
   (assert (eq (caar contraction-tensor) 'contraction))
@@ -455,7 +514,9 @@
                                                     contracted-nodes
                                                     :killed-pair killed-pair)))
     contracted-nodes))
+;; Mergin nodes:5 ends here
 
+;; [[file:readme.org::*Effective temporary tensor][Effective temporary tensor:1]]
 (defun get-contracted-temp-tensor (contraction-tensor &key (name 'contracted))
   (let* ((killed-pair '(x x))
          (x-nodes (get-contracted-nodes contraction-tensor
@@ -465,7 +526,9 @@
          (cleaned-nodes (remove-if (lambda (x) (equal x killed-pair))
                                    flat-nodes)))
     `(,name ,@cleaned-nodes)))
+;; Effective temporary tensor:1 ends here
 
+;; [[file:readme.org::*Compatible contractions][Compatible contractions:1]]
 (defun compatible-contractions (node-a node-b &key
                                                 orbital-spaces
                                                 contraction-rules)
@@ -483,7 +546,9 @@
                                 space-b))
                    (list a b)))))
            contraction-rules)))
+;; Compatible contractions:1 ends here
 
+;; [[file:readme.org::*Checking for connectedness][Checking for connectedness:1]]
 (defun is-connected-contraction (pair-combination node-pairs &key group-lengths)
   (let* ((psums (mapcar (lambda (ls) (apply #'+ ls))
                         (maplist #'identity (reverse group-lengths))))
@@ -522,7 +587,9 @@
                     ))
                ))))
     ))
+;; Checking for connectedness:1 ends here
 
+;; [[file:readme.org::*Finding contractions by number of legs][Finding contractions by number of legs:1]]
 #+nil
 (defun is-a-contraction-possible-by-number-of-legs
     (target tensor-list &key
@@ -544,7 +611,9 @@
          results)
 
   ))
+;; Finding contractions by number of legs:1 ends here
 
+;; [[file:readme.org::*Finding contractions by number of legs][Finding contractions by number of legs:2]]
 (defun find-contractions-in-product-by-number-of-legs
     (target tensor-list &key
                           orbital-spaces
@@ -650,7 +719,9 @@
                                                cleaned-results))
       (format t "~&~5tResults AFTER Cleaning ~a" (length cleaned-results))
       cleaned-results)))
+;; Finding contractions by number of legs:2 ends here
 
+;; [[file:readme.org::*Finding contractions by target properties][Finding contractions by target properties:1]]
 (defun find-contractions-in-product-by-target
     (target tensor-list &key
                           orbital-spaces
@@ -674,7 +745,9 @@
                                           :orbital-spaces orbital-spaces)
                 contraction
                 :no-match))))))
+;; Finding contractions by target properties:1 ends here
 
+;; [[file:readme.org::*Finding contractions by target properties][Finding contractions by target properties:3]]
 (defun contract-expressions-by-target
     (target expression &key orbital-spaces contraction-rules)
   (let ((products (expr-to-lists expression))
@@ -693,7 +766,9 @@
                      (mapcar (lambda (x) `((contraction ,x) ,@product))
                              contractions)))))
     `(+ ,@sums)))
+;; Finding contractions by target properties:3 ends here
 
+;; [[file:readme.org::*Help routines][Help routines:1]]
 (defun space-subseq (&key orbital-spaces from-index)
   (mapcar (lambda (space)
             (handler-case `(,(car space)
@@ -711,7 +786,9 @@
                         "BUT it currently has ~s ")
                        space from-index (length (cdr space))))))
           orbital-spaces))
+;; Help routines:1 ends here
 
+;; [[file:readme.org::*Help routines][Help routines:3]]
 (defun name-legs-by-space-name (tensor-description &key orbital-spaces (from-index 0))
   (let ((orbital-spaces-copy (copy-tree
                               (space-subseq :orbital-spaces orbital-spaces
@@ -728,7 +805,9 @@
                           (error "Not enough leg names given for space ~a~%"
                                  space))))))
     ))
+;; Help routines:3 ends here
 
+;; [[file:readme.org::*Partitions][Partitions:1]]
 (defun partition-tensor (tensor &key orbital-spaces partition (from-index 0))
   (let ((name (car tensor))
         (indices (cdr tensor))
@@ -766,39 +845,41 @@
                                          new-indices-unexpanded)))))
       `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
                    new-indices)))))
+;; Partitions:1 ends here
 
+;; [[file:readme.org::*Particle hole picture][Particle hole picture:5]]
 (defpackage :arponen/hole-particle-picture
   (:use :cl :arponen)
   (:nicknames :hp))
 (in-package :arponen/hole-particle-picture)
 
-(defconstant +default-orbital-spaces+
+(defvar *default-orbital-spaces*
   '((H)   ;; holes
     (P)   ;; particles
     (G)   ;; general (or rather ghosts)
     (PH)) ;; particle-holes (real vacuum)
   "Orbital space for the default particle-hole picture")
-(defvar *orbital-spaces* (copy-tree +default-orbital-spaces+))
+(defvar *orbital-spaces* (copy-tree *default-orbital-spaces*))
 
-(defconstant +default-orbital-spaces-counter+
+(defvar *default-orbital-spaces-counter*
   '((H . 0)
     (P . 0)
     (G . 0)
     (PH . 0))
   "Current index for the orbital spaces")
-(defvar *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+(defvar *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
 
-(defconstant +default-space-partition+
+(defvar *default-space-partition*
   '((PH H P)))
-(defvar *space-partition* (copy-tree +default-space-partition+))
+(defvar *space-partition* (copy-tree *default-space-partition*))
 
 (defvar *contraction-rules* '(((H H) 0 1)
                               ((P P) 1 0))
   "The conctractions that are not zero.")
 
 (defun reset-spaces ()
-  (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
-  (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
+  (setq *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
+  (setq *orbital-spaces* (copy-tree *default-orbital-spaces*))
   (values *orbital-spaces* *orbital-spaces-counter*))
 
 ;; simple useful functions for knowing which kind of index we have
@@ -947,7 +1028,9 @@
   (with-open-file (s file-name :if-exists :supersede :direction :output)
     (case format
       (t (format s "~s" contractions)))))
+;; Particle hole picture:5 ends here
 
+;; [[file:readme.org::*TeX][TeX:1]]
 (defun latex-tensor (tensor)
   (format nil "~a^{~a}_{~a}"
           (car tensor)
@@ -960,6 +1043,7 @@
                                                      (cdr tensor-expression))))
     (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
     (t (latex-tensor tensor-expression))))
+;; TeX:1 ends here
 
 #|
 (save "v@c-pp-hp-t1-t2"

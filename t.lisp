@@ -1,3 +1,4 @@
+;; [[file:readme.org::*Prolog][Prolog:3]]
 ;; todo define packages and all that
 (load "arponen.lisp")
 (in-package :arponen)
@@ -20,13 +21,17 @@
   `(assert-condition ,expr ,condition-type
                      (m) (assert-equal (format nil "~a" m)
                                        ,error-message)))
+;; Prolog:3 ends here
 
+;; [[file:readme.org::*Types][Types:4]]
 (assert (contraction? '((contraction ((a b) (c d))) nil)))
 (assert (contraction? '((contraction nil) ((t (a i) (b j))))))
 (assert (tensor? '(t (a i) (b j))))
 (assert (tensor? '(1 nil)))
 (assert (tensor? '(0 nil)))
+;; Types:4 ends here
 
+;; [[file:readme.org::*Cartesian product][Cartesian product:2]]
 (assert-equal (cartesian-product (H P) (a b c) (1 2 3 5))
               '((H A 1) (H A 2) (H A 3) (H A 5)
                 (H B 1) (H B 2) (H B 3) (H B 5)
@@ -37,7 +42,9 @@
 
 (assert-equal (cartesian-product (H (P)) ((a)))
               '((H (A)) ((P) (A))))
+;; Cartesian product:2 ends here
 
+;; [[file:readme.org::*Permutations][Permutations:2]]
 (assert-equal (all-permutations '(a b))
               '((A B) (B A)))
 (assert-equal (all-permutations '(a b c))
@@ -48,7 +55,9 @@
                 (B D C A) (B A C D) (B A D C) (C D A B) (C D B A) (C A B D)
                 (C A D B) (C B D A) (C B A D)
                 (D A B C) (D A C B) (D B C A) (D B A C) (D C A B) (D C B A)))
+;; Permutations:2 ends here
 
+;; [[file:readme.org::*Node pairs building][Node pairs building:2]]
 ;; trivial examples
 (assert-equal (get-node-pairs 1) '((0 0)))
 (assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
@@ -80,7 +89,9 @@
               '((0 2) (0 3) (0 4)
                 (1 2) (1 3) (1 4)
                 (2 3) (2 4)))
+;; Node pairs building:2 ends here
 
+;; [[file:readme.org::*Pair combinations][Pair combinations:3]]
 (assert-equal (ordered-subsets-with-repetition 1 2)
               '((0) (1)))
 
@@ -107,7 +118,9 @@
                 (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
                 (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
                 (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
+;; Pair combinations:3 ends here
 
+;; [[file:readme.org::*Utils][Utils:2]]
 (multiple-value-bind (expression _ )
     (macroexpand '(thread-first x (+ 5) (* 8)))
   (declare (ignorable _))
@@ -119,13 +132,17 @@
   (declare (ignorable _))
   (assert-equal '(* 8 (+ 5 x))
                 expression))
+;; Utils:2 ends here
 
+;; [[file:readme.org::*Utils][Utils:4]]
 (let ((vals '(((a b c) . nil)
               ((a (a) b c) . t)
               ((((a)) ((b e f g)) ((((b))))) . t))))
   (loop for (lst . val) in vals
         do (assert (eq (symbols-repeated-p lst) val))))
+;; Utils:4 ends here
 
+;; [[file:readme.org::*Arithmetic expressions][Arithmetic expressions:2]]
 (assert-equal (expr-to-lists '(* (a) (e))) '(((a) (e))))
 (assert-equal (expr-to-lists '(* a b c (* d e (* e f e))))
               '((a b c d e e f e)))
@@ -272,18 +289,26 @@
    ((T1 (P6 H6)) (T1 (P5 H5)))
    ((T1 (P6 H6)) (T2 (P3 H3) (P4 H4)))
    ((T2 (P3 H3) (P4 H4)) (T2 (P1 H1) (P2 H2)))))
+;; Arithmetic expressions:2 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:2]]
 (progn (assert (match-index-to-space 'k '(H i j k l)))
        (assert (not (match-index-to-space 'H '(H i j k l)))))
+;; Index spaces:2 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:4]]
 (progn (assert (equal (find-space-by-leg 'k '((P a b c) (H i j k l)))
                       '(H I J K L)))
        (assert (not (find-space-by-leg 'a '((H i j k l))))))
+;; Index spaces:4 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:6]]
 (assert-equal
  (find-space-by-name 'p '((PQ p q r s) (p a b c)))
  '(p a b c))
+;; Index spaces:6 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:7]]
 (let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
       (vals '((i . h)
               (p . pq)
@@ -291,12 +316,16 @@
               (b . p))))
   (loop for (v . result) in vals
         do (assert (eq (find-space-name-by-leg v spaces) result))))
+;; Index spaces:7 ends here
 
+;; [[file:readme.org::*Index spaces][Index spaces:9]]
 (assert-equal (tensor-to-description '(V (i k) (l a))
                                      :orbital-spaces
                                      '((H i j k l) (P a b c d)))
               '(V (H H) (H P)))
+;; Index spaces:9 ends here
 
+;; [[file:readme.org::*Tensor sum][Tensor sum:2]]
 (assert-equal (tensor-sum '(T (A b) (c d)))
               '(+ (T (a b) (c d))))
 (assert-equal (tensor-sum '(T (A b) (c d)) '(V (e i)))
@@ -310,7 +339,9 @@
 ;; this one is very useful
 (assert-equal (tensor-sum '(+ a b c d) '(+ e d) '(+ h1 h2))
               '(+ A B C D E D H1 H2))
+;; Tensor sum:2 ends here
 
+;; [[file:readme.org::*Tensor matching][Tensor matching:2]]
 (assert (match-target-with-tensor-1 '(V (H P) (P))
                                     '(t (i b) (a))
                                     :orbital-spaces
@@ -327,7 +358,9 @@
                                          :orbital-spaces
                                          '((H i)
                                            (P b a)))))
+;; Tensor matching:2 ends here
 
+;; [[file:readme.org::*Tensor matching][Tensor matching:4]]
 (progn
   (assert (match-target-with-tensor '(V (H P) (P H))
                                     '(t (a i) (j b))
@@ -339,7 +372,9 @@
                                          :orbital-spaces
                                          '((H i j)
                                            (P b a))))))
+;; Tensor matching:4 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:3]]
 (assert-equal (apply-symmetry-to-nodes '((P . Q) (S . R))
                                        '((P S) (Q R)))
               ;;
@@ -375,7 +410,9 @@
               '((V (Q R) (P S))
                 (V (S P) (Q R))
                 (V (P S) (R Q))))
+;; Node symmetry:3 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:5]]
 ;; utility function
 (assert-equal (triangle-pairs 1) nil)
 (assert-equal (triangle-pairs 2) '((0 1)))
@@ -444,7 +481,9 @@
   (assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2) (p3 h3)))
                 result)
   (assert-equal (length result) (- (* 4 3 2) 1)))
+;; Node symmetry:5 ends here
 
+;; [[file:readme.org::*Node symmetry][Node symmetry:7]]
 (assert-equal (find-effective-nodes-list
                '((V (p q) (r s)) (T2 (a b) (c d))))
               '(((p q) (r s)) ((a b) (c d))))
@@ -471,7 +510,9 @@
   (assert-equal symmetries
                 '(((H1 . H2) (P1 . P2))
                   ((P3 . P4) (H3 . H4)))))
+;; Node symmetry:7 ends here
 
+;; [[file:readme.org::*Antisymmetry][Antisymmetry:2]]
 ;; utility function
 (assert-equal (unzip '((a b) (c d)))
               '((a c) (b d)))
@@ -489,7 +530,9 @@
  (arponen::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
                                      #'arponen::make-antisymmetry-symmetry)
  '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
+;; Antisymmetry:2 ends here
 
+;; [[file:readme.org::*Filtering contractions through symmetries][Filtering contractions through symmetries:2]]
 (assert-equal (find-duplicate-set '#1=((a . b) (c . d))
                                   '(((c . e) (a . b))
                                     ((c . d) (a . b))
@@ -507,7 +550,9 @@
                          '(((c . e) (a . b))
                            ((c . d) (b . a))))
               '((c . d) (b . a)))
+;; Filtering contractions through symmetries:2 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:2]]
 (assert-equal (stich-together '(a d)
                               '(a b) '(c d))
               '(c b))
@@ -522,7 +567,9 @@
 (assert-errmsg (stich-together '(e c) '(a d) '(e f))
                simple-error
                "The contraction (E C) does not link nodes (A D) and (E F)")
+;; Mergin nodes:2 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:4]]
 (macrolet ((assert-eq (index result)
              `(assert (equal (find-and-replace-matching-nodes ,index
                                                                 original
@@ -561,7 +608,9 @@
     ;; todo: test error messages
 
     ))
+;; Mergin nodes:4 ends here
 
+;; [[file:readme.org::*Mergin nodes][Mergin nodes:6]]
 (assert-equal (get-contracted-nodes
                '((contraction ((e d) (k j)))
                  (v (a b) (c d))
@@ -570,7 +619,9 @@
               '(((A B) (C F))
                 ((X X) (G H))
                 ((I L) (X X))))
+;; Mergin nodes:6 ends here
 
+;; [[file:readme.org::*Effective temporary tensor][Effective temporary tensor:2]]
 (assert-equal (get-contracted-temp-tensor
                '((contraction ((e d) (k j)))
                  (v (a b) (c d))
@@ -589,7 +640,9 @@
                '((contraction nil)
                  (F (a i))) :name '|Fai|)
               '(|Fai| (A I)))
+;; Effective temporary tensor:2 ends here
 
+;; [[file:readme.org::*Compatible contractions][Compatible contractions:2]]
 ;; test
 (let ((spaces '((H I J K L)
                 (P A B C D)
@@ -631,7 +684,9 @@
                                                      :orbital-spaces spaces
                                                      :contraction-rules rules)
                             result)))))
+;; Compatible contractions:2 ends here
 
+;; [[file:readme.org::*Checking for connectedness][Checking for connectedness:2]]
 (macrolet ((! (&rest pts)
              `(mapcar (lambda (p)
                         (position p node-pairs :test #'equal)) ',pts)))
@@ -656,7 +711,9 @@
     ;; this is less quick, it goes from 1 to 2 twice and then goes to 3
     (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
                                       node-pairs :group-lengths '(1 3 5)))))
+;; Checking for connectedness:2 ends here
 
+;; [[file:readme.org::*Case study: Vijab with T1 and T2 coupling to singles excitations][Case study: Vijab with T1 and T2 coupling to singles excitations:1]]
 (let ((orbital-spaces '((H i j k l m n o h1 h2 h3 h4 h5)
                         (P a b c d e f g p1 p2 p3 p4 p5)))
       (contraction-rules '(((H H) 0 1)
@@ -763,7 +820,9 @@
                     #| 3 |# ((H2 H5) (P2 P5) (H1 H3) (P1 P3))
                     #| 2 |# ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
                     #| 1 |# ((P2 P5) (H2 H4) (H1 H3) (P1 P3))))))
+;; Case study: Vijab with T1 and T2 coupling to singles excitations:1 ends here
 
+;; [[file:readme.org::*Finding contractions by target properties][Finding contractions by target properties:2]]
 (let ((*filter-node-symmetry* nil)
       (orbital-spaces '((H I J K L h1 h2 h3)
                         (P A B C D p1 p2 p3)
@@ -813,7 +872,9 @@
      (find-contractions-in-product-by-target '(_ (H P))
                                              '((f (a b)) (t (c i))))
      '()))))
+;; Finding contractions by target properties:2 ends here
 
+;; [[file:readme.org::*Finding contractions by target properties][Finding contractions by target properties:4]]
 (let ((*allow-self-contractions* t)
       (*filter-node-symmetry* nil))
   (assert-equal
@@ -830,11 +891,15 @@
      ((CONTRACTION ((B C))) (F (A B)) (T (C K)))
      ((CONTRACTION ((I J))) (F (I J)) (T (C K)))
      ((CONTRACTION ((I K))) (F (I J)) (T (C K))))))
+;; Finding contractions by target properties:4 ends here
 
+;; [[file:readme.org::*Help routines][Help routines:2]]
 (assert-equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
                             :from-index 2)
               '((H 3 4) (P c) (G)))
+;; Help routines:2 ends here
 
+;; [[file:readme.org::*Help routines][Help routines:4]]
 (let ((vals '((0 . (t (h1 p1) (p2 h2)))
               (1 . (t (h2 p2) (p3 h3)))
               (2 . (t (h3 p3) (p4 h4))))))
@@ -845,7 +910,9 @@
                      :orbital-spaces '((H h1 h2 h3 h4) (P p1 p2 p3 p4))
                      :from-index from-index)
                     result))))
+;; Help routines:4 ends here
 
+;; [[file:readme.org::*Partitions][Partitions:2]]
 (let ((orbital-spaces '((PQ p q r s)
                         (H i j k l)
                         (P a b c d)))
@@ -857,13 +924,15 @@
   (partition-tensor '(V (p q) (r s))
                     :orbital-spaces orbital-spaces
                     :partition partition))
+;; Partitions:2 ends here
 
+;; [[file:readme.org::*Particle hole picture][Particle hole picture:6]]
 (in-package :hp)
 (import 'arponen::assert-equal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (progn
   (reset-spaces)
-  (print +default-orbital-spaces+)
+  (print *default-orbital-spaces*)
   (dotimes (i 10)
     (when (zerop (mod i 2)) (genindex 'P))
     (genindex 'H))
@@ -1016,7 +1085,9 @@
                        :only-connected t)))
       (assert-equal (length c) 2))
     ))
+;; Particle hole picture:6 ends here
 
+;; [[file:readme.org::*TeX][TeX:2]]
 (let ((orbital-spaces '((PQ p q r s)
                         (H i j k l)
                         (P a b c d)))
@@ -1027,3 +1098,4 @@
   (latex (partition-tensor '(V (p q) (r s))
                     :orbital-spaces orbital-spaces
                     :partition partition)))
+;; TeX:2 ends here
