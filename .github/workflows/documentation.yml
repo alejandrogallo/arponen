@@ -9,7 +9,6 @@ on:
 jobs:
   documentation:
     runs-on: ubuntu-latest
-    strategy:
     env:
       WITH_SHELL: nix-shell /home/runner/work/arponen/arponen/shell.nix --run
     steps:
