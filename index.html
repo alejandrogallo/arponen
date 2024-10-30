@@ -1,0 +1,4670 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2024-10-30 Wed 17:12 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>&lrm;</title>
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="content" class="content">
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org5714861">1. Todo <code>[50%]</code></a></li>
+<li><a href="#orgaf16359">2. Prolog</a></li>
+<li><a href="#org681a4da">3. Nomenclature</a>
+<ul>
+<li><a href="#org8a81831">3.1. Types</a></li>
+</ul>
+</li>
+<li><a href="#org74d6fb6">4. Main variables</a>
+<ul>
+<li><a href="#orgf260a8d">4.1. Verbosity and logging</a></li>
+<li><a href="#org987749d">4.2. Contractions within the same tensor</a></li>
+<li><a href="#org3de6b8c">4.3. Connected diagrams</a></li>
+<li><a href="#org033044f">4.4. Node symmetry</a></li>
+<li><a href="#org6f357ad">4.5. Parity symmetry</a></li>
+</ul>
+</li>
+<li><a href="#org1d1f5b2">5. Combinatorics</a>
+<ul>
+<li><a href="#org4a4c20e">5.1. Cartesian product</a></li>
+<li><a href="#org4638bb3">5.2. Permutations</a></li>
+<li><a href="#org2296119">5.3. Node pairs building</a></li>
+<li><a href="#org2b3f7fb">5.4. Pair combinations</a></li>
+<li><a href="#org9bea552">5.5. Utils</a></li>
+</ul>
+</li>
+<li><a href="#org1dae11f">6. Arithmetic expressions</a></li>
+<li><a href="#orgbd19105">7. Index spaces</a>
+<ul>
+<li><a href="#org2cc7cc3">7.1. Tensor sum</a></li>
+</ul>
+</li>
+<li><a href="#org6f1cd43">8. Tensor matching</a></li>
+<li><a href="#orgadbcf35">9. Symmetries</a>
+<ul>
+<li><a href="#orgf81588d">9.1. Node symmetry</a></li>
+<li><a href="#org0236219">9.2. <span class="todo TODO">TODO</span> Antisymmetry</a></li>
+<li><a href="#org3d1ed31">9.3. Filtering diagrams through contractions</a></li>
+<li><a href="#org70b3263">9.4. Filtering contractions through symmetries</a></li>
+</ul>
+</li>
+<li><a href="#orgc284e4f">10. Contractions</a>
+<ul>
+<li><a href="#org686239b">10.1. <span class="todo EXPLAIN">EXPLAIN</span> Mergin nodes</a></li>
+<li><a href="#orgce3bf17">10.2. Effective temporary tensor</a></li>
+<li><a href="#org0b83ac7">10.3. Contraction discovery</a>
+<ul>
+<li><a href="#orgfeaaa0d">10.3.1. Compatible contractions</a></li>
+<li><a href="#org586f506">10.3.2. Checking for connectedness</a></li>
+<li><a href="#orgbe5be54">10.3.3. Finding contractions by number of legs</a></li>
+<li><a href="#orgcc27cea">10.3.4. Finding contractions by target properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org6fbdbe6">11. Help routines</a>
+<ul>
+<li><a href="#org2e7d2e2">11.1. Partitions</a></li>
+</ul>
+</li>
+<li><a href="#org9936911">12. API</a>
+<ul>
+<li><a href="#orgbdf3b18">12.1. Particle hole picture</a></li>
+</ul>
+</li>
+<li><a href="#org84315d8">13. Examples</a>
+<ul>
+<li><a href="#orgedf52c6">13.1. Ccsd equations</a>
+<ul>
+<li><a href="#org7d56efd">13.1.1. Singles</a></li>
+</ul>
+</li>
+<li><a href="#orgbfe33c4">13.2. IP Equation of motion CCSD</a></li>
+</ul>
+</li>
+<li><a href="#orgbefb7ed">14. Integration tests</a>
+<ul>
+<li><a href="#org22ba1cd">14.1. Hirata</a>
+<ul>
+<li><a href="#org5d51b3a">14.1.1. CCD</a></li>
+<li><a href="#org9c1eaa0">14.1.2. MP2</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org0a568f8">15. Output formats</a>
+<ul>
+<li><a href="#org02a92ee">15.1. TeX</a></li>
+<li><a href="#org88afcf4">15.2. <span class="todo TODO">TODO</span> Dot diagrams</a>
+<ul>
+<li><a href="#orgb627172">15.2.1. herodot</a></li>
+<li><a href="#org07af236">15.2.2. old</a></li>
+</ul>
+</li>
+<li><a href="#orgd0e8bd0">15.3. <span class="todo TODO">TODO</span> SVG</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org5714861" class="outline-2">
+<h2 id="org5714861"><span class="section-number-2">1.</span> Todo <code>[50%]</code></h2>
+<div class="outline-text-2" id="text-1">
+<ul class="org-ul">
+<li class="trans"><code>[-]</code> create the unit tensor operator and check that it plays well</li>
+<li class="on"><code>[X]</code> create an option to disallow contractions of the tensor with
+itself.</li>
+<li class="on"><code>[X]</code> create an option for only allowing linked contractions</li>
+<li class="on"><code>[X]</code> implement symmetry filter:
+Viajb should be the same as Vaibj and so on.
+So the symmetry is a node Vertauschungssymmetrie.</li>
+<li class="off"><code>[&#xa0;]</code> compile with gcl</li>
+<li class="off"><code>[&#xa0;]</code> test with clasp (it takes too long to compile in nixos)</li>
+<li class="off"><code>[&#xa0;]</code> implement parity symmetry</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgaf16359" class="outline-2">
+<h2 id="orgaf16359"><span class="section-number-2">2.</span> Prolog</h2>
+<div class="outline-text-2" id="text-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(defpackage :arponen
+  (:use :cl))
+(in-package :arponen)
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">;; todo define packages and all that
+(in-package :arponen)
+
+(defmacro assert-equal (left right)
+  `(assert (equal ,left ,right)))
+
+(defmacro assert! (expr &amp;rest args)
+  `(assert (not ,expr) ,@args))
+
+(defmacro assert!-equal (left right)
+  `(assert (not (equal ,left ,right))))
+
+(defmacro assert-condition (expr condition-type &amp;rest body)
+  `(handler-case (progn ,expr
+                        (assert nil))
+     (,condition-type ,@body)))
+
+(defmacro assert-errmsg (expr condition-type error-message)
+  `(assert-condition ,expr ,condition-type
+                     (m) (assert-equal (format nil "~a" m)
+                                       ,error-message)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org681a4da" class="outline-2">
+<h2 id="org681a4da"><span class="section-number-2">3.</span> Nomenclature</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+In order to read better the code and organize it better, we
+should begin by having a clear nomenclature of the objects
+we are dealing with.
+</p>
+
+<p>
+A diagram is in its graph-theoretic sense
+a set of nodes with vertices.
+In the case of a diagram in chemistry a vertex is
+interpreted as a contraction and <i>uncontracted vertices</i>
+are legs of a diagram.
+</p>
+
+<p>
+We will not make the distinction between a legged-node
+and an unlegged-node, as we do not need it for our purposes.
+</p>
+
+<p>
+Therefore, a simple picture of a diagram can be akin to the
+following representation:
+</p>
+
+<pre class="example" id="org19ed9bb">
+\
+ \
+  \         v------------- Node
+   *========*
+  /          \
+ /            \ &lt;--------- Leg 
+/              \
+</pre>
+</div>
+
+<div id="outline-container-org8a81831" class="outline-3">
+<h3 id="org8a81831"><span class="section-number-3">3.1.</span> Types</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+In Lisp, we will represent a short list of objects in the following
+manner:
+</p>
+
+<ul class="org-ul">
+<li><p>
+A tensor
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(tensor-name [node])
+</pre>
+</div></li>
+<li><p>
+A contracted expression
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">((contraction (point-1 point-2)) (tensor-product))
+</pre>
+</div></li>
+</ul>
+
+<p>
+These conceps are simply represented as simple lisp predicates
+as follows
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defun contraction? (expr)
+  (and (listp expr)
+       (listp (car expr))
+       (eq (caar expr) 'contraction)
+       ;; body
+       (listp (cadr expr))))
+
+(defun tensor? (expr)
+  (and (listp expr)
+       (listp (cadr expr))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert (contraction? '((contraction ((a b) (c d))) nil)))
+(assert (contraction? '((contraction nil) ((t (a i) (b j))))))
+(assert (tensor? '(t (a i) (b j))))
+(assert (tensor? '(1 nil)))
+(assert (tensor? '(0 nil)))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org74d6fb6" class="outline-2">
+<h2 id="org74d6fb6"><span class="section-number-2">4.</span> Main variables</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The following variables act as flags for the behaviour of the program,
+you can set them temporarily in a `let` block in order to use them
+or set them globally with `setq`.
+</p>
+</div>
+
+<div id="outline-container-orgf260a8d" class="outline-3">
+<h3 id="orgf260a8d"><span class="section-number-3">4.1.</span> Verbosity and logging</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+To control the verbosity of the program, set the <code>*print-log*</code>
+variable.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *print-log* t
+  "Wether to print the log messages for the contractions and so on")
+
+;; TODO: implement log levels
+(defmacro logger (fmt &amp;rest args)
+  `(when *print-log*
+    (eval (format t ,fmt ,@args))))
+
+(defmacro logger! (&amp;rest args)
+  `(let ((*print-log* t))
+    (logger ,@args)))
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org987749d" class="outline-3">
+<h3 id="org987749d"><span class="section-number-3">4.2.</span> Contractions within the same tensor</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+In general, the contraction searcher will search for contractions
+according to the contraction rules between all nodes.
+</p>
+
+<p>
+However, for most many-body diagrammatics, one is mostly interested in
+contractions between different tensors.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *allow-self-contractions* nil
+  "Wether or not to allow a tensor to search for contractions with its
+  nodes.")
+</pre>
+</div>
+
+<p>
+If you want to allow self-contractions you can set this option as
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(setq *allow-self-contractions* t)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3de6b8c" class="outline-3">
+<h3 id="org3de6b8c"><span class="section-number-3">4.3.</span> Connected diagrams</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+As in coupled-cluster theories, you can also only
+look for connected contraction possibilities.
+</p>
+
+<p>
+This settings is disables by default so you will
+have to explicitly set it to have connected diagrams,
+see the examples for coupled-cluster theories.
+</p>
+
+<p>
+;; TODO: maybe this should be called linked,
+;;       check with lindgren paper.
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *only-connected-diagrams* nil
+  "Wether to look for contractions that create connected diagrams.")
+</pre>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-org033044f" class="outline-3">
+<h3 id="org033044f"><span class="section-number-3">4.4.</span> Node symmetry</h3>
+<div class="outline-text-3" id="text-4-4">
+<p>
+If you do not want the contractions to be filtered automatically
+by node symmetry set this variable to <code>nil</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *filter-node-symmetry* t)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6f357ad" class="outline-3">
+<h3 id="org6f357ad"><span class="section-number-3">4.5.</span> Parity symmetry</h3>
+<div class="outline-text-3" id="text-4-5">
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *filter-parity-symmetry* nil
+  "Wether to filter contractions according to parity symmetry.")
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org1d1f5b2" class="outline-2">
+<h2 id="org1d1f5b2"><span class="section-number-2">5.</span> Combinatorics</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+This code relies a lot on combinatorics and set-theoretic functions,
+this section describes their implementation in order to maintain
+the package self-contained.
+</p>
+</div>
+
+<div id="outline-container-org4a4c20e" class="outline-3">
+<h3 id="org4a4c20e"><span class="section-number-3">5.1.</span> Cartesian product</h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+We implement a cartesian product in the form of a macro
+that avoids recursion but however writes it with depending
+on the loop macro.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defmacro cartesian-product (&amp;rest lists)
+  (let* ((indices (loop for i from 1 to (length lists)
+                        collect (gensym (format nil "~a-i-" i))))
+         (initial-value `(loop for ,(car (last indices)) in ',(car (last lists))
+                               collect `(,,@indices))))
+    (reduce
+     (lambda (x y)
+       `(loop for ,(car x) in ',(cadr x)
+              nconc ,y))
+     (mapcar #'list (butlast indices) (butlast lists))
+     :from-end t
+     :initial-value initial-value)))
+</pre>
+</div>
+
+<p>
+With tests:
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (cartesian-product (H P) (a b c) (1 2 3 5))
+              '((H A 1) (H A 2) (H A 3) (H A 5)
+                (H B 1) (H B 2) (H B 3) (H B 5)
+                (H C 1) (H C 2) (H C 3) (H C 5)
+                (P A 1) (P A 2) (P A 3) (P A 5)
+                (P B 1) (P B 2) (P B 3) (P B 5)
+                (P C 1) (P C 2) (P C 3) (P C 5)))
+
+(assert-equal (cartesian-product (H (P)) ((a)))
+              '((H (A)) ((P) (A))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4638bb3" class="outline-3">
+<h3 id="org4638bb3"><span class="section-number-3">5.2.</span> Permutations</h3>
+<div class="outline-text-3" id="text-5-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun all-permutations (lst &amp;optional (remain lst))
+  (cond ((null remain) nil)
+        ((null (rest lst)) (list lst))
+        (t (append
+            (mapcar (lambda (l) (cons (first lst) l))
+                    (all-permutations (rest lst)))
+            (all-permutations (append (rest lst) (list (first lst)))
+                              (rest remain))))))
+</pre>
+</div>
+
+<p>
+And tests
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (all-permutations '(a b))
+              '((A B) (B A)))
+(assert-equal (all-permutations '(a b c))
+              '((A B C) (A C B) (B C A) (B A C) (C A B) (C B A)))
+(assert-equal (all-permutations '(a b c d))
+              '((A B C D) (A B D C) (A C D B) (A C B D) (A D B C) (A D C B)
+                (B C D A) (B C A D) (B D A C)
+                (B D C A) (B A C D) (B A D C) (C D A B) (C D B A) (C A B D)
+                (C A D B) (C B D A) (C B A D)
+                (D A B C) (D A C B) (D B C A) (D B A C) (D C A B) (D C B A)))
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org2296119" class="outline-3">
+<h3 id="org2296119"><span class="section-number-3">5.3.</span> Node pairs building</h3>
+<div class="outline-text-3" id="text-5-3">
+<p>
+In order to find contractions, we will be concerned with a product
+of tensors \((t_1, \ldots, t_n)\) and every tensor will have
+a series of nodes, let us denote the whole indices of the nodes
+from \(0\) to \(N - 1\) where
+</p>
+
+<p>
+\[
+N = \sum_i \#\mathrm{nodes}(t_i)
+\]
+</p>
+
+<p>
+<code>get-node-pairs</code> will give us pairs of nodes to search
+for contractions in.
+We have to restrict the possible pairs according to:
+</p>
+
+<ul class="org-ul">
+<li>only one occurrence of a pair combination is allowed
+in order not to search for the same contractions
+twice, this means that only \((i, j)\) pairs
+are allowed where \(i \leq j\).</li>
+<li>in the case we want to search only for contractions
+between different tensors, we can provide
+a <code>group-lengths</code> list which will only
+allow for pairs of different groups.</li>
+</ul>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun get-node-pairs (n &amp;key (group-lengths nil))
+  ;; check that group-lengths is well built
+  (when group-lengths (assert (eq n (apply #'+ group-lengths))))
+  (let ((successive-lengths
+          ;; successive-lengths
+          ;; should be simply (g0 (+ g0 g1) ... (+ g0 .. gn))
+          ;; where gj \in group-lengths
+          (reverse (maplist (lambda (lst) (apply #'+ lst))
+                            (reverse group-lengths)))))
+    (labels ((from-i (i)
+             (if group-lengths
+                 ;; find the first group where i
+                 ;; is smaller, this means the next group
+                 ;; starts there
+                 (find i successive-lengths :test #'&lt;)
+                 i)))
+    (loop for i from 0 below n
+        nconcing (loop for j from (from-i i) below n
+                       collect `(,i ,j))))))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">;; trivial examples
+(assert-equal (get-node-pairs 1) '((0 0)))
+(assert-equal (get-node-pairs 2) '((0 0) (0 1) (1 1)))
+(assert-equal (get-node-pairs 3) '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+
+;;   2        3
+;; (0 1 ||  2 3 4)
+(assert-equal (get-node-pairs 5 :group-lengths '(2 3))
+              '((0 2) (0 3) (0 4)
+                (1 2) (1 3) (1 4)))
+(assert-equal (get-node-pairs 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4)
+                (1 1) (1 2) (1 3) (1 4) (2 2)
+                (2 3) (2 4) (3 3) (3 4) (4 4)))
+
+;;   2        3       1       3
+;; (0 1 ||  2 3 4  || 5 ||  6 7 8)
+(assert-equal (get-node-pairs 9 :group-lengths '(2 3 1 3))
+              '((0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8)
+                (1 2) (1 3) (1 4) (1 5) (1 6) (1 7) (1 8)
+                (2 5) (2 6) (2 7) (2 8)
+                (3 5) (3 6) (3 7) (3 8)
+                (4 5) (4 6) (4 7) (4 8)
+                (5 6) (5 7) (5 8)))
+
+;;   V     T1    T2
+;; (0 1 || 2 || 3 4)
+(assert-equal (get-node-pairs 5 :group-lengths '(2 1 2))
+              '((0 2) (0 3) (0 4)
+                (1 2) (1 3) (1 4)
+                (2 3) (2 4)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org2b3f7fb" class="outline-3">
+<h3 id="org2b3f7fb"><span class="section-number-3">5.4.</span> Pair combinations</h3>
+<div class="outline-text-3" id="text-5-4">
+<p>
+Given a product of tensors, we will want to have
+which pair of nodes can have contractions, this is given
+by the <code>get-node-pairs</code> function.
+But in general we will want to have \(n_c\) contractions,
+taken from combinations of these node pairs <code>(node-a node-b)</code>.
+</p>
+
+<p>
+For example, if we are looking for 3 contractions in total,
+and we have the pairs of nodes where we can find these contractions
+<code>(p1 ... pn)</code>, then we will want to look for instance
+first three times in the pair of nodes <code>p1</code> for 3 successful
+contractions, in pair-index notation this would represent the
+list
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(0 0 0)
+</pre>
+</div>
+<p>
+where 0 is the index of the position of <code>p1</code> in the pair list.
+We call these lists <i>pair combinations</i>.
+</p>
+
+<p>
+A given <i>pair combination</i> describes the potential connections
+of the tensors and represent a whole class of diagrams.
+In particular, the linkedness and connectedness of diagrams
+are encoded in these lists and we use them to decide
+if a given diagram is linked or not.
+;; TODO: check link or connected exactly
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defmacro ordered-subsets-with-repetition (n space-size)
+  (when (&gt; n 0)
+    (let* ((vars (loop for i below (1+ n) collect (gensym))))
+      `(let ((,(car vars) 0))
+         ,(reduce (lambda (x other-loop)
+                    `(loop for ,(cdr x) from ,(car x) below ,space-size
+                           ,@(if (null other-loop)
+                                 `(collect `(,,@(cdr vars)))
+                                 (list 'nconcing other-loop))))
+                  (mapcar #'cons vars (cdr vars))
+                  :initial-value nil
+                  :from-end t)))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (ordered-subsets-with-repetition 1 2)
+              '((0) (1)))
+
+(assert-equal (ordered-subsets-with-repetition 2 2)
+              '((0 0) (0 1) (1 1)))
+
+(assert-equal (ordered-subsets-with-repetition 2 3)
+              '((0 0) (0 1) (0 2) (1 1) (1 2) (2 2)))
+
+(assert-equal (ordered-subsets-with-repetition 2 5)
+              '((0 0) (0 1) (0 2) (0 3) (0 4) (1 1) (1 2) (1 3)
+                (1 4) (2 2) (2 3) (2 4) (3 3) (3 4) (4 4)))
+
+(assert-equal (ordered-subsets-with-repetition 3 3)
+              '((0 0 0) (0 0 1) (0 0 2) (0 1 1) (0 1 2)
+                (0 2 2) (1 1 1) (1 1 2) (1 2 2) (2 2 2)))
+
+;; here we would need 4 contractions between a set of
+;; 4 pairs of nodes
+(assert-equal (ordered-subsets-with-repetition 4 4)
+              '((0 0 0 0) (0 0 0 1) (0 0 0 2) (0 0 0 3) (0 0 1 1) (0 0 1 2)
+                (0 0 1 3) (0 0 2 2) (0 0 2 3) (0 0 3 3) (0 1 1 1) (0 1 1 2)
+                (0 1 1 3) (0 1 2 2) (0 1 2 3) (0 1 3 3) (0 2 2 2) (0 2 2 3)
+                (0 2 3 3) (0 3 3 3) (1 1 1 1) (1 1 1 2) (1 1 1 3) (1 1 2 2)
+                (1 1 2 3) (1 1 3 3) (1 2 2 2) (1 2 2 3) (1 2 3 3) (1 3 3 3)
+                (2 2 2 2) (2 2 2 3) (2 2 3 3) (2 3 3 3) (3 3 3 3)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9bea552" class="outline-3">
+<h3 id="org9bea552"><span class="section-number-3">5.5.</span> Utils</h3>
+<div class="outline-text-3" id="text-5-5">
+<div class="org-src-container">
+<pre class="src src-lisp">;; functions taken from uruk
+(defun flatten-list (ls)
+  (cond
+    ((and (consp ls)
+          (atom (car ls)))
+     `(,(car ls) ,@(flatten-list (cdr ls))))
+    ((and (consp ls)
+          (consp (car ls)))
+     `(,@(flatten-list (car ls)) ,@(flatten-list (cdr ls))))
+    (t ls)))
+
+(defmacro thread-first (var &amp;rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (cons init (cdr f))))))
+    init))
+
+(defmacro thread-last (var &amp;rest forms)
+  (let ((init var))
+    (loop for f in forms
+          do (setf init (setf f (cons (car f)
+                                      (reverse (cons init
+                                                     (reverse (cdr f))))))))
+    init))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(multiple-value-bind (expression _ )
+    (macroexpand '(thread-first x (+ 5) (* 8)))
+  (declare (ignorable _))
+  (assert-equal '(* (+ x 5) 8)
+                expression))
+
+(multiple-value-bind (expression _ )
+    (macroexpand '(thread-last x (+ 5) (* 8)))
+  (declare (ignorable _))
+  (assert-equal '(* 8 (+ 5 x))
+                expression))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun symbols-repeated-p (lst)
+  (let ((symbols (flatten-list lst))
+        s)
+    (loop while (setq s (pop symbols))
+          if (&gt; (count s symbols) 0)
+            do (return t))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((vals '(((a b c) . nil)
+              ((a (a) b c) . t)
+              ((((a)) ((b e f g)) ((((b))))) . t))))
+  (loop for (lst . val) in vals
+        do (assert (eq (symbols-repeated-p lst) val))))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org1dae11f" class="outline-2">
+<h2 id="org1dae11f"><span class="section-number-2">6.</span> Arithmetic expressions</h2>
+<div class="outline-text-2" id="text-6">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun expr-to-lists (exp)
+    (case (if (atom exp) t (car exp))
+      (* (reduce (lambda (x y)
+                   (reduce #'append
+                           (loop for -x in x
+                                 collect (loop for -y in y
+                                               collect (append -x -y)))))
+                 (mapcar #'expr-to-lists (cdr exp))
+                 :initial-value '(nil)
+                 :from-end t))
+      (+ (reduce #'append (mapcar #'expr-to-lists (cdr exp))))
+      (t (list (list exp)))))
+
+(defun expr-power (n expr)
+  `(* ,@(mapcar (constantly expr) (loop for i below n collect nil))))
+</pre>
+</div>
+
+<p>
+Some extensive tests..
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (expr-to-lists '(* (a) (e))) '(((a) (e))))
+(assert-equal (expr-to-lists '(* a b c (* d e (* e f e))))
+              '((a b c d e e f e)))
+
+(assert-equal (expr-to-lists '(+ (+ (a) (e))
+                               (b)
+                               (c)))
+              '(((a)) ((e)) ((b)) ((c))))
+
+(assert-equal (expr-to-lists '(+ (+ a e) (+ b c)))
+              '((a) (e) (b) (c)))
+
+(assert-equal (expr-to-lists '(* a (+ b c) (+ d (* e l))))
+              '((A B D) (A B E L) (A C D) (A C E L)))
+
+
+(assert-equal (expr-to-lists '(* (+ f v)
+                               (+ 1 t1 t2 (* q1 q1) (* k1 k2) (* f2 f2))
+                               (+ r1 r2)
+                               |0&gt;|))
+              '((F 1 R1 0&gt;)
+                (F 1 R2 0&gt;)
+                (F T1 R1 0&gt;)
+                (F T1 R2 0&gt;)
+                (F T2 R1 0&gt;)
+                (F T2 R2 0&gt;)
+                (F Q1 Q1 R1 0&gt;)
+                (F Q1 Q1 R2 0&gt;)
+                (F K1 K2 R1 0&gt;)
+                (F K1 K2 R2 0&gt;)
+                (F F2 F2 R1 0&gt;)
+                (F F2 F2 R2 0&gt;)
+                (V 1 R1 0&gt;)
+                (V 1 R2 0&gt;)
+                (V T1 R1 0&gt;)
+                (V T1 R2 0&gt;)
+                (V T2 R1 0&gt;)
+                (V T2 R2 0&gt;)
+                (V Q1 Q1 R1 0&gt;)
+                (V Q1 Q1 R2 0&gt;)
+                (V K1 K2 R1 0&gt;)
+                (V K1 K2 R2 0&gt;)
+                (V F2 F2 R1 0&gt;)
+                (V F2 F2 R2 0&gt;)))
+
+
+(assert-equal (expr-to-lists (expr-power 2 '(+ a b)))
+              '((A A) (A B) (B A) (B B)))
+
+(assert-equal (expr-to-lists (expr-power 3 '(+ a b)))
+              '((A A A) (A A B) (A B A) (A B B)
+                (B A A) (B A B) (B B A) (B B B)))
+
+(assert-equal (expr-to-lists (expr-power 4 '(+ a b)))
+              '((A A A A) (A A A B) (A A B A) (A A B B) (A B A A)
+                (A B A B) (A B B A) (A B B B) (B A A A) (B A A B) (B A B A)
+                (B A B B) (B B A A) (B B A B) (B B B A) (B B B B)))
+
+(assert-equal
+ (expr-to-lists
+  '(* (+ (fab) (fij) (fai) (fia) (vpqrs) (v...))
+    (+ (1) (t1) (t2) (* (t1) (t1)) (* (t1) (t2)) (* (t2) (t2)))
+    (+ (r1) (r2))))
+
+ '(((FAB) (1) (R1)) ((FAB) (1) (R2)) ((FAB) (T1) (R1)) ((FAB) (T1) (R2))
+   ((FAB) (T2) (R1)) ((FAB) (T2) (R2)) ((FAB) (T1) (T1) (R1))
+   ((FAB) (T1) (T1) (R2))
+   ((FAB) (T1) (T2) (R1)) ((FAB) (T1) (T2) (R2))
+   ((FAB) (T2) (T2) (R1)) ((FAB) (T2) (T2) (R2))
+   ((FIJ) (1) (R1))
+   ((FIJ) (1) (R2))
+   ((FIJ) (T1) (R1))
+   ((FIJ) (T1) (R2))
+   ((FIJ) (T2) (R1))
+   ((FIJ) (T2) (R2))
+   ((FIJ) (T1) (T1) (R1))
+   ((FIJ) (T1) (T1) (R2))
+   ((FIJ) (T1) (T2) (R1))
+   ((FIJ) (T1) (T2) (R2))
+   ((FIJ) (T2) (T2) (R1))
+   ((FIJ) (T2) (T2) (R2))
+   ((FAI) (1) (R1))
+   ((FAI) (1) (R2))
+   ((FAI) (T1) (R1))
+   ((FAI) (T1) (R2))
+   ((FAI) (T2) (R1))
+   ((FAI) (T2) (R2))
+   ((FAI) (T1) (T1) (R1))
+   ((FAI) (T1) (T1) (R2))
+   ((FAI) (T1) (T2) (R1))
+   ((FAI) (T1) (T2) (R2))
+   ((FAI) (T2) (T2) (R1))
+   ((FAI) (T2) (T2) (R2))
+   ((FIA) (1) (R1))
+   ((FIA) (1) (R2))
+   ((FIA) (T1) (R1))
+   ((FIA) (T1) (R2))
+   ((FIA) (T2) (R1))
+   ((FIA) (T2) (R2))
+   ((FIA) (T1) (T1) (R1))
+   ((FIA) (T1) (T1) (R2))
+   ((FIA) (T1) (T2) (R1))
+   ((FIA) (T1) (T2) (R2))
+   ((FIA) (T2) (T2) (R1))
+   ((FIA) (T2) (T2) (R2))
+   ((VPQRS) (1) (R1))
+   ((VPQRS) (1) (R2))
+   ((VPQRS) (T1) (R1))
+   ((VPQRS) (T1) (R2))
+   ((VPQRS) (T2) (R1))
+   ((VPQRS) (T2) (R2))
+   ((VPQRS) (T1) (T1) (R1))
+   ((VPQRS) (T1) (T1) (R2))
+   ((VPQRS) (T1) (T2) (R1))
+   ((VPQRS) (T1) (T2) (R2))
+   ((VPQRS) (T2) (T2) (R1))
+   ((VPQRS) (T2) (T2) (R2))
+   ((V...) (1) (R1))
+   ((V...) (1) (R2))
+   ((V...) (T1) (R1))
+   ((V...) (T1) (R2))
+   ((V...) (T2) (R1))
+   ((V...) (T2) (R2))
+   ((V...) (T1) (T1) (R1))
+   ((V...) (T1) (T1) (R2))
+   ((V...) (T1) (T2) (R1))
+   ((V...) (T1) (T2) (R2))
+   ((V...) (T2) (T2) (R1))
+   ((V...) (T2) (T2) (R2))))
+
+(assert-equal (expr-to-lists '(* (+ (T1 (P6 H6))) (+ (T1 (P5 H5)))))
+              '(((T1 (P6 H6)) (T1 (P5 H5)))))
+
+(assert-equal
+ (expr-to-lists '(+ 1 (T1 (P6 H6))
+                        (T2 (P3 H3) (P4 H4))
+                        (* (+ (T1 (P6 H6))) (+ (T1 (P5 H5))))
+                        (* (+ (T1 (P6 H6))) (+ (T2 (P3 H3) (P4 H4))))
+                        (* (+ (T2 (P3 H3) (P4 H4))) (+ (T2 (P1 H1) (P2 H2))))))
+
+ '((1)
+   ((T1 (P6 H6)))
+   ((T2 (P3 H3) (P4 H4)))
+   ((T1 (P6 H6)) (T1 (P5 H5)))
+   ((T1 (P6 H6)) (T2 (P3 H3) (P4 H4)))
+   ((T2 (P3 H3) (P4 H4)) (T2 (P1 H1) (P2 H2)))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbd19105" class="outline-2">
+<h2 id="orgbd19105"><span class="section-number-2">7.</span> Index spaces</h2>
+<div class="outline-text-2" id="text-7">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun match-index-to-space (index orbital-space)
+  (find index (cdr orbital-space)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(progn (assert (match-index-to-space 'k '(H i j k l)))
+       (assert (not (match-index-to-space 'H '(H i j k l)))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-space-by-leg (index orbital-spaces)
+  (find index orbital-spaces :test #'match-index-to-space))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(progn (assert (equal (find-space-by-leg 'k '((P a b c) (H i j k l)))
+                      '(H I J K L)))
+       (assert (not (find-space-by-leg 'a '((H i j k l))))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-space-by-name (name orbital-spaces)
+  (find name orbital-spaces :key #'car))
+
+(defun find-space-name-by-leg (leg orbital-spaces)
+  (car (find leg orbital-spaces :test #'match-index-to-space)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal
+ (find-space-by-name 'p '((PQ p q r s) (p a b c)))
+ '(p a b c))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((spaces '((H k l i) (P a b c) (PQ p q r s)))
+      (vals '((i . h)
+              (p . pq)
+              (q . pq)
+              (b . p))))
+  (loop for (v . result) in vals
+        do (assert (eq (find-space-name-by-leg v spaces) result))))
+</pre>
+</div>
+
+
+<p>
+TODO: Tests
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defun traverse-nodes (fn tensor)
+  (destructuring-bind (name . nodes) tensor
+    `(,name ,@(mapcar fn nodes))))
+
+(defun traverse-legs (fn tensor)
+  (traverse-nodes (lambda (node) (mapcar fn node)) tensor))
+
+(defun tensor-to-description (tensor &amp;key orbital-spaces)
+  (traverse-legs (lambda (leg) (find-space-name-by-leg leg orbital-spaces))
+                 tensor))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (tensor-to-description '(V (i k) (l a))
+                                     :orbital-spaces
+                                     '((H i j k l) (P a b c d)))
+              '(V (H H) (H P)))
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org2cc7cc3" class="outline-3">
+<h3 id="org2cc7cc3"><span class="section-number-3">7.1.</span> Tensor sum</h3>
+<div class="outline-text-3" id="text-7-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun tensor-sum (&amp;rest expressions)
+  `(+ ,@(reduce (lambda (tsr rest)
+                  (if (atom tsr)
+                      (cons tsr rest)
+                      (case (car tsr)
+                        (+ (append (cdr tsr) rest))
+                        (t (cons tsr rest)))))
+                expressions
+                :from-end t
+                :initial-value nil)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (tensor-sum '(T (A b) (c d)))
+              '(+ (T (a b) (c d))))
+(assert-equal (tensor-sum '(T (A b) (c d)) '(V (e i)))
+              '(+ (T (a b) (c d))
+                  (V (e i))))
+(assert-equal (tensor-sum '(* (t (a b) (c d)) (f (k l))) '(v (e i)))
+              '(+ (* (T (A B) (C D)) (F (K L)))
+                  (V (E I))))
+(assert-equal (tensor-sum '(+ a b c d (* e d)) '(h1 h2))
+              '(+ A B C D (* E D) (H1 H2)))
+;; this one is very useful
+(assert-equal (tensor-sum '(+ a b c d) '(+ e d) '(+ h1 h2))
+              '(+ A B C D E D H1 H2))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-org6f1cd43" class="outline-2">
+<h2 id="org6f1cd43"><span class="section-number-2">8.</span> Tensor matching</h2>
+<div class="outline-text-2" id="text-8">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun match-target-with-tensor-1 (target tensor &amp;key orbital-spaces)
+  (unless (eq (length target) (length tensor))
+    (return-from match-target-with-tensor-1 nil))
+  (notany #'null
+          (loop for target-tensor in (mapcar #'list (cdr target) (cdr tensor))
+                collect
+                (let ((spaces (mapcar (lambda (i) (find i orbital-spaces :key #'car))
+                                      (car target-tensor))))
+                  (assert (eq (length (car target-tensor)) (length (cadr target-tensor))))
+                  (notany #'null (mapcar #'match-index-to-space
+                                         (cadr target-tensor)
+                                         spaces))))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert (match-target-with-tensor-1 '(V (H P) (P))
+                                    '(t (i b) (a))
+                                    :orbital-spaces
+                                    '((H i)
+                                      (P b a))))
+(assert (not (match-target-with-tensor-1 '(V (H P) (P))
+                                         '(t (i b) (c)) ;; here
+                                         :orbital-spaces
+                                         '((H i)
+                                           (P b a)))))
+
+(assert (not (match-target-with-tensor-1 '(V (H P))
+                                         '(t (i b) (c)) ;; here
+                                         :orbital-spaces
+                                         '((H i)
+                                           (P b a)))))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun match-target-with-tensor (target tensor &amp;key orbital-spaces)
+  "Here we check that Vaibj is equivalent to Viajb and so on always.
+  This is general to all tensors.
+  It works for any dimension thanks to permuting all the legs of
+  the tensor."
+  (let ((all-targets (mapcar (lambda (x) `(,(car target) ;; name
+                                                   ,@x)) ;; feet
+                             (all-permutations (cdr target)))))
+    (loop for tt in all-targets
+          thereis (match-target-with-tensor-1
+                  tt tensor
+                  :orbital-spaces orbital-spaces))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(progn
+  (assert (match-target-with-tensor '(V (H P) (P H))
+                                    '(t (a i) (j b))
+                                    :orbital-spaces
+                                    '((H i j)
+                                      (P b a))))
+  (assert (not (match-target-with-tensor '(V (H P) (P H))
+                                         '(t (i a) (j b))
+                                         :orbital-spaces
+                                         '((H i j)
+                                           (P b a))))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgadbcf35" class="outline-2">
+<h2 id="orgadbcf35"><span class="section-number-2">9.</span> Symmetries</h2>
+<div class="outline-text-2" id="text-9">
+<p>
+This section discusses how to implement and encode symmetries of the
+diagrams.
+</p>
+</div>
+
+<div id="outline-container-orgf81588d" class="outline-3">
+<h3 id="orgf81588d"><span class="section-number-3">9.1.</span> Node symmetry</h3>
+<div class="outline-text-3" id="text-9-1">
+<p>
+For instance, all operators in quantum chemistry
+have a node symmetry whereby exchanging the positions of the electrons
+the tensor remains unchanged. For instance, for the coulomb integrals
+\( V^{pq}_{rs} \) this is encoded in the relation
+</p>
+\begin{equation*}
+V^{pq}_{rs} = V^{qp}_{sr}
+\end{equation*}
+<p>
+and from the second-quantization point of view this is also
+transposing a pair number of times the \(q\)-operators.
+</p>
+
+<p>
+We can encode these properties in lisp by just
+saying by which replacements the tensors remain unchanged,
+for instance for
+</p>
+<pre class="example" id="org6f56a77">
+(V (p s) (q r))
+</pre>
+<p>
+we would write as symmetries
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">;; main two-body node symmetry
+((p . q) (s . r))
+</pre>
+</div>
+
+<p>
+and we can write a simple function to apply this symmetry to tensor nodes
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defun apply-symmetry-to-nodes (symmetry-equivalence object)
+  (let* ((temp-symbols (mapcar (lambda (x) (declare (ignorable x))
+                                 (gensym)) symmetry-equivalence))
+         (equiv-forward (mapcar (lambda (x y) (cons (cdr x) y))
+                                symmetry-equivalence temp-symbols))
+         (equiv-backward (mapcar (lambda (x y) (cons y (car x)))
+                                 symmetry-equivalence temp-symbols)))
+    (sublis equiv-backward
+            (sublis symmetry-equivalence
+                    (sublis equiv-forward object)))))
+
+
+(defun apply-symmetries-to-nodes (symmetry-equivalences object)
+  (mapcar (lambda (x) (apply-symmetry-to-nodes x object)) symmetry-equivalences))
+</pre>
+</div>
+
+<p>
+And in fact  it is a very general function that works on every
+tree thanks to <code>sublis</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (apply-symmetry-to-nodes '((P . Q) (S . R))
+                                       '((P S) (Q R)))
+              ;;
+              '((Q R) (P S)))
+
+(assert-equal (apply-symmetry-to-nodes '((a . b) (i . j))
+                                       '(T (a i) (b j) (c k)))
+              ;;
+              '(T (B J) (A I) (C K)))
+
+(let ((contraction '((contraction (P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                     (V (h1 p1) (h2 p2))
+                     (T (p3 h3) (p4 h4))
+                     (T (p5 h5)))))
+  (destructuring-bind ((cts _ a b c) v tabij tai . nil) (apply-symmetry-to-nodes
+                                               '((p3 . p4) (h3 . h4))
+                                               contraction)
+    (assert-equal tabij '(T (p4 h4) (p3 h3)))
+    (assert-equal tai '(t (p5 h5)))
+    (assert-equal v '(V (h1 p1) (h2 p2)))
+    (assert-equal (list a b c) '((h2 h4) (h1 h3) (p1 p4)))))
+
+
+(assert-equal (apply-symmetry-to-nodes '((p . q))
+                                       '(V (P s) (q r)))
+              ;;
+              '(V (Q S) (P R)))
+
+
+
+(assert-equal (apply-symmetries-to-nodes '(((p . q) (s . r)) ((p . s)) ((r . q)))
+                                         '(V (P s) (q r)))
+              '((V (Q R) (P S))
+                (V (S P) (Q R))
+                (V (P S) (R Q))))
+
+</pre>
+</div>
+
+<p>
+Mostly however it is quite tedious to write these equivalences
+by hand so we can use the <code>make-node-symmetry</code> function to
+create a well-named symmetry equivalence.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun triangle-pairs (n)
+  (loop for fst below n
+        append (loop for snd from (1+ fst) below n
+                     collect (list fst snd))))
+
+(defun iota (n &amp;key (start 0))
+  (declare (optimize (safety 0) (speed 3) (debug 0)) (fixnum n) (fixnum start))
+  (loop for i below n collect (+ i start)))
+
+(defun all-transpositions (ls &amp;key (test #'eq) )
+  (loop for perm in (all-permutations ls)
+        collect (remove-duplicates (loop for i in perm
+                                         for j in ls
+                                         if (not (funcall test i j))
+                                           collect (cons i j))
+                                   :test
+                                   (lambda (x y)
+                                     (and (eq (car x) (cdr y))
+                                          (eq (cdr x) (car y)))))))
+
+(defun make-node-symmetry (nodes)
+  (flet ((idxs-to-syms (idxs)
+           (loop for idx in idxs
+                 append (let ((node-a (nth (car idx) nodes))
+                              (node-b (nth (cdr idx) nodes)))
+                          (loop for a in node-a
+                                for b in node-b
+                                collect (cons a b))))))
+    (let* ((combinations (all-transpositions (iota (length nodes)))))
+      (remove-if #'null (mapcar #'idxs-to-syms combinations)))))
+</pre>
+</div>
+
+<p>
+And it should of course work for higher dimensional tensors.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">;; utility function
+(assert-equal (triangle-pairs 1) nil)
+(assert-equal (triangle-pairs 2) '((0 1)))
+(assert-equal (triangle-pairs 3) '((0 1) (0 2) (1 2)))
+
+;; fail gracefully for one dimensional diagrams
+(assert! (make-node-symmetry '((p q))))
+
+(assert-equal (make-node-symmetry '((p s) (q r)))
+              '(((P . Q) (S . R))))
+
+
+(assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2)))
+              '(;; node 1 &lt;&gt; node 2
+                ((P1 . P2) (H1 . H2))
+                ;; node 1 &lt;&gt; 0 &amp;&amp; 2 &lt;&gt; 1 &amp;&amp; 0 &lt;&gt; 2
+                ((P1 . P0) (H1 . H0) (P2 . P1) (H2 . H1) (P0 . P2) (H0 . H2))
+                ;; node 0 &lt;&gt; node 1
+                ((P0 . P1) (H0 . H1))
+                ;; node 2 &lt;&gt; 0 &amp;&amp; 0 &lt;&gt; 1 &amp;&amp; 1 &lt;&gt; 2
+                ((P2 . P0) (H2 . H0) (P0 . P1) (H0 . H1) (P1 . P2) (H1 . H2))
+                ;; node 0 &lt;&gt; node 2
+                ((P0 . P2) (H0 . H2))))
+
+(let ((result '(((P2 . P3) (H2 . H3)) ;; 2 &lt;&gt; 3
+                ((P2 . P1) (H2 . H1) (P3 . P2) (H3 . H2) (P1 . P3) (H1 . H3))
+                ((P1 . P2) (H1 . H2)) ;; 1 &lt;&gt; 2
+                ((P3 . P1) (H3 . H1) (P1 . P2) (H1 . H2) (P2 . P3) (H2 . H3))
+                ((P1 . P3) (H1 . H3)) ;; 1 &lt;&gt; 3
+                ((P1 . P0) (H1 . H0) (P2 . P1)
+                 (H2 . H1) (P3 . P2) (H3 . H2)
+                 (P0 . P3) (H0 . H3))
+                ((P1 . P0) (H1 . H0) (P2 . P1)
+                 (H2 . H1) (P0 . P2) (H0 . H2))
+                ((P1 . P0) (H1 . H0) (P3 . P1)
+                 (H3 . H1) (P0 . P2) (H0 . H2)
+                 (P2 . P3) (H2 . H3))
+                ((P1 . P0) (H1 . H0) (P3 . P1)
+                 (H3 . H1) (P0 . P3) (H0 . H3))
+                ((P0 . P1) (H0 . H1)) ;; 0 &lt;&gt; 1
+                ((P0 . P1) (H0 . H1) (P2 . P3) (H2 . H3))
+                ((P0 . P2) (H0 . H2) (P1 . P3) (H1 . H3))
+                ((P2 . P0) (H2 . H0) (P3 . P1)
+                 (H3 . H1) (P1 . P2) (H1 . H2)
+                 (P0 . P3) (H0 . H3))
+                ((P2 . P0) (H2 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P2) (H1 . H2))
+                ((P2 . P0) (H2 . H0) (P0 . P1)
+                 (H0 . H1) (P3 . P2) (H3 . H2)
+                 (P1 . P3) (H1 . H3))
+                ((P2 . P0) (H2 . H0) (P3 . P2)
+                 (H3 . H2) (P0 . P3) (H0 . H3))
+                ((P0 . P2) (H0 . H2)) ;; 0 &lt;&gt; 2
+                ((P3 . P0) (H3 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P2) (H1 . H2)
+                 (P2 . P3) (H2 . H3))
+                ((P3 . P0) (H3 . H0) (P0 . P1)
+                 (H0 . H1) (P1 . P3) (H1 . H3))
+                ((P0 . P3) (H0 . H3)) ;; 0 &lt;&gt; 3
+                ((P3 . P0) (H3 . H0) (P0 . P2)
+                 (H0 . H2) (P2 . P3) (H2 . H3))
+                ((P3 . P0) (H3 . H0) (P2 . P1)
+                 (H2 . H1) (P0 . P2) (H0 . H2)
+                 (P1 . P3) (H1 . H3))
+                ((P1 . P2) (H1 . H2) (P0 . P3) (H0 . H3)))))
+  (assert-equal (make-node-symmetry '((p0 h0) (p1 h1) (p2 h2) (p3 h3)))
+                result)
+  (assert-equal (length result) (- (* 4 3 2) 1)))
+</pre>
+</div>
+
+<p>
+In the case of a list of tensors
+we can define the following function
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-effective-nodes-list (list-of-tensors)
+  (let* ((keys (remove-duplicates (mapcar #'car list-of-tensors) :test #'equal))
+         (result-alist (mapcar (lambda (k) (cons k '())) keys)))
+    (mapc (lambda (tsr)
+            (let ((current (assoc (car tsr) result-alist)))
+              (rplacd (assoc (car tsr) result-alist)
+                    (append (cdr current) (cdr tsr)))))
+          list-of-tensors)
+    (mapcar #'cdr result-alist)))
+
+(defun make-symmetries-in-node-list (list-of-tensors sym-maker)
+  (labels ((reducer (x) (reduce #'union x :from-end t)))
+    (thread-last list-of-tensors
+                 (mapcar sym-maker)
+                 (reducer))))
+
+(defun make-symmetries-in-effective-node-list (list-of-tensors sym-maker)
+  (make-symmetries-in-node-list (find-effective-nodes-list list-of-tensors)
+                                sym-maker))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (find-effective-nodes-list
+               '((V (p q) (r s)) (T2 (a b) (c d))))
+              '(((p q) (r s)) ((a b) (c d))))
+
+(assert-equal (find-effective-nodes-list '((V (p q) (r s))
+                                           (T2 (a b) (c d)) (T2 (a2 b2) (c2 d2))
+                                           (R2 (g h) (h2 g2))))
+              '(((P Q) (R S))
+                ((A B) (C D) (A2 B2) (C2 D2))
+                ((G H) (H2 G2))))
+
+(assert-equal (find-effective-nodes-list '((V (p r) (q s))
+                                           (T1 (a i)) (T1 (aa ii))
+                                           (R1 (g e))))
+              '(((p r) (q s))
+                ((a i) (aa ii))
+                ((g e))))
+
+(let* ((tensors '((V (h1 p1) (h2 p2))
+                  (T2 (p3 h3) (p4 h4))
+                  (T1 (p5 h5))))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry)))
+  (assert-equal symmetries
+                '(((H1 . H2) (P1 . P2))
+                  ((P3 . P4) (H3 . H4)))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0236219" class="outline-3">
+<h3 id="org0236219"><span class="section-number-3">9.2.</span> <span class="todo TODO">TODO</span> Antisymmetry</h3>
+<div class="outline-text-3" id="text-9-2">
+<p>
+For fermionic diagrams where the tensors
+are represented by real antisymmetric objects,
+there is a further symmetry to be considered.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun unzip (ls)
+  (loop for i below (apply #'min (mapcar #'length ls))
+        collect (mapcar (lambda (l) (nth i l)) ls)))
+
+(defun make-antisymmetry-symmetry (nodes)
+  (assert (every (lambda (n) (eq (length n) (length (car nodes)))) nodes)
+          nil
+          "Antisymmetry is not expected to work for tensors with~%~4t~a~%~a"
+          nodes "an unequal number of legs per node")
+  (let* ((legs-list (unzip nodes))
+         (nlegs (length (car legs-list)))
+         (tpairs (triangle-pairs nlegs))
+         (single-symmetries
+           (mapcar (lambda (legs)
+                     (mapcar (lambda (pair) (cons (nth (car pair) legs)
+                                                  (nth (cadr pair) legs)))
+                             tpairs))
+                   legs-list)))
+    ;;
+    ;; TODO: think about including also the products or not
+    ;;
+    ;; (append (mapcar #'list (apply #'append single-symmetries))
+    ;;         (eval `(cartesian-product ,@single-symmetries)))
+    (mapcar #'list (apply #'append single-symmetries))))
+
+(defun make-parity-symmetry--1 (nodes)
+  (let* ((legs-list (unzip nodes))
+         (iota (iota (length (car legs-list))))
+         (legs-transpositions (mapcar #'all-transpositions legs-list)))
+    (assert (eq (length legs-list) 2))
+    (mapcar (lambda (x) (reduce #'append x))
+            (eval `(cartesian-product ,@legs-transpositions)))))
+
+
+(defun make-nodes-difference (nodes-a nodes-b)
+  (let (result)
+    (loop for node-a in nodes-a
+          for node-b in nodes-b
+          do (loop for a in node-a
+                       for b in node-b
+                       unless (eq a b)
+                         unless (or (assoc b result)
+                                    (assoc a result))
+                           do (push (cons a b) result)))
+    (reverse result)))
+
+#+nil
+(assert-equal (make-nodes-difference '((a b) (e f)) '((a c) (e h)))
+              '((b . c) (f . h)))
+
+(progn
+  ;; todo: improve this, it is too expensive
+  (defun make-parity-symmetry (nodes)
+    (let* ((node-symmetries (make-node-symmetry nodes))
+           ;; apply node symmetries to the nodes
+           (new-nodes (cons nodes
+                            (mapcar (lambda (sym)
+                                      (apply-symmetry-to-nodes sym nodes))
+                                    node-symmetries)))
+           ;; for every node let us take all the parity symmetries
+           (parity-symmetries (mapcar #'make-parity-symmetry--1 new-nodes))
+           (nodes-with-parity
+             (mapcar (lambda (syms -nnodes)
+                       (mapcar (lambda (sym)
+                                 (apply-symmetry-to-nodes sym -nnodes))
+                               syms))
+                     parity-symmetries new-nodes))
+           (node-differences (mapcar (lambda (-nodes)
+                                       (make-nodes-difference nodes -nodes))
+                                     (apply #'concatenate
+                                            (cons 'list nodes-with-parity)))))
+      (remove-if #'null node-differences)))
+
+  (make-parity-symmetry '((a i) (b j) (c k)))
+  (make-parity-symmetry '((a i) (b j))))
+
+(apply 'concatenate '(list (a b c) (d e f)))
+
+;(apply-symmetry-to-nodes '((a . b)) '(T2 a))
+(apply-symmetry-to-nodes nil '(T2 a))
+(make-parity-symmetry--1 '((a i) (b j)))
+(make-parity-symmetry--1 '((a i)))
+(make-parity-symmetry--1 '((a i) (b j) (c k)))
+
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">;; utility function
+(assert-equal (unzip '((a b) (c d)))
+              '((a c) (b d)))
+(assert-equal (unzip '((a b) (c d) (e f)))
+              '((a c e) (b d f)))
+
+
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j)))
+              '(((A . B)) ((I . J))))
+(assert-equal (make-antisymmetry-symmetry '((a i) (b j) (c k)))
+              '(((A . B)) ((A . C)) ((B . C))
+                ((I . J)) ((I . K)) ((J . K))))
+
+(arponen::assert-equal
+ (arponen::make-symmetries-in-node-list '(((p2 h2) (h3 p3)) ((p1 h1) (p4 h4)))
+                                     #'arponen::make-antisymmetry-symmetry)
+ '(((H2 . P3)) ((P2 . H3)) ((P1 . P4)) ((H1 . H4))))
+</pre>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-org3d1ed31" class="outline-3">
+<h3 id="org3d1ed31"><span class="section-number-3">9.3.</span> Filtering diagrams through contractions</h3>
+<div class="outline-text-3" id="text-9-3">
+<p>
+Now the question in everyones minds is, wether or not
+we can restrict ourselves only to the contractions to apply
+the symmetries.
+</p>
+
+<p>
+The following is a text depiction of a diagram where
+we have numbered the nodes from 1 to 5.
+</p>
+<div class="org-src-container">
+<pre class="src src-artist">                           hh
+                          V              
+                           pp            
+                   1                    2
+                   x--------------------x
+                  ---                  ---
+                 /   \                /   \
+                /     \              /     \
+                |     |              |     |
+.       .       ^     v              ^     v
+ .     .        |     |              |     |
+  v   ^         \     /              \     /
+   . .           \   /                \   /
+    .             ---                  ---
+    o==============o                 ===o===
+    3              4                    5
+           T                               T
+            2                               1
+
+</pre>
+</div>
+
+
+<p>
+In this case, the contractions will be
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">((h1 h4) (p1 p4) (h2 h5) (p2 p5))
+</pre>
+</div>
+
+<p>
+The equivalent diagram linking through bubbles
+nodes \( (4, 2) \) and \( (1, 5) \)
+would be writted as
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">((h1 h5) (p1 p5) (h2 h4) (p2 p4))
+</pre>
+</div>
+
+<p>
+If we are to apply the node symmetry of \( V \)
+to this contraction set we will get
+the original contraction as depicted in the diagram
+and thus it is enough to apply the symmetries
+to the contractions.
+</p>
+
+<p>
+Indeed, the contractions are the differntiating
+element that distinguish diagrams, it is therefore
+understandable that through them we can also identify
+equal diagrams.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org70b3263" class="outline-3">
+<h3 id="org70b3263"><span class="section-number-3">9.4.</span> Filtering contractions through symmetries</h3>
+<div class="outline-text-3" id="text-9-4">
+<p>
+Given a set of diagrams, we should decide
+which ones are equivalent through a set of symmetries and which ones arent.
+</p>
+
+<p>
+The obvious way of checking the diagrams is through looping
+through a set of diagrams and a set of symmetries
+and check wether or not they are the same in terms of contractions
+and in the sense of sets through such a function like
+<code>find-duplicate-set</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-duplicate-set (element lst)
+  (find element lst :test-not (lambda (-x -y)
+                                (set-difference -x -y :test #'equal))))
+
+(defun pair-set-difference (pa pb)
+  (check-type pa cons)
+  (check-type pb cons)
+  (flet ((c-to-list (c) (list (car c) (cdr c))))
+    (set-difference (c-to-list pa) (c-to-list pb))))
+
+(defun find-duplicate-pair-set (element lst)
+  (find element lst :test-not
+        (lambda (x y)
+          (set-difference x y
+                          :test-not #'pair-set-difference))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (find-duplicate-set '#1=((a . b) (c . d))
+                                  '(((c . e) (a . b))
+                                    ((c . d) (a . b))
+                                    #1#))
+              '((c . d) (a . b)))
+
+;; it should also accept transposed variations of the
+;; elements
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (a . b))))
+              '((c . d) (a . b)))
+
+(assert-equal (find-duplicate-pair-set '((a . b) (d . c))
+                         '(((c . e) (a . b))
+                           ((c . d) (b . a))))
+              '((c . d) (b . a)))
+</pre>
+</div>
+
+<p>
+However, this begs the question of given a set of symmetries
+as discussed so far, wether it is necessary to compute the minimal
+group containing them in order to discover equivalent diagrams.
+</p>
+
+<p>
+The symmetry group of a diagram is exactly the product group
+of the individual symmetry groups of every piece of the diagram.
+Which means that in general we should have to compute the product
+group of the symmetry components.
+However, since in general we will look for repeated diagrams
+in a set of contractions that is already been created by
+computing all combinations of contractions, simply computing
+the direct sum of the symmetry sets will be enough
+for these cases.
+</p>
+
+<p>
+In conclusion, the suitable function for filtering
+a set of contractions through a set of symmetries (which might
+be a group or not) is:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun filter-contractions-by-symmetries (symmetries contractions)
+  (let ((-contractions (copy-tree contractions)))
+    (do (result seen-contractions)
+        ((null -contractions) result)
+      (let ((c (pop -contractions)))
+        (block :sym-searching
+          ;; go through all symmetries
+          (loop for sym in (cons nil symmetries)
+                do (let ((new-c (apply-symmetry-to-nodes sym c)))
+                     (when (find-duplicate-pair-set new-c seen-contractions)
+                       (push new-c seen-contractions)
+                       (logger "~&amp;~a is the same as ~a by virtue of ~a"
+                               c new-c sym)
+                       (return-from :sym-searching))))
+          ;; if I got here, then c is a new contraction
+          ;; never seen before
+          (push c result)
+          (push c seen-contractions))))))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgc284e4f" class="outline-2">
+<h2 id="orgc284e4f"><span class="section-number-2">10.</span> Contractions</h2>
+<div class="outline-text-2" id="text-10">
+<p>
+Contraction rules should be something that tells us
+which contractions are not zero.
+For instance having
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(v (j b)) (t (a i))
+</pre>
+</div>
+
+<p>
+here we can see that
+</p>
+
+<ul class="org-ul">
+<li><code>a b</code> can contract: <code>(P 1 0)</code> (i.e. first position and zeroth position)</li>
+<li><code>i j</code> can contract: <code>(H 0 1)</code> (i.e. zeroth position and first position)</li>
+</ul>
+
+<p>
+A contraction is given by the format
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">((contraction ((a b)))
+ (v (j b)
+ (t (a i))))
+</pre>
+</div>
+
+<p>
+and we can stich this contraction together to create a tensor
+This is done by <code>contraction-to-temp-tensor</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">((contraction ((a b)))
+ (v (j b)
+ (t (a i)))) =&gt;&gt; (tv (j i)) which would match (_ (H H))
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org686239b" class="outline-3">
+<h3 id="org686239b"><span class="section-number-3">10.1.</span> <span class="todo EXPLAIN">EXPLAIN</span> Mergin nodes</h3>
+<div class="outline-text-3" id="text-10-1">
+<p>
+In this section we work on the fact that when
+a contraction is made between legs, then these legs
+disappear from the resulting tensor object having in general
+two legs less, i.e., one node less.
+</p>
+
+<p>
+TODO:: Think about why is not possible to contract
+       '(a c) '(a b) '(c d)&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun stich-together (contraction node-a node-b)
+  ;; contraction-assoc: ((c0 . x) (c1 . x))
+  (let ((contraction-assoc (mapcar (lambda (x) (cons x 'x)) contraction)))
+      (labels ((kill-matching (i) (sublis contraction-assoc i)))
+    (let* ((killed-a (kill-matching node-a))
+           (pos-a (position 'x killed-a))
+           (killed-b (kill-matching node-b))
+           (pos-b (position 'x killed-b)))
+      (when (or (equal killed-a node-a)
+                (equal killed-b node-b))
+        (error "The contraction ~a does not link nodes ~a and ~a"
+               contraction node-a node-b))
+      (if (eq pos-a pos-b) ;; NUCLEAR-TODO
+          (error "You are trying to contract ~a and ~a at the same position ~a"
+                 node-a node-b pos-a)
+          (progn
+            (setf (nth pos-a node-a) (car (delete 'x killed-b)))
+            node-a))))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (stich-together '(a d)
+                              '(a b) '(c d))
+              '(c b))
+(assert-equal (stich-together '(b c)
+                              '(a b) '(c d))
+              '(a d))
+
+(assert-errmsg (stich-together '(a c) '(a d) '(e f))
+               simple-error
+               "The contraction (A C) does not link nodes (A D) and (E F)")
+
+(assert-errmsg (stich-together '(e c) '(a d) '(e f))
+               simple-error
+               "The contraction (E C) does not link nodes (A D) and (E F)")
+</pre>
+</div>
+
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-and-replace-matching-nodes (contraction tensor-nodes-list
+                                        &amp;key killed-pair)
+  "tensor-nodes-list is a list of list of nodes"
+  (let* ((result (copy-tree tensor-nodes-list))
+         (all-nodes-flat (reduce #'append result)))
+    (loop for node in all-nodes-flat
+          do (case (length (intersection node contraction))
+               (0 (continue))
+               ;; self-contraction
+               (2 (return (subst killed-pair node result :test #'equal)))
+               ;; usual contraction
+               ;; x--&lt;&gt;---
+               ;; we should find exactly ONE OTHER PLACE where this
+               ;; contraction is linked by the contraction
+               ;; otherwise it is an error
+               (1 (let ((matching-nodes
+                          (remove-if
+                           (lambda (x) (or (equal x node)
+                                           (not (intersection x contraction))))
+                           all-nodes-flat)))
+                    (logger "~&amp;current: ~s matching: ~s through: ~s"
+                            node matching-nodes contraction)
+                    (case (length matching-nodes)
+                      (0 (error "Unbound contractiong ~a with ~a"
+                                node contraction))
+                      (1 (let ((stiched (stich-together contraction
+                                                        node
+                                                        (car matching-nodes))))
+                           (return (subst killed-pair
+                                          (car matching-nodes)
+                                          (subst stiched node result
+                                                 :test #'equal)
+                                          :test #'equal))))
+                      (t
+                       (error "Contraction arity(~a) error ~a contracts with ~a"
+                              (length matching-nodes) node matching-nodes)))
+                    ))))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(macrolet ((assert-eq (index result)
+             `(assert (equal (find-and-replace-matching-nodes ,index
+                                                                original
+                                                                :killed-pair
+                                                                '(x x))
+                             ,result))))
+  (let ((original '(((a b) (c d))
+                    ((e f) (g h))
+                    ((i j) (k l) (h1 h2)))))
+
+    ;; 0-1 contraction
+    (assert-eq '(e h) '(((a b) (c d))
+                        ((g f) (x x))
+                        ((i j) (k l) (h1 h2))))
+
+    ;; self contraction
+    (assert-eq '(k l) '(((a b) (c d))
+                        ((e f) (g h))
+                        ((i j) (x x) (h1 h2))))
+
+    ;; 1-0 contraction
+    (assert-eq '(b k) '(((a l) (c d))
+                        ((e f) (g h))
+                        ((i j) (X X) (h1 h2))))
+
+    ;; contraction with tripes
+    (assert-eq '(a h2) '(((h1 b) (c d))
+                         ((e f) (g h))
+                         ((i j) (k l) (x x))))
+
+    ;; contraction within the tensor
+    (assert-eq '(a d) '(((c b) (X X))
+                        ((e f) (g h))
+                        ((i j) (k l) (h1 h2))))
+
+    ;; todo: test error messages
+
+    ))
+</pre>
+</div>
+
+
+<p>
+This functions is a handy function to get
+from a contraction object
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun get-contracted-nodes (contraction-tensor &amp;key killed-pair)
+  ;; todo replace with contraction-p
+  (assert (eq (caar contraction-tensor) 'contraction))
+  (let ((contracted-nodes (copy-list (mapcar #'cdr (cdr contraction-tensor))))
+        (contractions (cadar contraction-tensor)))
+    (loop for contraction in contractions
+          do
+             (setq contracted-nodes
+                   (find-and-replace-matching-nodes contraction
+                                                    contracted-nodes
+                                                    :killed-pair killed-pair)))
+    contracted-nodes))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (get-contracted-nodes
+               '((contraction ((e d) (k j)))
+                 (v (a b) (c d))
+                 (h (e f) (g h))
+                 (l (i j) (k l))) :killed-pair '(x x))
+              '(((A B) (C F))
+                ((X X) (G H))
+                ((I L) (X X))))
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgce3bf17" class="outline-3">
+<h3 id="orgce3bf17"><span class="section-number-3">10.2.</span> Effective temporary tensor</h3>
+<div class="outline-text-3" id="text-10-2">
+<p>
+Given a contraction, we will want to know what
+kind of tensor it will result when the contraction
+gets applied.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun get-contracted-temp-tensor (contraction-tensor &amp;key (name 'contracted))
+  (let* ((killed-pair '(x x))
+         (x-nodes (get-contracted-nodes contraction-tensor
+                                        :killed-pair killed-pair))
+         (flat-nodes (reduce (lambda (x y) (concatenate 'list x y))
+                             x-nodes))
+         (cleaned-nodes (remove-if (lambda (x) (equal x killed-pair))
+                                   flat-nodes)))
+    `(,name ,@cleaned-nodes)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (get-contracted-temp-tensor
+               '((contraction ((e d) (k j)))
+                 (v (a b) (c d))
+                 (h (e f) (g h))
+                 (l (i j) (k l))))
+              '(contracted (A B) (C F) (G H) (I L)))
+
+(assert-equal (get-contracted-temp-tensor
+               '((contraction ((b a) (j k)))
+                 (V (J I) (A B))
+                 (T (C K))
+                 (R (G L))) :name '|v*t*r|)
+              '(|v*t*r| (C I) (G L)))
+
+(assert-equal (get-contracted-temp-tensor
+               '((contraction nil)
+                 (F (a i))) :name '|Fai|)
+              '(|Fai| (A I)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0b83ac7" class="outline-3">
+<h3 id="org0b83ac7"><span class="section-number-3">10.3.</span> Contraction discovery</h3>
+<div class="outline-text-3" id="text-10-3">
+</div>
+<div id="outline-container-orgfeaaa0d" class="outline-4">
+<h4 id="orgfeaaa0d"><span class="section-number-4">10.3.1.</span> Compatible contractions</h4>
+<div class="outline-text-4" id="text-10-3-1">
+<p>
+This routing finds the possible contractions between two nodes.
+One could think that one should create all combinations
+of legs that belong to the node and then check according to the
+contraction rules. In fact, one just has to loop
+over the contraction rules and match every time against the two nodes
+since the position of the legs are encoded in the description of the
+contraction rules.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun compatible-contractions (node-a node-b &amp;key
+                                                orbital-spaces
+                                                contraction-rules)
+  (declare (cons node-a) (cons node-b))
+  (assert (and (eq (length node-a) 2) (eq (length node-a) (length node-b))))
+  (remove-if
+   #'null
+   (mapcar (lambda (rule)
+             (destructuring-bind ((space-a space-b) pos-a pos-b) rule
+               (let ((a (nth pos-a node-a))
+                     (b (nth pos-b node-b)))
+                 (when (and (eq (find-space-name-by-leg a orbital-spaces)
+                                space-a)
+                            (eq (find-space-name-by-leg b orbital-spaces)
+                                space-b))
+                   (list a b)))))
+           contraction-rules)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">;; test
+(let ((spaces '((H I J K L)
+                (P A B C D)
+                (G G))))
+
+  (let ((rules '(((H H) 0 1)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . nil)
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((b c)))
+                  ((i a) (g l) . ((i l)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b)))
+                  ((a i) (j b) . nil)
+                  ((a b) (c d) . ((b c))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result))))
+
+  (let ((spaces '((H I J K L)
+                  (P A B C D)
+                  (G G)))
+        ;; test with some absurd contraction rules
+        (rules '(((H H) 0 1)
+                 ((H P) 1 1)
+                 ((P H) 0 1)
+                 ((P G) 0 0)
+                 ((P P) 1 0)))
+        (values '(((j i) (i a) . ((i a)))
+                  ((j i) (i k) . ((j k)))
+                  ((a b) (c k) . ((a k) (b c)))
+                  ((a i) (g l) . ((a l) (a g)))
+                  ((i j) (k l) . ((i l)))
+                  ((i a) (b j) . ((i j) (a b))))))
+    (loop for (a b . result) in values
+          do (assert (equal (compatible-contractions a b
+                                                     :orbital-spaces spaces
+                                                     :contraction-rules rules)
+                            result)))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org586f506" class="outline-4">
+<h4 id="org586f506"><span class="section-number-4">10.3.2.</span> Checking for connectedness</h4>
+<div class="outline-text-4" id="text-10-3-2">
+<p>
+To calculate if a diagram is connected, it is not
+enough to check if the contractions touch all diagrams,
+but we have to check that we can go to any diagram
+through a contraction path.
+</p>
+
+<p>
+Therefore, we can simply
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun is-connected-contraction (pair-combination node-pairs &amp;key group-lengths)
+  (let* ((psums (mapcar (lambda (ls) (apply #'+ ls))
+                        (maplist #'identity (reverse group-lengths))))
+         ;; an interval represents a diagram
+         (intervals (mapcar #'cons psums (append (cdr psums) '(0))))
+         (diagrams-names (mapcar (lambda (i) (cons i (gensym "DIAGRAM-")))
+                                 intervals))
+         (node-indices (mapcar (lambda (pair-index) (nth pair-index node-pairs))
+                               pair-combination)))
+    ;; TODO: optimize this...
+    (labels ((diagram-of (i)
+               (cdr (assoc (find-if (lambda (interval)
+                                      (and (&gt; (car interval) i)
+                                           (&gt;= i (cdr interval))))
+                                    intervals)
+                           diagrams-names))))
+      (block :main-routine
+        (loop
+          for node-permutation in (all-permutations node-indices)
+          do (let (path)
+               (block :current-permutation
+                 (tagbody
+                    (loop for node in node-permutation
+                          do (let ((diagrams (mapcar #'diagram-of node)))
+                               (if (equal (intersection diagrams path)
+                                          diagrams)
+                                   (return-from :current-permutation)
+                                   (progn
+                                     (setq path
+                                           (append
+                                            path
+                                            (set-difference diagrams path)))
+                                     (when (&gt;= (length path)
+                                               (length group-lengths))
+                                       (return-from :main-routine t))))))
+                    ))
+               ))))
+    ))
+</pre>
+</div>
+<div class="org-src-container">
+<pre class="src src-lisp">(macrolet ((! (&amp;rest pts)
+             `(mapcar (lambda (p)
+                        (position p node-pairs :test #'equal)) ',pts)))
+  (let ((node-pairs
+          '((0 1) (0 2) (0 3) (0 4) (0 5) (0 6) (0 7) (0 8) ;; | 1st -&gt; all
+            (1 4) (1 5) (1 6) (1 7) (1 8)    ;; | 2nd diagram -&gt; 3
+            (2 4) (2 5) (2 6) (2 7) (2 8)    ;; |
+            (3 4) (3 5) (3 6) (3 7) (3 8)))) ;; |
+
+    ;; this contraction only goes from the first diagram to the second
+    (assert! (is-connected-contraction (! (0 1) (0 2) (0 3))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this contraction only goes from the 2nd diagram to the 3rc
+    (assert! (is-connected-contraction (! (1 4) (1 6) (3 4) (3 7) (2 6))
+                                       node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is quick, it just goes to from 1 to 2 and to 3 directly
+    (assert (is-connected-contraction (! (0 1) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))
+
+    ;; this is less quick, it goes from 1 to 2 twice and then goes to 3
+    (assert (is-connected-contraction (! (0 1) (0 2) (2 5))
+                                      node-pairs :group-lengths '(1 3 5)))))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbe5be54" class="outline-4">
+<h4 id="orgbe5be54"><span class="section-number-4">10.3.3.</span> Finding contractions by number of legs</h4>
+<div class="outline-text-4" id="text-10-3-3">
+<p>
+In this routine magic happens.
+So we have a target tensor with
+  N<sub>t</sub> operators
+and some product of tensors with N<sub>i</sub> operators each.
+The number of contractions should be N<sub>c</sub>,
+so filters for the number of contractions are
+</p>
+
+<p>
+N<sub>c</sub> = (Σ<sub>i</sub> N<sub>i</sub>) - N<sub>t</sub>
+</p>
+
+<p>
+If we need N<sub>c</sub> contractions, we can get up to
+N<sub>c</sub> pairs of indices, where every index has a single
+contraction. Therefore we need all ORDERED
+subsets of length up to N<sub>c</sub>
+</p>
+
+
+<p>
+Here we apply the norm simply
+Find contractions in a product.
+Some filters used are the number of contractions
+</p>
+
+<pre class="example" id="orgddadd84">
+2 * N-c = Sum (i) legs(product) - legs(target)
+</pre>
+
+<p>
+Some contractiosn might be combinatorially very expensive
+to go through but a quick check can solve the issue.
+Every contraction reduces the number of legs by two.
+If we count the number of legs in the target
+and we loop over contractions we can see if at all
+there can be contractions appearing, this
+can serve as a quick check for some terms that might
+be very expensive and where it is clear that
+the combinatorial search will have a negative
+result.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">#+nil
+(defun is-a-contraction-possible-by-number-of-legs
+    (target tensor-list &amp;key
+                          orbital-spaces
+                          contraction-rules)
+  (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
+                    (length (flatten-list (cdr target))))
+                 2))
+         (all-nodes (copy-tree (reduce #'append (mapcar #'cdr tensor-list))))
+         (group-lengths (mapcar (lambda (tsr) (length (cdr tsr))) tensor-list))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs (length all-nodes)
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       group-lengths)))
+         (node-pair-combinations
+           (eval `(ordered-subsets-with-repetition ,N-c
+                                                   ,(length node-pairs))))
+         results)
+
+  ))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-contractions-in-product-by-number-of-legs
+    (target tensor-list &amp;key
+                          orbital-spaces
+                          contraction-rules)
+  (let* ((N-c (/ (- (length (flatten-list (mapcar #'cdr tensor-list)))
+                    (length (flatten-list (cdr target))))
+                 2))
+         (all-nodes (reduce #'append (mapcar #'cdr tensor-list)))
+         (group-lengths (mapcar (lambda (tsr) (length (cdr tsr))) tensor-list))
+         ;; '((1 1) (1 2) (2 2)) if length all-nodes = 2
+         (node-pairs (get-node-pairs (length all-nodes)
+                                     :group-lengths
+                                     (unless *allow-self-contractions*
+                                       group-lengths)))
+         (node-pair-combinations
+           (eval `(ordered-subsets-with-repetition ,N-c
+                                                   ,(length node-pairs))))
+         results)
+    (logger "~&amp;============")
+    (logger "~&amp;N-contractions: ~s" N-c)
+    (logger "~&amp;all nodes: ~s" all-nodes)
+    (logger "~&amp;all node-pairs: ~s" node-pairs)
+    (logger "~&amp;all combinations (of pairs) : ~s" node-pair-combinations)
+    (setq results
+          (flet
+              ((indexing (indices lst) (mapcar (lambda (i) (nth i lst))
+                                               indices)))
+            (loop
+              for node-pair-combination in node-pair-combinations
+              nconcing
+              (block :pairs-discovery
+                (tagbody
+                   (let* ((pairs (indexing node-pair-combination node-pairs))
+                          (nodes (mapcar (lambda (x)
+                                           (indexing x all-nodes)) pairs))
+                          (II 0)
+                          top-contractions)
+                     (logger "~&amp;combination: ~s pairs: ~s [~s]"
+                             node-pair-combination
+                             pairs nodes)
+                     (incf II)
+                     (when *only-connected-diagrams*
+                       (unless (is-connected-contraction node-pair-combination
+                                                         node-pairs
+                                                         :group-lengths
+                                                         group-lengths)
+                         (return-from :pairs-discovery)))
+                     (loop for pair in pairs
+                           collect
+                           (let* ((vertices (indexing pair all-nodes))
+                                  (conts (compatible-contractions
+                                          (car vertices)
+                                          (cadr vertices)
+                                          :orbital-spaces orbital-spaces
+                                          :contraction-rules contraction-rules)))
+                             (cond
+                               ((null conts) (return-from :pairs-discovery))
+                               ((equal conts
+                                       (intersection top-contractions conts
+                                                     :test #'equal))
+                                (logger "~&amp;~30t⇐Exiting since ~a fully in ~a"
+                                        conts top-contractions)
+                                (return-from :pairs-discovery))
+                               (t
+                                (logger "~&amp;~8tvertices: ~s" vertices)
+                                (logger "~&amp;~24t appending contractions ~s" conts)
+                                (push conts top-contractions)))))
+
+                     ;; START FILTERING
+                     (return-from :pairs-discovery
+                       (let (--result)
+                         (mapc (lambda (real-contraction)
+                                 ;; photons say: repeated letters must go!
+                                 (let ((letters (flatten-list real-contraction)))
+                                   (unless (symbols-repeated-p letters)
+                                     (pushnew real-contraction
+                                              --result
+                                              :test-not
+                                              (lambda (x y) (set-difference
+                                                             x y
+                                                             :test #'equal))))))
+                               (eval `(cartesian-product
+                                       ,@top-contractions)))
+                         --result))
+                     ))))))
+    (let ((cleaned-results (remove-if #'null results))
+          symmetries)
+      (format t "~&amp;~5tCompute symmetries")
+      (when *filter-node-symmetry*
+        (format t "~&amp;~10tnode symms")
+        (setq symmetries
+              (append symmetries (make-symmetries-in-effective-node-list
+                                  tensor-list #'make-node-symmetry))))
+      (when *filter-parity-symmetry*
+        (format t "~&amp;~10tparity symms")
+        (setq symmetries
+              (append symmetries (make-symmetries-in-node-list
+                                  (mapcar #'cdr tensor-list)
+                                  #'make-parity-symmetry))))
+      (format t "~&amp;~5tResults BEFORE cleaning ~a" (length cleaned-results))
+      (setq cleaned-results
+            (filter-contractions-by-symmetries symmetries
+                                               cleaned-results))
+      (format t "~&amp;~5tResults AFTER Cleaning ~a" (length cleaned-results))
+      cleaned-results)))
+</pre>
+</div>
+</div>
+
+
+<ol class="org-ol">
+<li><a id="orge910521"></a>Case study: Vijab with T1 and T2 coupling to singles excitations<br />
+<div class="outline-text-5" id="text-10-3-3-1">
+<p>
+Let us illustrage this function with some tests
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((orbital-spaces '((H i j k l m n o h1 h2 h3 h4 h5)
+                        (P a b c d e f g p1 p2 p3 p4 p5)))
+      (contraction-rules '(((H H) 0 1)
+                           ((P P) 1 0))))
+  (labels ((with-rules (target tensor)
+             (find-contractions-in-product-by-number-of-legs target tensor
+                                                             :orbital-spaces
+                                                             orbital-spaces
+                                                             :contraction-rules
+                                                             contraction-rules))
+           (with-rules-c (target tensor) (let ((*only-connected-diagrams* t)
+                                               (*allow-self-contractions* nil))
+                                           (with-rules target tensor))))
+    (let ((*filter-node-symmetry* t))
+      (with-rules-c '(_ (P H) (P H))
+        '((V (h1 p1) (h2 p2))
+          (T2 (p3 h3) (p4 h4))
+          (T1 (p5 h5)))))
+    ))
+
+#+(or)
+'((1 (P2 P5) (H2 H4) (H1 H3) (P1 P3))
+  (2 (H2 H5) (P2 P4) (H1 H3) (P1 P3))
+  (3 (H2 H5) (P2 P5) (H1 H3) (P1 P3))
+  (4 (P2 P5) (H2 H3) (H1 H4) (P1 P3))
+  (5 (H2 H5) (P2 P3) (P1 P4) (H1 H3))
+  (6 (P2 P5) (H2 H4) (P1 P4) (H1 H3))
+  (7 (H2 H5) (P2 P4) (H1 H4) (P1 P3))
+  (8 (H2 H5) (P2 P5) (P1 P4) (H1 H3))
+  (9 (H2 H5) (P2 P5) (H1 H4) (P1 P3))
+  (10 (P2 P4) (H2 H3) (H1 H5) (P1 P3))
+  (11 (H2 H4) (P2 P3) (P1 P5) (H1 H3))
+  (12 (P2 P5) (H2 H3) (H1 H5) (P1 P3))
+  (13 (H2 H5) (P2 P3) (P1 P5) (H1 H3))
+  (14 (H2 H4) (P2 P4) (P1 P5) (H1 H3))
+  (15 (H2 H4) (P2 P4) (H1 H5) (P1 P3))
+  (16 (P2 P5) (H2 H4) (H1 H5) (P1 P3))
+  (17 (H2 H5) (P2 P4) (P1 P5) (H1 H3))
+  (18 (P2 P5) (H2 H3) (H1 H4) (P1 P4))
+  (19 (H2 H5) (P2 P3) (H1 H4) (P1 P4))
+  (20 (H2 H5) (P2 P5) (H1 H4) (P1 P4))
+  (21 (H2 H3) (P2 P3) (P1 P5) (H1 H4))
+  (22 (H2 H3) (P2 P3) (H1 H5) (P1 P4))
+  (23 (P2 P4) (H2 H3) (P1 P5) (H1 H4))
+  (24 (H2 H4) (P2 P3) (H1 H5) (P1 P4))
+  (25 (P2 P5) (H2 H3) (H1 H5) (P1 P4))
+  (26 (H2 H5) (P2 P3) (P1 P5) (H1 H4))
+  (27 (P2 P5) (H2 H4) (H1 H5) (P1 P4))
+  (28 (H2 H5) (P2 P4) (P1 P5) (H1 H4))
+  (29 (H2 H3) (P2 P3) (H1 H5) (P1 P5))
+  (30 (P2 P4) (H2 H3) (H1 H5) (P1 P5))
+  (31 (H2 H4) (P2 P3) (H1 H5) (P1 P5))
+  (32 (H2 H4) (P2 P4) (H1 H5) (P1 P5)))
+
+(defun count-duplicates (lst)
+  (mapcar (lambda (x)
+            (count x lst
+                   :test-not (lambda (-x -y)
+                           (set-difference -x -y :test #'equal))))
+          lst))
+
+
+(let* ((tensors
+         '((V (h1 p1) (h2 p2))
+           (T2 (p3 h3) (p4 h4))
+           (T1 (p5 h5))))
+       (symmetries (make-symmetries-in-effective-node-list
+                    tensors #'make-node-symmetry))
+       (contractions
+         '(((P2 P5) (H2 H4) (H1 H3) (P1 P3)) ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+           ((H2 H5) (P2 P5) (H1 H3) (P1 P3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P4) (H1 H3)) ((P2 P5) (H2 H4) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P4) (H1 H4) (P1 P3)) ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+           ((H2 H5) (P2 P5) (H1 H4) (P1 P3)) ((P2 P4) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H4) (P2 P3) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P3) (P1 P5) (H1 H3)) ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+           ((H2 H4) (P2 P4) (H1 H5) (P1 P3)) ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+           ((H2 H5) (P2 P4) (P1 P5) (H1 H3)) ((P2 P5) (H2 H3) (H1 H4) (P1 P4))
+           ((H2 H5) (P2 P3) (H1 H4) (P1 P4)) ((H2 H5) (P2 P5) (H1 H4) (P1 P4))
+           ((H2 H3) (P2 P3) (P1 P5) (H1 H4)) ((H2 H3) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P4) (H2 H3) (P1 P5) (H1 H4)) ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+           ((P2 P5) (H2 H3) (H1 H5) (P1 P4)) ((H2 H5) (P2 P3) (P1 P5) (H1 H4))
+           ((P2 P5) (H2 H4) (H1 H5) (P1 P4)) ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+           ((H2 H3) (P2 P3) (H1 H5) (P1 P5)) ((P2 P4) (H2 H3) (H1 H5) (P1 P5))
+           ((H2 H4) (P2 P3) (H1 H5) (P1 P5)) ((H2 H4) (P2 P4) (H1 H5) (P1 P5)))))
+
+  ;; there are no duplicates
+  (assert (every (lambda (x) (eq x 1)) (count-duplicates contractions)))
+  (let ((sym-conts (filter-contractions-by-symmetries symmetries contractions)))
+    (assert-equal sym-conts
+                  '(#| 32 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P5))
+                    #| 31 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P5))
+                    #| 28 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H4))
+                    #| 24 |# ((H2 H4) (P2 P3) (H1 H5) (P1 P4))
+                    #| 23 |# ((P2 P4) (H2 H3) (P1 P5) (H1 H4))
+                    #| 17 |# ((H2 H5) (P2 P4) (P1 P5) (H1 H3))
+                    #| 16 |# ((P2 P5) (H2 H4) (H1 H5) (P1 P3))
+                    #| 15 |# ((H2 H4) (P2 P4) (H1 H5) (P1 P3))
+                    #| 14 |# ((H2 H4) (P2 P4) (P1 P5) (H1 H3))
+                    #| 12 |# ((P2 P5) (H2 H3) (H1 H5) (P1 P3))
+                    #| 8 |# ((H2 H5) (P2 P5) (P1 P4) (H1 H3))
+                    #| 5 |# ((H2 H5) (P2 P3) (P1 P4) (H1 H3))
+                    #| 4 |# ((P2 P5) (H2 H3) (H1 H4) (P1 P3))
+                    #| 3 |# ((H2 H5) (P2 P5) (H1 H3) (P1 P3))
+                    #| 2 |# ((H2 H5) (P2 P4) (H1 H3) (P1 P3))
+                    #| 1 |# ((P2 P5) (H2 H4) (H1 H3) (P1 P3))))))
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+
+<div id="outline-container-orgcc27cea" class="outline-4">
+<h4 id="orgcc27cea"><span class="section-number-4">10.3.4.</span> Finding contractions by target properties</h4>
+<div class="outline-text-4" id="text-10-3-4">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun find-contractions-in-product-by-target
+    (target tensor-list &amp;key
+                          orbital-spaces
+                          contraction-rules)
+  (let ((result (find-contractions-in-product-by-number-of-legs
+                 target tensor-list :orbital-spaces orbital-spaces
+                                    :contraction-rules contraction-rules)))
+    (logger "~&amp;CONTRACTIONS TO CHECK: ~a" result)
+    (remove-if (lambda (x) (eq x :no-match))
+     (loop for contraction in (cons nil result)
+          collect
+          (let* ((contraction-tensor `((contraction ,contraction)
+                                       ,@(copy-list tensor-list)))
+                 (contracted-tensor (get-contracted-temp-tensor
+                                     contraction-tensor)))
+
+            (logger "~&amp;temp-tensor... ~a" contracted-tensor)
+
+            (if (match-target-with-tensor target
+                                          contracted-tensor
+                                          :orbital-spaces orbital-spaces)
+                contraction
+                :no-match))))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((*filter-node-symmetry* nil)
+      (orbital-spaces '((H I J K L h1 h2 h3)
+                        (P A B C D p1 p2 p3)
+                        (G g)))
+      (contraction-rules '(((H H) 0 1)
+                           ((P P) 1 0)))
+      (|_ H P H| '(_ (G H) (P H)))
+      (|P H P H| '(_ (P H) (P H)))
+      (|Vhhpp * Tpphh * Tpphh| '((V (i a) (j b))
+                                 (T (c k) (d l))
+                                 (T (p1 h1) (p2 h2))))
+      (|Vhphp * Thp * Rh| '((V (J I) (A B))
+                            (T (C K))
+                            (R (G L)))))
+  (macrolet ((assert-with-env (fun-applied value)
+               `(assert
+                 (equal
+                  ,(concatenate 'list fun-applied '(:orbital-spaces
+                                                    orbital-spaces
+                                                    :contraction-rules
+                                                    contraction-rules))
+                        ,value))))
+
+    ;; with self-contractions
+    (let ((*allow-self-contractions* t))
+
+      (assert-with-env
+       (find-contractions-in-product-by-target |_ H P H| |Vhphp * Thp * Rh|)
+       '(((B A) (J I))
+         ((B C) (J I))
+         ((B A) (J K))
+         ((B C) (J K))
+         ((B A) (J L))
+         ((B C) (J L))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (P H))
+                                             '((f (a b)) (t (c i))))
+     '(((B A)) ((B C))))
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (G H))
+                                             '((f (a b)) (t (c i))))
+     '())
+
+    (assert-with-env
+     (find-contractions-in-product-by-target '(_ (H P))
+                                             '((f (a b)) (t (c i))))
+     '()))))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun contract-expressions-by-target
+    (target expression &amp;key orbital-spaces contraction-rules)
+  (let ((products (expr-to-lists expression))
+        sums)
+    (setq sums
+          (loop
+            for product in products
+            appending
+            (progn (print product)
+                   (let ((contractions
+                           (find-contractions-in-product-by-target target product
+                                                                   :orbital-spaces
+                                                                   orbital-spaces
+                                                                   :contraction-rules
+                                                                   contraction-rules)))
+                     (mapcar (lambda (x) `((contraction ,x) ,@product))
+                             contractions)))))
+    `(+ ,@sums)))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">
+(let ((*allow-self-contractions* t)
+      (*filter-node-symmetry* nil))
+  (assert-equal
+   (contract-expressions-by-target '(_ (P H))
+                                   '(* (+ (f (a b)) (f (i j)))
+                                     (t (c k)))
+                                   :orbital-spaces
+                                   '((H i j k)
+                                     (P a b c))
+                                   :contraction-rules
+                                   '(((H H) 0 1)
+                                     ((P P) 1 0)))
+   '(+ ((CONTRACTION ((B A))) (F (A B)) (T (C K)))
+     ((CONTRACTION ((B C))) (F (A B)) (T (C K)))
+     ((CONTRACTION ((I J))) (F (I J)) (T (C K)))
+     ((CONTRACTION ((I K))) (F (I J)) (T (C K))))))
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org6fbdbe6" class="outline-2">
+<h2 id="org6fbdbe6"><span class="section-number-2">11.</span> Help routines</h2>
+<div class="outline-text-2" id="text-11">
+<p>
+TOOD: Explain that all indices must be different and so on
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun space-subseq (&amp;key orbital-spaces from-index)
+  (mapcar (lambda (space)
+            (handler-case `(,(car space)
+                            ,@(subseq (cdr space) from-index))
+              (condition ()
+                (error (concatenate
+                        'string
+                        "Dear user: "
+                        "When partitioning tensors, all spaces "
+                        "should have a long enough length to cut "
+                        "through the leg names using from-index. "
+                        "~&amp;In this case "
+                        "the space ~s needs at least more "
+                        "than ~s elements "
+                        "BUT it currently has ~s ")
+                       space from-index (length (cdr space))))))
+          orbital-spaces))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(assert-equal (space-subseq :orbital-spaces '((H 1 2 3 4) (P a b c) (G g g2))
+                            :from-index 2)
+              '((H 3 4) (P c) (G)))
+</pre>
+</div>
+
+<p>
+TODO:: Explain how one to do the naming of tensors so that everything works well
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(defun name-legs-by-space-name (tensor-description &amp;key orbital-spaces (from-index 0))
+  (let ((orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index))))
+
+    `(,(car tensor-description)
+      ,@(loop for index-description in (cdr tensor-description)
+              collect
+              (loop for space-name in index-description
+                    collect
+                    (let ((space (find-space-by-name space-name orbital-spaces-copy)))
+                      (if (cdr space)
+                          (pop (cdr space))
+                          (error "Not enough leg names given for space ~a~%"
+                                 space))))))
+    ))
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((vals '((0 . (t (h1 p1) (p2 h2)))
+              (1 . (t (h2 p2) (p3 h3)))
+              (2 . (t (h3 p3) (p4 h4))))))
+  (loop for (from-index . result) in vals
+        do (assert (equal
+                    (name-legs-by-space-name
+                     '(t (H P) (P H))
+                     :orbital-spaces '((H h1 h2 h3 h4) (P p1 p2 p3 p4))
+                     :from-index from-index)
+                    result))))
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org2e7d2e2" class="outline-3">
+<h3 id="org2e7d2e2"><span class="section-number-3">11.1.</span> Partitions</h3>
+<div class="outline-text-3" id="text-11-1">
+<p>
+TODO: Explain the concept of partitioning and the format
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defun partition-tensor (tensor &amp;key orbital-spaces partition (from-index 0))
+  (let ((name (car tensor))
+        (indices (cdr tensor))
+        (orbital-spaces-copy (copy-tree
+                              (space-subseq :orbital-spaces orbital-spaces
+                                            :from-index from-index)))
+        new-indices-unexpanded)
+    (setq
+     new-indices-unexpanded
+     (mapcar
+      (lambda (index)
+        (mapcar
+         (lambda (leg)
+           (let* ((space (find-space-by-leg leg orbital-spaces))
+                  (space-name (car space))
+                  (partition (find space-name partition :key #'car)))
+             (if partition
+                 ;; we found a partition
+                 (mapcar (lambda (-space-name)
+                           (let* ((space (find-space-by-name
+                                          -space-name
+                                          orbital-spaces-copy)))
+                             (if (cdr space) ;; available leg names
+                                 (pop (cdr space))
+                                 (error "Not enough leg names given for space ~a~%"
+                                        space))))
+                         ;; elements of the partition (e.g H P)
+                         (cdr partition))
+                 (list leg))))
+         index))
+      indices))
+    (let ((new-indices (eval `(cartesian-product
+                               ,@(mapcar (lambda (index-set)
+                                           (eval `(cartesian-product ,@index-set)))
+                                         new-indices-unexpanded)))))
+      `(+ ,@(mapcar (lambda (ids) `(,name ,@ids))
+                   new-indices)))))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+
+  (partition-tensor '(f (p q))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)
+  (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition))
+
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9936911" class="outline-2">
+<h2 id="org9936911"><span class="section-number-2">12.</span> API</h2>
+<div class="outline-text-2" id="text-12">
+<p>
+In this section we will present most functions that will be useful
+using the library from a user perspective in order to contract
+expressions.
+</p>
+
+<p>
+From the discussion up to know, some points should be noted:
+</p>
+
+<ul class="org-ul">
+<li>the names of the tensors is meaningful and they should be equal
+only in reference to symmetries.
+In general, one should name the many-body components
+of a tensor differently, i.e. for instance
+<code>(T2 (a i) (b j))</code>
+and
+<code>(T1 (a i))</code>.</li>
+<li>All the legs in an expression should be named differently.</li>
+</ul>
+</div>
+
+<div id="outline-container-orgbdf3b18" class="outline-3">
+<h3 id="orgbdf3b18"><span class="section-number-3">12.1.</span> Particle hole picture</h3>
+<div class="outline-text-3" id="text-12-1">
+<p>
+In order to design a good user interface, we should make it as clear
+and as modular as possible for the user, and reading these lines
+one should be convinced that it is not too much effort to design
+your own interface if this one does not suit you.
+</p>
+
+<p>
+Generally we will want to define tensors generally
+in the real vacuum description and partition the tensor
+in holes and particles.
+</p>
+
+<p>
+For our purposes let us denote fix the index space:
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(PQ pq1 pq2 pq3 ...) ;; real vacuum indices
+(P  p1 p2 p3 ...)    ;; particle indices
+(H  h1 h2 h3 ...)    ;; hole indices
+</pre>
+</div>
+
+<p>
+Then we will want to turn
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(Vpqrs (PQ1 PQ2) (PQ3 PQ4))
+</pre>
+</div>
+<p>
+into all 16 combinations
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(Vhhpp (h1 p1) (h2 p2))
+(Vhphp (h1 h2) (p1 p2))
+;; ...
+</pre>
+</div>
+
+<p>
+Actually we will want less combinations since
+by virtue of node symmetry we should consider
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(Vhphp (h1 h2) (p1 p2))
+;; and
+(Vhphp (p1 p2) (h1 h2))
+</pre>
+</div>
+<p>
+equivalent.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defpackage :arponen/hole-particle-picture
+  (:use :cl :arponen)
+  (:nicknames :hp))
+(in-package :arponen/hole-particle-picture)
+
+(defvar *default-orbital-spaces*
+  '((H)   ;; holes
+    (P)   ;; particles
+    (G)   ;; general (or rather ghosts)
+    (PH)) ;; particle-holes (real vacuum)
+  "Orbital space for the default particle-hole picture")
+(defvar *orbital-spaces* (copy-tree *default-orbital-spaces*))
+
+(defvar *default-orbital-spaces-counter*
+  '((H . 0)
+    (P . 0)
+    (G . 0)
+    (PH . 0))
+  "Current index for the orbital spaces")
+(defvar *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
+
+(defvar *default-space-partition*
+  '((PH H P)))
+(defvar *space-partition* (copy-tree *default-space-partition*))
+
+(defvar *contraction-rules* '(((H H) 0 1)
+                              ((P P) 1 0))
+  "The conctractions that are not zero.")
+
+(defun reset-spaces ()
+  (setq *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
+  (setq *orbital-spaces* (copy-tree *default-orbital-spaces*))
+  (values *orbital-spaces* *orbital-spaces-counter*))
+
+;; simple useful functions for knowing which kind of index we have
+(defun hole-p (idx) (char= (char (symbol-name idx) 0) #\H))
+(defun particle-p (idx) (char= (char (symbol-name idx) 0) #\P))
+
+(defun genindex (space-name)
+  (let ((counter (find space-name *orbital-spaces-counter* :key #'car))
+        (space (position space-name *orbital-spaces* :key #'car)))
+    (unless (and counter space) (error "~&amp;The name ~s is not one of ~s"
+                                       space-name
+                                       (mapcar #'car *orbital-spaces*)))
+    (let ((new-index
+            (intern (format nil "~a~a" space-name (incf (cdr counter))))))
+      (setf (nth space *orbital-spaces*)
+            (append (nth space *orbital-spaces*) (list new-index)))
+      new-index)))
+
+(defun name-legs-by-space-name-1 (tensor-description)
+  (arponen::traverse-legs #'genindex tensor-description))
+
+
+(defun do-partition-node-description (node &amp;key partition)
+  (eval `(arponen::cartesian-product
+          ,@(mapcar (lambda (leg)
+                      (let ((p (find leg partition :key #'car)))
+                        (if p (cdr p) (list leg))))
+                    node))))
+
+
+(defun partition-tensor-description (tensor-description &amp;key partition)
+  (destructuring-bind (name . nodes) tensor-description
+    (let* ((p-node-lists (mapcar (lambda (n)
+                                   (do-partition-node-description n
+                                     :partition partition)) nodes))
+           (new-node-lists (eval `(arponen::cartesian-product ,@p-node-lists))))
+      (mapcar (lambda (nodes) `(,name ,@nodes)) new-node-lists))))
+
+
+(defun remove-1-in-product-list (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+(defun filter-tensors-by-symmetries (symmetries-list tensor-list)
+  (let (result)
+    (mapc (lambda (sym tsr)
+            (let ((new-tsrs (arponen::apply-symmetries-to-nodes sym tsr)))
+              (unless (intersection (cons tsr new-tsrs) result :test #'equal)
+                (push tsr result))))
+          symmetries-list tensor-list)
+    (reverse result)))
+
+(defun filter-tensors-by-symmetries-and-description
+    (symmetries tensor-list &amp;key orbital-spaces)
+  (mapcar #'cadr
+          (remove-duplicates
+           (mapcar #'list symmetries tensor-list)
+           :test
+           (lambda (x y)
+             (let* ((all-x (cons (cadr x)
+                                 (arponen::apply-symmetries-to-nodes (car x) (cadr x))))
+                    (all-y (cons (cadr y)
+                                 (arponen::apply-symmetries-to-nodes (car y) (cadr y))))
+                    (x-descr (mapcar (lambda (-x)
+                                       (arponen::tensor-to-description -x
+                                                                       :orbital-spaces
+                                                                       orbital-spaces))
+                                     all-x))
+                    (y-descr (mapcar (lambda (-y)
+                                       (arponen::tensor-to-description -y
+                                                                       :orbital-spaces
+                                                                       orbital-spaces))
+                                     all-y)))
+               (intersection x-descr y-descr :test #'equal))))))
+
+(defun partition-symmetrize-and-filter (tensor-description &amp;key unrestricted)
+  (let* ((tensors (mapcar #'name-legs-by-space-name-1
+                          (partition-tensor-description tensor-description
+                                                        :partition
+                                                        *space-partition*)))
+         (arponen::*filter-parity-symmetry* unrestricted)
+         symmetries)
+    (print tensors)
+    (when arponen::*filter-node-symmetry*
+      (setq symmetries
+            (mapcar (lambda (x) (arponen::make-node-symmetry (cdr x)))
+                    tensors)))
+    (when arponen::*filter-parity-symmetry*
+      (setq symmetries
+            (append symmetries
+                    (mapcar (lambda (x)
+                              (arponen::make-parity-symmetry (cdr x)))
+                            (remove-duplicates
+                             (reduce #'append
+                                     (arponen::apply-symmetries-to-nodes symmetries
+                                                                         tensors))
+                             :test #'equal)))))
+    (filter-tensors-by-symmetries-and-description symmetries
+                                                  tensors
+                                                  :orbital-spaces
+                                                  *orbital-spaces*)))
+(defmacro ! (name &amp;rest nodes)
+  `'(,name ,@nodes))
+
+(defmacro !! (name &amp;rest nodes)
+  (let ((tensor-description `(,name ,@nodes)))
+    `'(+ ,@(partition-symmetrize-and-filter tensor-description))))
+
+(defmacro .* (&amp;rest args)
+  `(list '* ,@args))
+
+(defmacro .+ (&amp;rest args)
+  `(arponen::tensor-sum ,@args))
+
+;; TODO: node-symmetry ein und auschalten
+(defun contract (target expression &amp;key (node-symmetry t) (only-connected nil)
+                                     (unrestricted nil))
+  (let* ((expanded (remove-1-in-product-list (arponen::expr-to-lists expression)))
+         (n (length expanded))
+         (arponen::*only-connected-diagrams* only-connected)
+         (arponen::*allow-self-contractions* nil)
+         (arponen::*filter-parity-symmetry* unrestricted)
+         (i 0))
+    (remove-if #'null
+               (mapcar (lambda (tensor-product)
+                         (format t "~&amp;[~a/~a] ~a" (incf i) n tensor-product)
+                         (let ((begin (get-internal-run-time))
+                               (contractions
+                                 (arponen::find-contractions-in-product-by-target
+                                  target
+                                  tensor-product
+                                  :orbital-spaces
+                                  *orbital-spaces*
+                                  :contraction-rules
+                                  *contraction-rules*)))
+                           (format t "~2t in (~,1f seconds)"
+                                   (/ (- (get-internal-run-time) begin)
+                                      internal-time-units-per-second))
+                           (when contractions
+                             (list `(contractions ,contractions) tensor-product))))
+                       expanded))))
+
+(defun save-contractions (file-name contractions &amp;key format)
+  (with-open-file (s file-name :if-exists :supersede :direction :output)
+    (case format
+      (t (format s "~s" contractions)))))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(in-package :hp)
+(import 'arponen::assert-equal)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(progn
+  (reset-spaces)
+  (print *default-orbital-spaces*)
+  (dotimes (i 10)
+    (when (zerop (mod i 2)) (genindex 'P))
+    (genindex 'H))
+  (assert (eq (genindex 'H) 'H11))
+  (assert (eq (genindex 'H) 'H12))
+  (assert (eq (genindex 'P) 'P6))
+  (assert (eq (genindex 'G) 'G1))
+  (assert (eq (genindex 'ph) 'ph1))
+  (reset-spaces)
+  (assert (eq (genindex 'H) 'H1))
+  (reset-spaces))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(assert-equal (do-partition-node-description '(H P)
+                :partition '((PH H P)))
+              '((H P)))
+(assert-equal (do-partition-node-description '(H P)
+                :partition '((P |a| A)))
+              '((H |a|) (H A)))
+(assert-equal (do-partition-node-description '(PH P)
+                :partition '((PH H P)))
+              '((H P) (P P)))
+(assert-equal (do-partition-node-description '(PH PH)
+                :partition '((PH H P)))
+              '((H H) (H P) (P H) (P P)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(reset-spaces)
+(assert-equal (name-legs-by-space-name-1 '(t2 (P H) (P H)))
+              '(t2 (p1 h1) (p2 h2)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(assert-equal (partition-tensor-description '(T2 (HP HP))
+                                            :partition '((HP P H)))
+              '((T2 (P P)) (T2 (P H)) (T2 (H P)) (T2 (H H))))
+(assert-equal (partition-tensor-description '(T2 (HP H))
+                                            :partition '((HP P H)))
+              '((T2 (P H)) (T2 (H H))))
+(assert-equal (partition-tensor-description '(T2 (HP HP) (HP HP))
+                                            :partition '((HP H P)))
+              '((T2 (H H) (H H))
+                (T2 (H H) (H P))
+                (T2 (H H) (P H))
+                (T2 (H H) (P P))
+                (T2 (H P) (H H))
+                (T2 (H P) (H P))
+                (T2 (H P) (P H))
+                (T2 (H P) (P P))
+                (T2 (P H) (H H))
+                (T2 (P H) (H P))
+                (T2 (P H) (P H))
+                (T2 (P H) (P P))
+                (T2 (P P) (H H))
+                (T2 (P P) (H P))
+                (T2 (P P) (P H))
+                (T2 (P P) (P P))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(filter-tensors-by-symmetries '((((P . H) (H . P)))
+                                (((H . P) (P . H))))
+                              '((V (P H) (H P))
+                                (V (H P) (P H))))
+
+(assert-equal (arponen::apply-symmetries-to-nodes '(((H1 . H3) (H2 . H4))
+                                   ((H1 . H2))
+                                   ((H3 . H4)))
+                                               '(V (H1 H2) (H3 H4)))
+              '((V (H3 H4) (H1 H2)) (V (H2 H1) (H3 H4)) (V (H1 H2) (H4 H3))))
+
+(arponen::make-node-symmetry '((P H) (H P)))
+(arponen::make-node-symmetry '((P H) (P P) (A B)))
+(arponen::apply-symmetry-to-nodes '((P . P) (H . P))
+                               '(V (P H) (P P)))
+
+
+(arponen::apply-symmetry-to-nodes '((P . H) (H . P))
+                               '(V (P H) (H P)))
+'((V (H1 H2) (H3 H4))      ;; Vijkl
+  (V (H13 P5) (H14 H15))   ;; Vijak
+  (V (H16 P6) (H17 P7))    ;; Vijab
+  (V (P13 H21) (H22 H23))  ;; Vaijk
+  (V (P14 H24) (H25 P15))  ;; Vaijb
+  (V (P16 H26) (P17 H27))  ;; Vabij
+  (V (P21 P22) (H29 H30))  ;; Vaibj
+  (V (P23 P24) (H31 P25))  ;; Vaibc
+  (V (P26 P27) (P28 H32))  ;; Vabci
+  (V (P29 P30) (P31 P32))) ;; Vabcd
+
+(progn (reset-spaces)
+       (partition-symmetrize-and-filter '(V (PH PH) (PH PH)) :unrestricted t))
+
+(assert-equal (! V (a b) (c d))
+              '(V (a b) (c d)))
+
+(progn
+  (reset-spaces)
+  (let* ((arponen::*print-log* nil)
+
+         (t2 (!! t2 (P H) (P H)))
+
+         (vaibj (!! V (P P) (H H)))
+         (vaijb (!! V (P H) (H P)))
+         (V (.+ vaijb vaibj))
+         (H (.+ v))
+         ;; t1 amplitudes
+         (t1 (!! T1 (P H)))
+         (fai (!! f (P H)))
+         ;; the whole expression to contract
+         ;; i.e. Hamiltonian times T amplitudes
+         (expression (.* H t1))
+         (expression-2 (.* (.+ fai)
+                           (.+ 1 t1)))
+
+         ;; targets for the diagrams search space
+         (%singles (! _ (P H)))
+         (%doubles (! _ (P H) (P H)))
+
+         (contractions (contract %singles expression
+                                 :unrestricted t
+                                 :only-connected t)))
+
+    (format nil "Processing singles~%")
+
+    (assert-equal (arponen::expr-to-lists expression)
+                  '(((V (P3 H3) (H4 P4)) (T1 (P2 H2)))
+                    ((V (P5 P6) (H5 H6)) (T1 (P2 H2)))))
+
+
+    ;; it should be possible to just find an uncontracted diagram
+    (assert-equal (contract %singles expression-2
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (NIL)) ((F (P1 H1))))))
+
+    (assert-equal (arponen/hole-particle-picture::remove-1-in-product-list
+                   (arponen::expr-to-lists expression-2))
+                  '(((F (P1 H1))) ((F (P1 H1)) (T1 (P2 H2)))))
+
+    (assert-equal (contract %doubles (.* vaibj t2)
+                            :unrestricted t
+                            :only-connected t)
+                  '(((CONTRACTIONS (((H5 H7) (P6 P7))))
+                     ((V (P5 P6) (H5 H6)) (T2 (P7 H7) (P8 H8))))))
+
+    (let ((c (contract %doubles (.* H t2)
+                       :unrestricted t
+                       :only-connected t)))
+      (assert-equal (length c) 2))
+    ))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org84315d8" class="outline-2">
+<h2 id="org84315d8"><span class="section-number-2">13.</span> Examples</h2>
+<div class="outline-text-2" id="text-13">
+</div>
+<div id="outline-container-orgedf52c6" class="outline-3">
+<h3 id="orgedf52c6"><span class="section-number-3">13.1.</span> Ccsd equations</h3>
+<div class="outline-text-3" id="text-13-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(load "arponen.lisp")
+(in-package :hp)
+(let* ((arponen::*print-log* nil)
+
+       ;; define the hamiltonian through
+       ;; a particle-hole partition PH
+       ;;
+       ;; one-body matrix
+       (f (!! f (PH PH)))
+       ;; two-body matrix
+       (v (!! V (PH PH) (PH PH )))
+       ;; the sum
+       (h (.+ v f))
+
+       ;; t1 amplitudes
+       (t1 (!! T1 (P H)))
+       (t1- (!! T1 (P H)))
+
+       ;; t2 amplitudes
+       (t2 (!! T2 (P H) (P H)))
+       (t2- (!! T2 (P H) (P H)))
+
+       ;; the whole expression to contract
+       ;; i.e. Hamiltonian times T amplitudes
+       (expression
+         (.* h
+             (.+ 1 t1 t2 (.* t1 t1-) (.* t1 t2) (.* t2 t2-))))
+
+       ;; targets for the diagrams search space
+       (singles (! _ (P H)))
+       (doubles (! _ (P H) (P H))))
+
+  (format nil "Processing singles~%")
+  (save-contractions "singles.lisp"
+                     (contract singles expression
+                               :unrestricted t
+                               :only-connected t))
+
+  (format nil "Processing doubles~%")
+  (save-contractions "doubles.lisp"
+                     (contract doubles expression
+                               :unrestricted t
+                               :only-connected t)))
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-org7d56efd" class="outline-4">
+<h4 id="org7d56efd"><span class="section-number-4">13.1.1.</span> Singles</h4>
+<div class="outline-text-4" id="text-13-1-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(defvar *ccsd-singles*
+  '(((CONTRACTIONS (((H18 H39) (H17 H40) (P9 P39)) ((H18 H40) (H17 H39) (P9 P39))))
+     ((V (H17 P9) (H18 H19)) (T2 (P39 H39) (P40 H40))))
+    ((CONTRACTIONS (((H18 H37) (H17 H38) (P9 P37)) ((H18 H38) (H17 H37) (P9 P37))))
+     ((V (H17 P9) (H18 H19)) (T1 (P37 H37)) (T1 (P38 H38))))
+    ((CONTRACTIONS
+      (((H21 H37) (P11 P37) (H20 H40) (P10 P40)) ((H21 H40) (P11 P37) (P10 P40) (H20 H39))
+       ((P11 P40) (H21 H37) (H20 H40) (P10 P39)) ((H21 H37) (P11 P37) (H20 H40) (P10 P39))
+       ((H21 H40) (P11 P37) (H20 H39) (P10 P39)) ((P11 P40) (H21 H37) (H20 H39) (P10 P39))
+       ((H21 H40) (P11 P37) (P10 P40) (H20 H37)) ((H21 H40) (P11 P40) (H20 H39) (P10 P37))
+       ((H21 H40) (P11 P40) (P10 P39) (H20 H37)) ((H21 H40) (P11 P39) (H20 H39) (P10 P37))
+       ((P11 P40) (H21 H39) (P10 P39) (H20 H37)) ((H21 H40) (P11 P37) (P10 P39) (H20 H37))
+       ((P11 P40) (H21 H37) (H20 H39) (P10 P37)) ((P11 P39) (H21 H37) (H20 H39) (P10 P37))
+       ((P11 P40) (H21 H39) (H20 H37) (P10 P37)) ((H21 H39) (P11 P39) (H20 H37) (P10 P37))))
+     ((V (H20 P10) (H21 P11)) (T1 (P37 H37)) (T2 (P39 H39) (P40 H40))))
+    ((CONTRACTIONS (((H29 H37) (P19 P37)))) ((V (P18 H28) (H29 P19)) (T1 (P37 H37))))
+    ((CONTRACTIONS (((H33 H37) (P26 P37)))) ((V (P25 P26) (H33 H34)) (T1 (P37 H37))))
+    ((CONTRACTIONS (((H35 H40) (P29 P40) (P28 P39)) ((P29 P40) (H35 H39) (P28 P39))))
+     ((V (P27 P28) (H35 P29)) (T2 (P39 H39) (P40 H40))))
+    ((CONTRACTIONS (((H35 H38) (P29 P38) (P28 P37)) ((P29 P38) (H35 H37) (P28 P37))))
+     ((V (P27 P28) (H35 P29)) (T1 (P37 H37)) (T1 (P38 H38))))
+    ((CONTRACTIONS (((H1 H37)))) ((F (H1 H2)) (T1 (P37 H37))))
+    ((CONTRACTIONS (((P1 P40) (H3 H39)) ((H3 H39) (P1 P39)))) ((F (H3 P1)) (T2 (P39 H39) (P40 H40))))
+    ((CONTRACTIONS (((P1 P38) (H3 H37)))) ((F (H3 P1)) (T1 (P37 H37)) (T1 (P38 H38))))
+    ((CONTRACTIONS (((P4 P37)))) ((F (P3 P4)) (T1 (P37 H37))))))
+
+
+(defun latex-sum-contractions (contractions-tuples)
+  (format nil "\\sum_{~{~a~^,~}}" (mapcar #'cadr contractions-tuples)))
+
+
+(defun latex-contractions (contractions)
+  (let* ((conts (cadar contractions))
+         (product `(* ,@(cadr contractions)))
+         (substitutions (mapcar (lambda (-conts)
+                                  (mapcar (lambda (c) (cons (car c) (cadr c)))
+                                          -conts))
+                                conts))
+         (substituted-products (mapcar (lambda (-subs) (sublis -subs product))
+                                       substitutions))
+         (text-contractions (mapcar #'latex-sum-contractions conts))
+         (text-products (mapcar #'arponen::latex substituted-products)))
+    (format nil "~{~a~}" (mapcar (lambda (c p) (format nil "~a ~a~%" c p))
+            text-contractions text-products))))
+
+(defun latex-all-contractions (conts)
+  (format nil "~{~a~}" (mapcar #'latex-contractions conts)))
+
+(print (latex-all-contractions *ccsd-singles*))
+</pre>
+</div>
+
+
+
+
+<p>
+\[
+\sum_{H_{39},H_{40},P_{39}} V^{H_{40}H_{39}}_{P_{39}H_{19}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},H_{39},P_{39}} V^{H_{39}H_{40}}_{P_{39}H_{19}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37},H_{38},P_{37}} V^{H_{38}H_{37}}_{P_{37}H_{19}} T1^{P_{37}}_{H_{37}} T1^{P_{38}}_{H_{38}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{38},H_{37},P_{37}} V^{H_{37}H_{38}}_{P_{37}H_{19}} T1^{P_{37}}_{H_{37}} T1^{P_{38}}_{H_{38}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37},P_{37},H_{40},P_{40}} V^{H_{40}H_{37}}_{P_{40}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{37},P_{40},H_{39}} V^{H_{39}H_{40}}_{P_{40}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{37},H_{40},P_{39}} V^{H_{40}H_{37}}_{P_{39}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37},P_{37},H_{40},P_{39}} V^{H_{40}H_{37}}_{P_{39}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{37},H_{39},P_{39}} V^{H_{39}H_{40}}_{P_{39}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{37},H_{39},P_{39}} V^{H_{39}H_{37}}_{P_{39}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{37},P_{40},H_{37}} V^{H_{37}H_{40}}_{P_{40}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{40},H_{39},P_{37}} V^{H_{39}H_{40}}_{P_{37}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{40},P_{39},H_{37}} V^{H_{37}H_{40}}_{P_{39}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{39},H_{39},P_{37}} V^{H_{39}H_{40}}_{P_{37}P_{39}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{39},P_{39},H_{37}} V^{H_{37}H_{39}}_{P_{39}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{37},P_{39},H_{37}} V^{H_{37}H_{40}}_{P_{39}P_{37}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{37},H_{39},P_{37}} V^{H_{39}H_{37}}_{P_{37}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{39},H_{37},H_{39},P_{37}} V^{H_{39}H_{37}}_{P_{37}P_{39}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{39},H_{37},P_{37}} V^{H_{37}H_{39}}_{P_{37}P_{40}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{39},P_{39},H_{37},P_{37}} V^{H_{37}H_{39}}_{P_{37}P_{39}} T1^{P_{37}}_{H_{37}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37},P_{37}} V^{P_{18}H_{37}}_{H_{28}P_{37}} T1^{P_{37}}_{H_{37}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37},P_{37}} V^{P_{25}H_{37}}_{P_{37}H_{34}} T1^{P_{37}}_{H_{37}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{40},P_{40},P_{39}} V^{P_{27}H_{40}}_{P_{39}P_{40}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{39},P_{39}} V^{P_{27}H_{39}}_{P_{39}P_{40}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{38},P_{38},P_{37}} V^{P_{27}H_{38}}_{P_{37}P_{38}} T1^{P_{37}}_{H_{37}} T1^{P_{38}}_{H_{38}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{38},H_{37},P_{37}} V^{P_{27}H_{37}}_{P_{37}P_{38}} T1^{P_{37}}_{H_{37}} T1^{P_{38}}_{H_{38}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{37}} F^{H_{37}}_{H_{2}} T1^{P_{37}}_{H_{37}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{40},H_{39}} F^{H_{39}}_{P_{40}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{H_{39},P_{39}} F^{H_{39}}_{P_{39}} T2^{P_{39}P_{40}}_{H_{39}H_{40}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{38},H_{37}} F^{H_{37}}_{P_{38}} T1^{P_{37}}_{H_{37}} T1^{P_{38}}_{H_{38}} 
+\]
+</p>
+
+<p>
+\[
+\sum_{P_{37}} F^{P_{3}}_{P_{37}} T1^{P_{37}}_{H_{37}} 
+\]
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgbfe33c4" class="outline-3">
+<h3 id="orgbfe33c4"><span class="section-number-3">13.2.</span> IP Equation of motion CCSD</h3>
+<div class="outline-text-3" id="text-13-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(load "arponen.lisp")
+(in-package :arponen)
+
+(defun make-space (name prefix n)
+  `(,name ,@(mapcar (lambda (i)
+                      (intern (format nil "~a~a" prefix i)))
+                    (loop for i from 1 to n collect i))))
+
+(defun remove-1 (prod-list)
+  (mapcar (lambda (product)
+            (remove-if (lambda (el) (or (eq el 1) (equal el '(1))))
+                       product))
+          prod-list))
+
+(defun contract-expression (target expr &amp;key orbital-spaces contraction-rules)
+  (let* ((expanded (remove-1 (expr-to-lists expr)))
+         (n (length expanded))
+         (i 0))
+    (remove-if
+     #'null
+     (mapcar
+      (lambda (tensor-product)
+        (format t "~&amp;[~a/~a] ~a" (incf i) n tensor-product)
+        (let ((begin (get-internal-run-time))
+              (contractions
+                (find-contractions-in-product-by-target target
+                                                        tensor-product
+                                                        :orbital-spaces
+                                                        orbital-spaces
+                                                        :contraction-rules
+                                                        contraction-rules)))
+          (format t "~2t in (~,1f seconds)"
+                  (/ (- (get-internal-run-time) begin)
+                     internal-time-units-per-second))
+          (when contractions
+            (list `(contractions ,contractions) tensor-product))))
+      expanded))))
+
+
+
+(defun tensor-sum (&amp;rest args)
+  `(+ ,@(reduce (lambda (tsr rest) (ccase (car tsr)
+                                     ('+ (append (cdr tsr) rest))
+                                     (t (cons tsr rest))))
+                args
+                :from-end t
+                :initial-value nil)))
+
+(let* ((orbital-spaces
+         (list (append (make-space 'H 'h 20) '(i j k l m n))
+               (append (make-space 'P 'p 20) '(a b c d e f))
+               (make-space 'G 'g 20)
+               (append (make-space 'pq 'pq- 20) '(p q r s))))
+
+       (*only-connected-diagrams* t)
+
+       (partition '((PQ H P)))
+
+       (contraction-rules
+         '(((H H) 0 1)
+           ((P P) 1 0)))
+
+       ;; tensors
+       vpqrs f t1 t2 r1 r2
+
+       (r1-like '(_ (G H)))
+       (r2-like '(_ (G H) (P H)))
+
+       ccsd-expressions)
+
+  (setq *print-log* nil)
+  (setq vpqrs (partition-tensor '(V (p q) (r s))
+                                :orbital-spaces orbital-spaces
+                                :partition partition))
+
+  (setq f (partition-tensor '(f (p q))
+                            :orbital-spaces orbital-spaces
+                            :partition partition
+                            :from-index 4))
+
+  (setq t1 (name-legs-by-space-name '(T1 (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 6))
+
+  (setq -t1 (name-legs-by-space-name '(T1 (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 7))
+
+  (setq t2 (name-legs-by-space-name '(T2 (P H) (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 8))
+
+  (setq -t2 (name-legs-by-space-name '(T2 (P H) (P H))
+                                     :orbital-spaces orbital-spaces
+                                     :from-index 10))
+
+  (setq r1 (name-legs-by-space-name '(R1 (G H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 12))
+
+  (setq r2 (name-legs-by-space-name '(R2 (G H) (P H))
+                                    :orbital-spaces orbital-spaces
+                                    :from-index 13))
+
+
+  (setq ccsd-expressions
+        `(* ,(tensor-sum f vpqrs)
+                       (+ 1 ,t1 ,t2 (* ,t1 ,-t1) (* ,t1 ,t2) (* ,t2 ,-t2))
+                       (+ ,r1 ,r2)))
+  (format t "~&amp;======~&amp;=&gt; ~a" ccsd-expressions)
+
+  (format t "~&amp;~&amp; DOING R1")
+  (with-open-file (s "r1.lisp" :direction :output :if-exists :supersede)
+    (time (format s "~s"
+                  (contract-expression r1-like
+                                       ccsd-expressions
+                                       :orbital-spaces orbital-spaces
+                                       :contraction-rules contraction-rules))))
+
+  (format t "~&amp;~&amp; DOING r2")
+  (with-open-file (s "r2.lisp" :direction :output :if-exists :supersede)
+    (time (format s "~s"
+            (contract-expression r2-like
+                                 ccsd-expressions
+                                 :orbital-spaces orbital-spaces
+                                 :contraction-rules contraction-rules))))
+
+  (format t "~&amp;~&amp;Done"))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgbefb7ed" class="outline-2">
+<h2 id="orgbefb7ed"><span class="section-number-2">14.</span> Integration tests</h2>
+<div class="outline-text-2" id="text-14">
+</div>
+<div id="outline-container-org22ba1cd" class="outline-3">
+<h3 id="org22ba1cd"><span class="section-number-3">14.1.</span> Hirata</h3>
+<div class="outline-text-3" id="text-14-1">
+<p>
+The tensor contraction engine of Hirata
+is a python based tensor contraction system
+that is able to produce many kinds of equations
+in an unrestricted formalism.
+It has been thoroughly tested and veted
+by many codes and researchers and it is a great
+candidate for testing against.
+</p>
+
+
+<p>
+For this we wrote a parser to convert the hirata
+equations into arponen expressions,
+you can read the details <a href="tests/hirata/README.html">here</a>.
+</p>
+</div>
+
+<div id="outline-container-org5d51b3a" class="outline-4">
+<h4 id="org5d51b3a"><span class="section-number-4">14.1.1.</span> CCD</h4>
+<div class="outline-text-4" id="text-14-1-1">
+<p>
+The CCD equations are represented in arponen using
+the following input
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(in-package :hp)
+
+
+(hp::reset-spaces)
+
+(let* ((arponen::*print-log* nil)
+       (f (!! f (PH PH)))
+       (v (!! V (PH PH) (PH PH)))
+       (h (.+ v f))
+
+       ;; \(t^{ab}_{ij}\) amplitudes
+       (t2 (!! T2 (P H) (P H)))
+       (t2- (!! T2_2 (P H) (P H)))
+
+       (expression
+         (.* h
+             (.+ t2 (.* t2 t2-))))
+
+       (doubles (! _ (P H) (P H))))
+
+  (format nil "Processing doubles~%")
+  (save-contractions "doubles.lisp"
+                     (contract doubles expression
+                               :unrestricted t
+                               :only-connected t)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9c1eaa0" class="outline-4">
+<h4 id="org9c1eaa0"><span class="section-number-4">14.1.2.</span> MP2</h4>
+<div class="outline-text-4" id="text-14-1-2">
+<p>
+The MP2 energy equation should be like
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(in-package :hp)
+
+(hp::reset-spaces)
+
+(let* ((arponen::*print-log* nil)
+       (v (!! V (H P) (H P)))
+       ;; \(t^{ab}_{ij}\) amplitudes
+       (t2 (!! T2 (P H) (P H)))
+
+       (expression (.* v t2))
+
+       (target (! _)))
+
+  (format nil "Processing doubles~%")
+  expression
+  (save-contractions "out.lisp"
+                     (contract target expression
+                               :unrestricted t
+                               :only-connected t))
+  (contract target expression
+            :unrestricted t
+            :only-connected t))
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0a568f8" class="outline-2">
+<h2 id="org0a568f8"><span class="section-number-2">15.</span> Output formats</h2>
+<div class="outline-text-2" id="text-15">
+</div>
+<div id="outline-container-org02a92ee" class="outline-3">
+<h3 id="org02a92ee"><span class="section-number-3">15.1.</span> TeX</h3>
+<div class="outline-text-3" id="text-15-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(defun latex-tensor (tensor)
+  (format nil "~a^{~a}_{~a}"
+          (car tensor)
+          (format nil "~{~a~}" (mapcar #'car (cdr tensor)))
+          (format nil "~{~a~}" (mapcar #'cadr (cdr tensor)))))
+
+(defun latex (tensor-expression &amp;optional (stream nil))
+  (case (car tensor-expression)
+    (+ (format stream "~&amp;( ~{~a~^~%+ ~}~%)" (mapcar #'latex
+                                                     (cdr tensor-expression))))
+    (* (format nil "~{~a ~}" (mapcar #'latex (cdr tensor-expression))))
+    (t (latex-tensor tensor-expression))))
+
+</pre>
+</div>
+
+<p>
+TODO actually to the tests
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp">(let ((orbital-spaces '((PQ p q r s)
+                        (H i j k l)
+                        (P a b c d)))
+      (partition '((PQ H P))))
+  (latex (partition-tensor '(f (p q))
+                           :orbital-spaces orbital-spaces
+                           :partition partition))
+  (latex (partition-tensor '(V (p q) (r s))
+                    :orbital-spaces orbital-spaces
+                    :partition partition)))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org88afcf4" class="outline-3">
+<h3 id="org88afcf4"><span class="section-number-3">15.2.</span> <span class="todo TODO">TODO</span> Dot diagrams</h3>
+<div class="outline-text-3" id="text-15-2">
+</div>
+<div id="outline-container-orgb627172" class="outline-4">
+<h4 id="orgb627172"><span class="section-number-4">15.2.1.</span> herodot</h4>
+<div class="outline-text-4" id="text-15-2-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(asdf:defsystem "herodot"
+  :description "Another s-expression language for dot"
+  :version "0.0.1"
+  :author "Alejandro Gallo &lt;aamsgallo@gmail.com&gt;"
+  :licence "GPLv3"
+  :depends-on (#:uiop)
+  :serial t
+  :components ((:file "herodot/herodot")
+               (:file "herodot/goldstone")))
+</pre>
+</div>
+</div>
+
+<ol class="org-ol">
+<li><a id="org1044721"></a>Main routines<br />
+<div class="outline-text-5" id="text-15-2-1-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(defpackage :herodot
+  (:use :cl)
+  (:export #:render-sdot
+           #:render-sdot!
+           #:save))
+(in-package :herodot)
+
+(declaim (optimize (debug 3) (safety 3)))
+
+(defun render-sdot (graph &amp;optional stream)
+  (eval `(render-sdot! ,graph ,stream)))
+
+(defparameter *default-indentation* "  ")
+(defun indent (text &amp;key (indentation *default-indentation*))
+  (declare (string text) (string indentation))
+  (with-output-to-string (s)
+    #1=(princ indentation s)
+    (mapc (lambda (c) (princ c s) (when (char= c #\newline) #1#))
+          (coerce text 'list))))
+
+(defun indent-list (textlist &amp;key (indentation *default-indentation*))
+  (indent (format nil "~{~a~^~%~}" textlist) :indentation indentation))
+
+(defmacro render-sdot! (graph &amp;optional stream)
+  `(labels ((:-- (from to &amp;rest opts)
+              (format ,stream "~a -- ~a ~a" from to (:-[options] opts)))
+            (:-&gt; (from to &amp;rest opts)
+              (apply #':-- (append (list from to) (cons '(dir "forward") opts))))
+            (:&lt;- (from to &amp;rest opts)
+              (apply #':-- (append (list from to) (cons '(dir "back") opts))))
+            (:-render-atom (p) (if (symbolp p)
+                                  (substitute #\_ #\- (string-downcase
+                                                       (symbol-name p)))
+                                  p))
+            (:-[options] (opts) (format ,stream "[~{~a~^, ~}]" (:-options opts)))
+            (:-options (opts) (mapcar (lambda (o)
+                                       (etypecase o
+                                         (atom (format ,stream "~a" o))
+                                         (list (:= (car o) (cadr o)))))
+                                     opts))
+            (:scope (name &amp;rest els)
+              (format ,stream "~&amp;{ /* begin: ~a */~%~a~%} /* end: ~a */"
+                      name (indent-list els) name))
+            (:= (key var)
+              (format ,stream "~a = ~s" (:-render-atom key) (:-render-atom var)))
+            (:el (name &amp;rest opts)
+              (format ,stream "~(~a~) ~a" name (:-[options] opts)))
+            (:node (&amp;rest opts) (apply #':el (cons "node" opts)))
+            (:edge (&amp;rest opts) (apply #':el (cons "edge" opts)))
+            (:graph-env (&amp;rest opts) (apply #':el (cons "graph" opts)))
+            (:cluster (name &amp;rest els) (format ,stream
+                                              "subgraph cluster_~a ~a"
+                                              name
+                                              (apply #':scope (cons "" els))))
+            (:list (&amp;rest els) (format nil "~&amp;~{~a~%~}"
+                                       (remove-if-not
+                                        (lambda (x) (and (atom x)
+                                                         (not (functionp x))
+                                                         (not (null x))))
+                                        els)))
+            (:-named-scope (scope-name name els)
+              (format ,stream "~a ~a {~%~a~%}"
+                      scope-name name
+                      (indent (apply #':list els))))
+            (:graph (name &amp;rest els) (:-named-scope "graph" name els))
+            (:digraph (name &amp;rest els) (:-named-scope "digraph" name els)))
+     ,graph))
+
+(defun save (file-basename graph &amp;key (format :svg))
+  (let ((dot-string (render-sdot nil graph))
+        (out-file (format nil "~a.~(~a~)" file-basename format))
+        (dot-file (format nil "~a.dot" file-basename))
+        (dot-cmd (format nil "dot -T~(~a~)" format)))
+    ;; save dot file
+    (with-open-file (f dot-file :if-exists :supersede :direction :output)
+      (princ dot-string f))
+    ;; create export
+    (with-input-from-string (i dot-string)
+      (with-open-file (f out-file :if-exists :supersede :direction :output)
+      (princ (with-output-to-string (o)
+               (uiop:run-program dot-cmd :output o :input i))
+             f)))
+    out-file))
+</pre>
+</div>
+</div>
+</li>
+
+<li><a id="org0cd366f"></a>Goldstone diagrams<br />
+<div class="outline-text-5" id="text-15-2-1-2">
+<div class="org-src-container">
+<pre class="src src-lisp">(in-package :herodot)
+
+(defun hole (from to &amp;rest attrs)
+  (append `(:&lt;- ,from ,to '(:color :black))
+          attrs))
+
+(defun particle (from to)
+  `(:-&gt; ,from ,to '(:color :red)))
+
+(defun make-top (names &amp;rest opts)
+  `(:scope "top level"
+           (:= :rank :sink)
+           (:node '(shape point) '(width .0))
+           ,@(mapcar (lambda (x) `',x) opts)
+           ,@names))
+
+(defun tensor (order name label &amp;rest opts)
+  (let ((-label (case order
+                  (1 label)
+                  (t (format nil "~{~a~^|~}"
+                             (loop for i below order
+                                   collect
+                                   (format nil "&lt;~a&gt;~a" i
+                                           (if (= i (floor order 2))
+                                               label ""))))))))
+    `(:el ,name
+          '(label ,-label)
+          '(shape "record")
+          '(heigth 0.01)
+          ,@(mapcar (lambda (x) `',x) opts))))
+
+(defun style ()
+  `(:list (:graph-env '(:fontname "CMU Serif")
+                      '(:rankdir "BT")
+                      '(:splines "line")
+                      '(:nodesep "equally"))
+          (:node '(:fontname "CMU Serif"))))
+
+(defun plus ()
+  `(:el (gensym) '(:shape :none) '(label "+")))
+
+(defun t-amplitude (n)
+  "Create a stand-alone t-amplitude"
+  (let* ((*tops* (loop for i below (* 2 n) collect `',(gensym "HEAVEN")))
+         (*t* (tensor n (format nil "t~a" n) ""))
+         (*contractions* (let ((name (cadr *t*)))
+                           (loop for j below n
+                                 with c = -1
+                                 appending
+                                 (list (hole #1=(format nil "~a:~a" name j)
+                                             #2=(nth (incf c) *tops*))
+                                       (particle #1# #2#))))))
+    `(:list ,(make-top *tops*)
+            ,*t*
+            ,@*contractions*)))
+</pre>
+</div>
+</div>
+
+<ol class="org-ol">
+<li><a id="orga4f43f6"></a>Examples<br />
+<div class="outline-text-6" id="text-15-2-1-2-1">
+<div class="org-src-container">
+<pre class="src src-lisp">(format t "~a"
+        (render-sdot
+         `(:graph "Diagram"
+                  ,(style)
+                  (:scope "top" ,(make-top '(:top1 :top2 :top3 :top4 :top5 :top6)))
+                  (:scope "t3 diagram" ,(tensor 3 :t3 "T"))
+                  ,(hole "t3:0" :top1)
+                  ,(particle "t3:0" :top2)
+                  ,(hole "t3:1" :top3)
+                  ,(particle "t3:1" :top4)
+                  ,(hole "t3:2" :top5)
+                  ,(particle "t3:2" :top6))))
+</pre>
+</div>
+
+
+<div id="org29ab079" class="figure">
+<p><img src="file:///tmp/dot-Nj5JeM.svg" alt="dot-Nj5JeM.svg" class="org-svg" />
+</p>
+</div>
+</div>
+</li>
+</ol>
+</li>
+
+<li><a id="org7165365"></a>Render arponen contractions&#xa0;&#xa0;&#xa0;<span class="tag"><span class="arponen">arponen</span></span><br />
+<div class="outline-text-5" id="text-15-2-1-3">
+<div class="org-src-container">
+<pre class="src src-lisp">
+#|
+(save "v@c-pp-hp-t1-t2"
+      `(graph "diagram"
+              ,(style)
+              ,(make-top '(:top1 :top2 :top3 :top4))
+              (scope "V"
+                    (node '(color blue))
+                    ,(tensor 2 "v" "V"))
+              ,(tensor 1 "t1" "T")
+              ,(tensor 2 "t2" "T")
+              (scope "t1 times v"
+                     ,(particle "t1:0" "v:0")
+                     ,(particle "v:0" :top1)
+                     ,(hole "t1:0" :top2))
+              (scope "t2 times V"
+                     ,(particle "t2:0" "v:1")
+                     ,(hole "t2:0" "v:1")
+                     ,(particle "t2:1" :top3)
+                     ,(hole "t2:1" :top4))))
+|#
+
+(defpackage arponen/dot
+  (:use :cl :herodot :arponen))
+(in-package arponen/dot)
+
+(defun top (i)
+  (intern (format nil "TOP~a" i) "KEYWORD"))
+
+(defun make-top (contraction)
+  (let ((n (- (length (arponen::flatten-list (mapcar #'cdr (cadr contraction))))
+              (length (arponen::flatten-list (cdar contraction))))))
+    (loop for i from 1 to n collect (top i))))
+
+(make-top
+ '((CONTRACTIONS (((P116 P84) (P114 P83))))
+   ((V (P113 P114) (P115 P116))
+    (T2 (P83 H83) (P84 H84)))))
+
+(defun render-contraction-pair (cnt tensors)
+  (let (c-tensors)
+    ;; find tensors participating in the contraction
+    (loop :for tsr :in tensors
+          :if (intersection cnt (arponen::flatten-list (cdr tsr)))
+            :do (push tsr c-tensors))
+    (labels ((coords (leg)
+               (let* ((tsr-idx (position leg c-tensors
+                                         :test
+                                         (lambda (i r)
+                                           (member i (arponen::flatten-list r)))))
+                      (tsr (nth tsr-idx c-tensors))
+                      (inode (position leg (cdr tsr)
+                                       :test
+                                       (lambda (i r)
+                                         (member i
+                                                 (arponen::flatten-list r))))))
+                 (list :itensor tsr-idx
+                       :inode inode
+                       :label (let ((name (symbol-name (car tsr))))
+                                (format nil "~(~a~):~a" name inode))
+                       :hole-p (hp::hole-p leg)))))
+      (let (left right hole-or-particle (max-itensor -1))
+        (loop :for leg :in cnt
+              :do (destructuring-bind (&amp;key itensor inode label hole-p) (coords leg)
+                    (setq hole-or-particle
+                          (if hole-p #'herodot::hole #'herodot::particle))
+                    (if (&gt; itensor max-itensor)
+                        (setq right left
+                              left label
+                              max-itensor itensor)
+                        (setq right label))))
+        (funcall hole-or-particle right left)))))
+
+
+(render-contraction-pair
+ '(P116 P84)
+ '((V (P113 P114) (P115 P116))
+   (T2 (P83 H83) (P84 H84))))
+
+(defun render-heaven (contraction heaven)
+  (let ((contracted-indices (arponen::flatten-list (cdar contraction))))
+    (flet ((is-contracted (idx) (member idx contracted-indices)))
+      (let (coords)
+        (loop :for tsr :in (cadr contraction)
+              :for c :from 0
+              :collect
+              (let ((ileg 0))
+                (arponen::traverse-legs
+                 (lambda (leg)
+                   (unless (is-contracted leg)
+                     (push (list :itensor c
+                                 :ileg ileg
+                                 :name (format nil "~(~a~):~a"
+                                               (car tsr)
+                                               (position leg (cdr tsr)
+                                                  :test (lambda (i x)
+                                                          (member i x))))
+                                 :top (pop heaven)
+                                 :leg leg
+                                 :hole-p (hp::hole-p leg))
+                           coords))
+                   (incf ileg))
+                 tsr)))
+        (loop :for coord :in (reverse coords)
+              :collect
+              (destructuring-bind (&amp;key itensor top name ileg inode leg hole-p)
+                  coord
+                (if hole-p
+                    (herodot::hole name top)
+                    (herodot::particle name top))))))))
+
+(render-heaven
+ #1='((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84))))
+ (make-top #1#))
+
+(defun render (contraction)
+  "Render only one diagram, this means,
+   do not pass a set of diagrams in the format of
+   many contractions like
+
+   ((contractions ((...) (...)))
+    (tensors...))"
+  (assert (eq (length (cdar contraction)) 1))
+  (herodot:render-sdot
+   (let ((top (make-top contraction)))
+     `(:graph "diagram"
+              ,(herodot::style)
+              ,(herodot::make-top top)
+              ,@(mapcar (lambda (tsr)
+                          (let ((lbl (symbol-name (car tsr))))
+                            (herodot::tensor (length (cdr tsr))
+                                             lbl lbl)))
+                        (cadr contraction))
+              (:scope "Contractions"
+                      ,@(let ((cts (cadar contraction))
+                              (tsrs (cadr contraction)))
+                          (loop :for ct :in (car cts)
+                                :collect (render-contraction-pair ct tsrs))))
+              (:scope "Heaven"
+                      ,@(render-heaven
+                                contraction
+                                top))
+              ))))
+
+#+(or)
+(progn
+  #1=(render
+      '((CONTRACTIONS (((P116 P84) (P114 P83))))
+        ((V (P113 P114) (P115 P116))
+         (T2 (P83 H83) (P84 H84)))))
+  (format t "~a" #1#))
+
+(defun render-all (contractions)
+  "Return a list of strings of dot graphics."
+  (destructuring-bind (conts tensors) contractions
+    (mapcar #+nil (lambda (cnt) (list :cnt cnt #'identity))
+            (lambda (cont)
+              (render `((contractions (,cont))
+                        ,tensors)))
+            (cadar contractions))))
+
+#+(or)
+(render-all '((CONTRACTIONS
+               (((P91 P82) (H101 H83) (H100 H82) (P90 P83)) ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+                ((P91 P82) (H101 H81) (P90 P84) (H100 H83)) ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+                ((H101 H81) (P91 P83) (P90 P84) (H100 H83)) ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+                ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+              ((V (H100 P90) (H101 P91)) (T2 (P83 H83) (P84 H84)) (T2 (P81 H81) (P82 H82)))))
+
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(progn
+  (format t "~a"
+          (render
+           '((CONTRACTIONS (((P116 P84) (P114 P83))))
+             ((V (P113 P114) (P115 P116))
+              (T2 (P83 H83) (P84 H84)))))))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(loop :for d :in (render-all '((CONTRACTIONS
+                                (((P91 P82) (H101 H83) (H100 H82) (P90 P83))
+                                 ((H101 H82) (P91 P82) (H100 H84) (P90 P83))
+                                 ((P91 P82) (H101 H81) (P90 P84) (H100 H83))
+                                 ((P91 P82) (H101 H83) (H100 H84) (P90 P83))
+                                 ((H101 H81) (P91 P83) (P90 P84) (H100 H83))
+                                 ((H101 H81) (P91 P81) (H100 H83) (P90 P83))
+                                 ((P91 P81) (H101 H84) (H100 H83) (P90 P83))))
+                               ((V (H100 P90) (H101 P91))
+                                (T2 (P83 H83) (P84 H84))
+                                (T2_2 (P81 H81) (P82 H82)))))
+      :for c :from 0
+      :do
+         (with-open-file (s (format nil "ccd-diagram-~a.dot" c)
+                            :direction :output
+                            :if-exists :supersede)
+           (format s "~a" d)))
+</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+
+
+<div id="outline-container-org07af236" class="outline-4">
+<h4 id="org07af236"><span class="section-number-4">15.2.2.</span> old</h4>
+<div class="outline-text-4" id="text-15-2-2">
+<p>
+This section defines some utilities to export the diagrams to dot
+format so that one can have some rough estimates for the diagrammatic
+form of the terms.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(in-package :arponen)
+
+(defun tensor-name-to-sdot-name (tensor)
+  (format nil "~(~a~)" (car tensor)))
+
+(declaim (optimize (debug 3)))
+(defun contraction-to-sdot (contraction)
+  (destructuring-bind ((contraction cts) . tensors) contraction
+    (declare (ignore contraction))
+    (flet ((tensor-of-leg (leg)
+             (find leg tensors :key #'cdr
+                               :test (lambda (l nodes)
+                                       (member l (flatten-list nodes))))))
+      (loop for ct in cts
+            collect
+            (let* ((tsr-a (tensor-of-leg (car ct)))
+                   (name-a (tensor-name-to-sdot-name tsr-a))
+                   (tsr-b (tensor-of-leg (cadr ct)))
+                   (name-b (tensor-name-to-sdot-name tsr-b)))
+              `(edge ))))))
+
+(contraction-to-sdot '((contraction ((a b)))
+                       (V (a e)) (t2 (b e) (i j))))
+
+(defun render-sdot (stream graph)
+  (eval `(render-sdot-macro ,stream ,graph)))
+
+(defmacro render-sdot-macro (stream graph)
+  `(labels ((-- (from to &amp;rest opts)
+              (format ,stream "~a -- ~a ~a" from to (-[options] opts)))
+            (-&gt; (from to &amp;rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "forward") opts))))
+            (&lt;- (from to &amp;rest opts)
+              (apply #'-- (append (list from to) (cons '(dir "back") opts))))
+            (-[options] (opts) (format ,stream "[~{~a~^,~}]" (-options opts)))
+            (-options (opts) (mapcar (lambda (o)
+                                       (etypecase o
+                                         (atom (format ,stream "~a" o))
+                                         (list (:= (car o) (cadr o)))))
+                                     opts))
+            (scope (&amp;rest els) (format ,stream "{~{~&amp;~t~a~%~}}" els))
+            (:= (key var)
+              (format ,stream "~a = ~a" (if (symbolp key)
+                                            (string-downcase (symbol-name key))
+                                            key) var))
+            (-element (name &amp;rest opts)
+              (format ,stream "~(~a~) ~a" name (-[options] opts)))
+            (node (&amp;rest opts) (apply #'-element (cons "node" opts)))
+            (edge (&amp;rest opts) (apply #'-element (cons "edge" opts)))
+            (:graph (&amp;rest opts) (apply #'-element (cons "graph" opts)))
+            (cluster (name &amp;rest els) (format ,stream
+                                              "cluster cluster_~a ~a"
+                                              name
+                                              (apply #'scope els)))
+            (-named-scope (scope-name name els)
+              (format ,stream "~a ~a {~%~{~2t~a~%~}}" scope-name name els))
+            (graph (name &amp;rest els) (-named-scope "graph" name els))
+            (digraph (name &amp;rest els) (-named-scope "digraph" name els)))
+     ,graph))
+
+
+(render-sdot-macro nil
+             (graph "This"
+                    (:= 'rankdir 'BT)
+                    (:graph '(rankdir 654))
+                    (scope (-&gt; 'i 'k)
+                           (-&gt; 'e 'k)
+                           (&lt;- 'e 'k))
+                    (node '(dir backward))
+                    (edge '(dir backward))
+                    (cluster 'v (-&gt; 'e 'k))
+                    (-element 'node 'simple)
+                    (-&gt; 'a 'b)
+                    (&lt;- 'a 'b)
+                    (-&gt; 'c 'd)))
+
+(let ((a '(-&gt; 'a 'b)))
+  (render-sdot nil a))
+
+(render-sdot nil
+             '(graph nil
+               (scope (-&gt; 'i 'k)
+                (-&gt; 'a 'b))
+               (-&gt; 'a 'b)
+               (&lt;- 'a 'b)
+               (-&gt; 'c 'd)))
+</pre>
+</div>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(defpackage :arponen/dot
+  (:use :cl))
+(in-package :arponen/dot)
+
+(defun symb (&amp;rest args)
+  (intern (format nil "~{~a~}" (cl-user::flatten-list args))))
+
+(defun subgraph (name &amp;rest contents)
+  (format nil "~&amp;subgraph cluster_~a {~%~{~t~a~^~%~}~%}" name contents))
+
+(defun declare-legs (tensor)
+  (format nil "~{~a~^, ~} [shape = point]"
+          (mapcar (lambda (x) (symb (car tensor) x))
+                  (cdr tensor))))
+
+(defun contraction-to-graphviz (contraction)
+  ;;(assert (cl-user::contraction? contraction))
+  (destructuring-bind ((contraction-symbol conts . nil) prods . nil) contraction
+    (loop
+      for tensor in prods
+      collect
+      (let ((tname (car tensor)))
+        (case tname
+          ((v t2) (subgraph tname
+                       (declare-legs tensor)))
+          (t1 (format nil "~&amp;~tt1 [shape = box, height = 0.02, label=\"\""))))))
+  )
+(contraction-to-graphviz
+ '((contraction ((h1 h5) (p1 p5) (h2 h3)))
+   ((V (h1 h2 ) (p1 p2))
+    (t1 (p3 h3))
+    (t2 (p4 h4) (p5 h5)))))
+</pre>
+</div>
+
+<p>
+An example output should be
+</p>
+
+<div class="org-src-container">
+<pre class="src src-dot">graph {
+  rankdir = TB
+  {
+    node [width = .3]
+    rank = same
+    heaven1, heaven2, heaven3, heaven4 [shape = none, label="", height=.01]
+  }
+
+  subgraph cluster_v {
+    rank = same
+    vleft, vright [shape = "point", label=""];
+    {
+      vleft -- vright [style = dashed]
+    }
+  }
+
+  subgraph cluster_t2 {
+    rank = same
+    style = filled
+    t2left, t2right [shape = "point", label=""];
+  }
+
+  t1 [shape = "box", height=.02, label=""]
+
+  //
+  // contractions
+  //
+  vleft -- t2left [dir = forward]
+  vleft -- t2left [dir = back]
+
+  vright -- t1 [dir=back]
+
+  heaven3 -- t2right [dir = forward, label="i"]
+  heaven2 -- t2right [dir = back, label="a"]
+  heaven4 -- t1 [dir = forward, label="j"]
+  heaven1 -- vright [dir = back, label="b"]
+
+}
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd0e8bd0" class="outline-3">
+<h3 id="orgd0e8bd0"><span class="section-number-3">15.3.</span> <span class="todo TODO">TODO</span> SVG</h3>
+<div class="outline-text-3" id="text-15-3">
+<div class="org-src-container">
+<pre class="src src-lisp">#+quicklisp (ql:quickload 'cl-svg)
+#+asdf (asdf:load-system 'cl-svg)
+
+(in-package :cl-svg)
+
+
+(defvar test-contraction nil)
+(setq test-contraction
+  '((contraction ((h1 h3) (h2 h4) (p1 p2) (p2 p5)))
+    (V (h1 p1) (h2 p2))
+    (T1 (p3 h3))
+    (T2 (p4 h4) (p5 h3))))
+
+(defun svg-diagram (contraction &amp;key (node-length 100) (diagram-height 100)
+                                  (diagram-box-height 20)
+                                  (out-file nil))
+  (labels ((box-pos (i) (cons (+ (* i node-length) (* (mod i 2) 10))
+                              (* i diagram-height)))
+           (node-position (node) (let* ((-i (position node contraction
+                                                     :key #'cdr :test #'find))
+                                        (i (- -i 1))
+                                        (tsr (nth -i contraction ))
+                                        (-j (position node tsr :test #'equal))
+                                        (j (- -j 1)))
+                                   (cons (+ (car (box-pos i))
+                                            (* j node-length))
+                                         (+ (cdr (box-pos i))
+                                            (/ diagram-box-height 2)))
+                                   ))
+           (nodes-of-contraction (leg-a leg-b)
+             (let* ((tsr-a (find leg-a (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (tsr-b (find leg-b (cdr contraction)
+                                 :key #'cdr
+                                 :test (lambda (x where) (find x where :test #'member))))
+                    (a (find leg-a (cdr tsr-a) :test #'member))
+                    (b (find leg-b (cdr tsr-b) :test #'member)))
+               (assert (and a b))
+               (list a b))))
+    (let* ((n-nodes (reduce (lambda (x n)
+                              (+ n (length (cdr x))))
+                            (cdr contraction)
+                            :initial-value 0
+                            :from-end t))
+           (n-diagrams (length (cdr contraction)))
+           (width (* n-nodes node-length))
+           (height (* n-diagrams diagram-height))
+           (scene (make-svg-toplevel 'svg-1.1-toplevel
+                                     :height height :width width))
+           (iotas (loop for i below n-nodes collect i)))
+      ;; draw blocks
+
+      ;; DRAW BODIES
+      (mapc (lambda (i tsr)
+              (let* ((nodes (cdr tsr))
+                     (n (length nodes))
+                     (box-width (if (&gt; n 1)
+                                    (* node-length (- n 1))
+                                    (/ node-length 2)))
+                     (box-pos (box-pos i)))
+                ;;; DRAW BOX
+                (draw scene
+                    (:rect :x (car box-pos)
+                           :y (cdr box-pos)
+                           :width box-width
+                           :height diagram-box-height)
+                    :fill "#000000")
+                ;; TEXT
+                (text scene (:x (- (+ (car box-pos)
+                                      (/ box-width 2))
+                                   (/ diagram-box-height 2))
+                             :y (+ (cdr box-pos)
+                                   diagram-box-height))
+                  (tspan (:fill "red"
+                          :font-weight "bold"
+                          :font-size diagram-box-height)
+                         (symbol-name (car tsr))))
+
+                ;;; NODE POINTS
+                (mapc (lambda (node)
+                        (let ((node-pos (node-position node)))
+                          (draw scene (:circle :cx (car node-pos)
+                                               :cy (cdr node-pos)
+                                               :r (/ diagram-box-height 5))
+                                :fill "#ff0000")))
+                      nodes)))
+            iotas (cdr contraction))
+
+      ;; DRAW CONTRACTIONS
+      (mapc (lambda (c)
+              (destructuring-bind (node-a node-b) (nodes-of-contraction (car c) (cadr c))
+                (let ((pos-a (node-position node-a))
+                      (pos-b (node-position node-b)))
+                  (draw scene (:line :x1 (car pos-a)
+                                     :y1 (cdr pos-a)
+                                     :x2 (car pos-b)
+                                     :y2 (cdr pos-b))
+                        :stroke "green"))))
+            (cadar contraction))
+
+      (if out-file
+          (with-open-file (s out-file :direction :output :if-exists :supersede)
+            (stream-out s scene))
+          (with-output-to-string (s nil)
+            (stream-out s scene)
+            s)))))
+
+(svg-diagram '((contraction ((h1 i) (h2 i2) (p1 a2)))
+               (V (h1 h2) (p1 p2))
+               (t2 (a i) (b j))
+               (t1 (a2 i2)))
+             :out-file "test.svg")
+
+(svg-diagram test-contraction
+             :out-file "test.svg")
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Created: 2024-10-30 Wed 17:12</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
