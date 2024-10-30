@@ -2471,33 +2471,33 @@ equivalent.
   (:nicknames :hp))
 (in-package :arponen/hole-particle-picture)
 
-(defconstant +default-orbital-spaces+
+(defvar *default-orbital-spaces*
   '((H)   ;; holes
     (P)   ;; particles
     (G)   ;; general (or rather ghosts)
     (PH)) ;; particle-holes (real vacuum)
   "Orbital space for the default particle-hole picture")
-(defvar *orbital-spaces* (copy-tree +default-orbital-spaces+))
+(defvar *orbital-spaces* (copy-tree *default-orbital-spaces*))
 
-(defconstant +default-orbital-spaces-counter+
+(defvar *default-orbital-spaces-counter*
   '((H . 0)
     (P . 0)
     (G . 0)
     (PH . 0))
   "Current index for the orbital spaces")
-(defvar *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
+(defvar *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
 
-(defconstant +default-space-partition+
+(defvar *default-space-partition*
   '((PH H P)))
-(defvar *space-partition* (copy-tree +default-space-partition+))
+(defvar *space-partition* (copy-tree *default-space-partition*))
 
 (defvar *contraction-rules* '(((H H) 0 1)
                               ((P P) 1 0))
   "The conctractions that are not zero.")
 
 (defun reset-spaces ()
-  (setq *orbital-spaces-counter* (copy-tree +default-orbital-spaces-counter+))
-  (setq *orbital-spaces* (copy-tree +default-orbital-spaces+))
+  (setq *orbital-spaces-counter* (copy-tree *default-orbital-spaces-counter*))
+  (setq *orbital-spaces* (copy-tree *default-orbital-spaces*))
   (values *orbital-spaces* *orbital-spaces-counter*))
 
 ;; simple useful functions for knowing which kind of index we have
@@ -2655,7 +2655,7 @@ equivalent.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (progn
   (reset-spaces)
-  (print +default-orbital-spaces+)
+  (print *default-orbital-spaces*)
   (dotimes (i 10)
     (when (zerop (mod i 2)) (genindex 'P))
     (genindex 'H))
