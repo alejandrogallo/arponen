@@ -1,3 +1,4 @@
+;; [[file:../readme.org::*Goldstone diagrams][Goldstone diagrams:1]]
 (in-package :herodot)
 
 (defun hole (from to &rest attrs)
@@ -53,3 +54,4 @@
     `(:list ,(make-top *tops*)
             ,*t*
             ,@*contractions*)))
+;; Goldstone diagrams:1 ends here

@@ -1,3 +1,4 @@
+;; [[file:../readme.org::*Main routines][Main routines:1]]
 (defpackage :herodot
   (:use :cl)
   (:export #:render-sdot
@@ -81,3 +82,4 @@
                (uiop:run-program dot-cmd :output o :input i))
              f)))
     out-file))
+;; Main routines:1 ends here

@@ -1,5 +1,7 @@
 # -*- imenu-literate-current-mode: lisp-mode; -*-
 #+TODO: TODO EXPLAIN CLEAN | DONE
+#+PROPERTY: header-args:lisp+ :comments noweb
+
 * Todo [50%]
 
 - [-] create the unit tensor operator and check that it plays well
@@ -21,9 +23,23 @@
   :version "0.0.1"
   :author "Alejandro Gallo <aamsgallo@gmail.com>"
   :licence "GPLv3"
-  :depends-on (#:herodot)
+  :depends-on (#:herodot
+               #:serapeum
+               #:alexandria
+               #:rutils)
   :serial t
   :components ((:file "arponen")))
+
+
+(asdf:defsystem "arponen-test"
+  :description "An many-body equation generator"
+  :version "0.0.1"
+  :author "Alejandro Gallo <aamsgallo@gmail.com>"
+  :licence "GPLv3"
+  :depends-on (#:arponen
+               #:fiveam)
+  :serial t
+  :components ((:file "t")))
 #+end_src
 
 
@@ -39,7 +55,6 @@
 
 #+begin_src lisp :tangle t.lisp
 ;; todo define packages and all that
-(load "arponen.lisp")
 (in-package :arponen)
 
 (defmacro assert-equal (left right)
